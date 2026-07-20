@@ -235,13 +235,14 @@ Exit criteria:
 
 ### Phase 6: Build the starter quick-pick flow
 
-- [x] Keep the ordered workflow: Context, Colors, Standard.
+- [x] Keep the ordered workflow: Context, Colors, Saved pairs.
 - [x] In Colors, present Brand first, Neutral second, and Secondary as optional.
-- [x] Put generated semantic roles behind one concise suggestion action.
+- [x] Put Brand-synced semantic roles behind one concise action.
 - [x] Provide an overview showing all eight roles without opening eight full editors.
 - [x] Reveal detailed scale controls only for the active role.
 - [x] Keep Preview and Export as unnumbered result destinations.
-- [x] Keep theme switching inside Preview; Standard owns only the WCAG target.
+- [x] Keep theme switching inside Preview; the bottom-right Steps window owns the global WCAG target.
+- [x] Save deduplicated matrix pairs into Step 03 and include them in CSS and JSON export.
 
 Exit criteria:
 
@@ -323,4 +324,4 @@ Mitigation: resolve repository setup before the source split. Do not begin the s
 
 ## Approval gate
 
-Do not begin Phase 0 or code changes until Riza confirms this execution plan. Once approved, update this file as phases complete. If the architecture changes materially, revise this plan before changing the code.
+Do not begin Phase 0 or code changes until the project owner confirms this execution plan. Once approved, update this file as phases complete. If the architecture changes materially, revise this plan before changing the code.

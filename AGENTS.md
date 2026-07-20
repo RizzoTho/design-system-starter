@@ -15,10 +15,13 @@ Do not turn it into a generic color picker. Its core question is:
 - `index.html` owns the runnable page structure and loads the standalone source files.
 - `styles.css` owns all visual and responsive styles.
 - `js/color-engine.js` owns pure color parsing, conversion, scale, luminance, and contrast calculations.
+- `js/i18n.js` owns the complete English and Chinese catalogs plus language switching. English is the default.
 - `js/role-model.js` owns role definitions, suggestions, palette aliases, semantic assignment resolution, and default color state.
 - `js/app.js` owns the single mutable state, rendering, interaction, navigation, copy, and export behavior.
+- `scripts/prepare-pages.sh` owns the clean `_site/` artifact used for GitHub Pages deployment.
+- `.github/workflows/pages.yml` owns verification and deployment to the `github-pages` environment from `main`.
 - `AGENTS.md` owns the project intent and maintenance rules.
-- There is currently no build step, package manager, framework, or generated source.
+- There is no package manager, framework, or generated source. GitHub Pages uses a dependency-free packaging script that copies runtime files into ignored `_site/` output.
 - The page must continue to work when `index.html` is opened directly through `file://`.
 
 ## Eight-role model
@@ -38,14 +41,14 @@ The workflow has three ordered steps plus two separate result destinations:
 
 1. `Context`: set the fixed Background and Text colors and show an explicit PASS or FAIL result for normal text at 4.5:1.
 2. `Colors`: define Brand and Neutral, optionally add Secondary, generate semantic suggestions, and inspect each active 50–950 scale.
-3. `Standard`: choose the WCAG target, inspect the fit report, and inspect the contrast matrix.
+3. `Saved pairs`: inspect the fit report and contrast matrix, then keep useful foreground/background combinations for export.
 
 After those steps:
 
 - `Preview`: review the current system in light and dark component examples. It is an unnumbered result destination, not a workflow step. Light and Dark are switched locally inside Preview and are not shown simultaneously.
 - `Export`: copy CSS variables or JSON. It is an unnumbered result destination alongside Preview.
 
-The floating Steps window is the navigation owner for this sequence. Only Context, Colors, and Standard carry step numbers. `Preview` and `Export` remain separate, unnumbered entries at the same navigation level after the steps. Every destination must have a stable anchor and participate in active-section tracking.
+The floating Steps window is the navigation owner for this sequence. Only Context, Colors, and Saved pairs carry step numbers. `Preview` and `Export` remain separate, unnumbered entries at the same navigation level after the steps. Every destination must have a stable anchor and participate in active-section tracking. The WCAG target is a global control in the bottom-right Steps window, not a page-local step.
 
 ## Color and accessibility rules
 
@@ -67,12 +70,16 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 ## Interaction contract
 
+- The fixed top-right `EN / 中` control switches the whole product copy. English is active on first load.
+- Every user-facing title, description, button label, status, and feedback change must update both `en` and `zh` catalogs in the same change.
+- Product and technical terms such as Brand, Neutral, Secondary, Regular, Success, Warning, Danger, Information, WCAG, AA, AAA, OKLCH, HEX, CSS, JSON, token, palette, surface, and contrast remain untranslated where they are the clearest label.
+- Missing translation keys or mismatched catalogs must fail visibly. Do not add a silent language fallback.
 - Background, Text, and every enabled palette owner accept direct HEX input and native color input.
 - Invalid HEX must be marked invalid without silently changing the last valid color.
 - Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
 - Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
 - Disabling Secondary must remove its palettes and exports without leaving stale tokens.
-- Clicking a matrix cell copies the foreground/background pair.
+- Clicking a matrix cell saves and copies the foreground/background pair. Saved pairs are deduplicated, removable from Step 03, re-evaluated when the global target changes, and included in CSS and JSON export.
 - Copy feedback must be short, use white text, and must not obscure the main task.
 - Generated scale tokens have no hover movement. Avoid decorative motion that suggests a state change where none exists.
 - The floating Steps window can be minimized and restored. Navigation should respect `prefers-reduced-motion`.
@@ -105,14 +112,15 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 For every behavior or layout change:
 
 1. Run `node --check` on every JavaScript owner.
-2. Run `node tests/static-contract.test.mjs`, `node tests/color-engine.test.mjs`, and `node tests/app-smoke.test.mjs`.
+2. Run `node tests/static-contract.test.mjs`, `node tests/i18n.test.mjs`, `node tests/color-engine.test.mjs`, and `node tests/app-smoke.test.mjs`.
 3. Manually verify Context PASS and FAIL states with at least one high-contrast and one low-contrast pair.
 4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.
-6. Change the WCAG target and confirm Fit report and Contrast matrix update together.
-7. Check the Steps links, minimize control, Preview entry, and Export entry.
-8. Check desktop and narrow layouts. The scale and matrix may scroll horizontally, but controls and copy must remain usable.
-9. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
+6. Change the global WCAG target and confirm Fit report, saved-pair status, and Contrast matrix update together.
+7. Save a matrix cell, confirm it appears once in Step 03, remove it, and verify saved pairs are included in CSS and JSON export.
+8. Check the Steps links, minimize control, global target, Preview entry, and Export entry.
+9. Check desktop and narrow layouts. The scale and matrix may scroll horizontally, but controls and copy must remain usable.
+10. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
 
 ## Repository continuity
 

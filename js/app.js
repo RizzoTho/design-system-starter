@@ -6,7 +6,6 @@
     hexToRgb,
     rgbToHex,
     hexToOklch,
-    oklchToHex,
     mapOklchToSrgb,
     shiftLightness,
     contrast,
@@ -14,6 +13,8 @@
     makePalette,
   } = window.ColorEngine;
   const model = window.ColorRoleModel;
+  const i18n = window.I18n;
+  const t = (key, params) => i18n.t(key, params);
 
   const state = {
     context: { ...model.defaults.context },
@@ -23,7 +24,8 @@
     palettes: {},
     assignments: {},
     diagnostics: [],
-    secondarySuggestionIndex: 0,
+    savedPairs: [],
+    language: 'en',
   };
 
   const seedColor = $('#seedColor');
@@ -94,7 +96,7 @@
     const enabled = roleIsEnabled(roleId);
     const seed = role.seed || '#E4DED4';
     const oklch = hexToOklch(seed);
-    const alias = definition.aliasOf ? ` · uses ${model.roles[definition.aliasOf].label}` : '';
+    const alias = definition.aliasOf ? ` · ${t('role.uses', { role: model.roles[definition.aliasOf].label })}` : '';
 
     seedColor.value = seed.toLowerCase();
     hexInput.value = role.seed || '';
@@ -106,18 +108,20 @@
     $('#chromaValue').textContent = oklch.C.toFixed(3);
     $('#lightValue').textContent = `${Math.round(oklch.L * 100)}%`;
     $('#candidateLabel').textContent = `${definition.label}${alias}`;
-    $('#activeRoleDescription').textContent = definition.description;
-    $('#summaryLabel').textContent = `${enabled ? 'ACTIVE' : 'DISABLED'} ${roleId.toUpperCase()}`;
-    $('#summaryTitle').textContent = definition.aliasOf ? `${definition.label} uses ${model.roles[ownerId].label}` : `${definition.label} color`;
-    $('#summaryHex').textContent = enabled ? `${seed} · ${formatOklch(seed)}` : 'No palette is generated';
-    $('#summaryNote').textContent = definition.aliasOf ? 'No duplicate palette · edits update Neutral' : '500 keeps the exact seed';
+    $('#activeRoleDescription').textContent = t(definition.descriptionKey);
+    $('#summaryLabel').textContent = t(enabled ? 'summary.active' : 'summary.disabled', { role: roleId.toUpperCase() });
+    $('#summaryTitle').textContent = definition.aliasOf
+      ? t('summary.alias', { role: definition.label, owner: model.roles[ownerId].label })
+      : t('summary.color', { role: definition.label });
+    $('#summaryHex').textContent = enabled ? `${seed} · ${formatOklch(seed)}` : t('summary.noPalette');
+    $('#summaryNote').textContent = definition.aliasOf ? t('summary.noDuplicate') : t('summary.seedExact');
     $('#scaleRole').textContent = definition.aliasOf ? `${definition.label} / ${model.roles[ownerId].label}` : definition.label;
 
     for (const input of [seedColor, hexInput, hueRange, chromaRange, lightRange]) input.disabled = !enabled;
     $('#lockRole').disabled = !enabled;
-    $('#lockRole').textContent = `${role.locked ? 'Unlock' : 'Lock'} ${model.roles[ownerId].label}`;
+    $('#lockRole').textContent = t(role.locked ? 'action.unlock' : 'action.lock', { role: model.roles[ownerId].label });
     $('#lockRole').setAttribute('aria-pressed', String(Boolean(role.locked)));
-    $('#regenerateRole').disabled = roleId === 'brand' || roleId === 'regular' || (roleId === 'secondary' && !enabled);
+    $('#semanticSyncActions').hidden = roleId !== 'brand';
     $('#secondaryControls').hidden = roleId !== 'secondary';
     $('#secondaryStrategy').value = state.roles.secondary.strategy;
 
@@ -136,7 +140,7 @@
       const seed = roleSeed(roleId);
       const owner = model.resolvePaletteOwner(roleId);
       return `<button class="role-tab ${state.activeRole === roleId ? 'active' : ''} ${enabled ? '' : 'disabled-role'}" type="button" data-select-role="${roleId}" aria-pressed="${state.activeRole === roleId}">
-        <i style="--role-color:${seed || '#CFC8BC'}"></i><span>${definition.label}</span>${definition.aliasOf ? '<em>alias</em>' : state.roles[owner].locked ? '<em>locked</em>' : ''}
+        <i style="--role-color:${seed || '#CFC8BC'}"></i><span>${definition.label}</span>${definition.aliasOf ? `<em>${t('role.alias')}</em>` : state.roles[owner].locked ? `<em>${t('role.locked')}</em>` : ''}
       </button>`;
     }).join('');
     $('#roleTabs').innerHTML = markup;
@@ -149,10 +153,10 @@
       const seed = roleSeed(roleId);
       const owner = model.resolvePaletteOwner(roleId);
       const status = definition.aliasOf
-        ? `Alias of ${model.roles[owner].label}`
+        ? t('role.aliasOf', { role: model.roles[owner].label })
         : enabled
-          ? `${seed}${state.roles[owner].locked ? ' · Locked' : ''}`
-          : 'Optional · Off';
+          ? `${seed}${state.roles[owner].locked ? ` · ${t('role.locked')}` : ''}`
+          : t('role.optionalOff');
       return `<button class="role-card ${state.activeRole === roleId ? 'active' : ''}" type="button" data-select-role="${roleId}">
         <span class="role-card-swatch" style="background:${seed || '#E4DED4'};color:${seed ? textColor(seed) : '#6F675C'}">${enabled ? 'Aa' : '—'}</span>
         <span><strong>${definition.label}</strong><small>${status}</small></span>
@@ -163,16 +167,16 @@
   function renderSecondarySuggestions() {
     const strategy = state.roles.secondary.strategy;
     const suggestions = model.makeSecondarySuggestions(state.roles.brand.seed, strategy);
-    $('#secondarySuggestions').innerHTML = suggestions.map(suggestion => `<button type="button" class="suggestion" data-secondary-hex="${suggestion.hex}"><i style="background:${suggestion.hex}"></i><span>${suggestion.label}</span><b>${suggestion.hex}</b></button>`).join('');
+    $('#secondarySuggestions').innerHTML = suggestions.map((suggestion, index) => `<button type="button" class="suggestion" data-secondary-hex="${suggestion.hex}"><i style="background:${suggestion.hex}"></i><span>${t('secondary.suggestion', { strategy: t(suggestion.labelKey), index: index + 1 })}</span><b>${suggestion.hex}</b></button>`).join('');
   }
 
   function renderScale() {
     if (!scale.length) {
-      $('#scale').innerHTML = '<div class="empty-state">Secondary 目前关闭。选择近似色或对比色策略后再生成 palette。</div>';
+      $('#scale').innerHTML = `<div class="empty-state">${t('scale.empty')}</div>`;
       return;
     }
     const usage = { 50: 'Page', 100: 'Surface', 200: 'Hover', 300: 'Border', 400: 'Muted', 500: 'Seed', 600: 'Action', 700: 'Pressed', 800: 'Strong', 900: 'Dark', 950: 'Deep' };
-    $('#scale').innerHTML = scale.map(item => `<button class="swatch" data-copy="${item.hex}" data-apply-color="${item.hex}" data-copy-label="Applied and copied" title="${item.step} · ${usage[item.step]} · 应用并复制 ${item.hex}"><span class="swatch-color" style="background:${item.hex}">${item.step === 600 ? '<span class="swatch-rec">REC</span>' : ''}<span class="swatch-hex">${item.hex}</span></span><span class="swatch-meta"><b>${item.step}</b><span class="token-use">${usage[item.step]}</span><span class="contrast-values">W ${item.ratioOnWhite.toFixed(1)} · K ${item.ratioOnBlack.toFixed(1)}</span></span></button>`).join('');
+    $('#scale').innerHTML = scale.map(item => `<button class="swatch" data-copy="${item.hex}" data-apply-color="${item.hex}" data-copy-label="${t('toast.appliedCopied')}" title="${item.step} · ${usage[item.step]} · ${t('toast.appliedCopied')} ${item.hex}"><span class="swatch-color" style="background:${item.hex}">${item.step === 600 ? '<span class="swatch-rec">REC</span>' : ''}<span class="swatch-hex">${item.hex}</span></span><span class="swatch-meta"><b>${item.step}</b><span class="token-use">${usage[item.step]}</span><span class="contrast-values">W ${item.ratioOnWhite.toFixed(1)} · K ${item.ratioOnBlack.toFixed(1)}</span></span></button>`).join('');
   }
 
   function renderDiagnostics() {
@@ -180,7 +184,7 @@
     const note = $('#scaleDiagnostics');
     note.hidden = activeDiagnostics.length === 0;
     note.textContent = activeDiagnostics.length
-      ? `${activeDiagnostics.length} 个 token 为进入 sRGB gamut 自动降低了 chroma；Lightness 与 Hue 尽量保持不变。`
+      ? t('diagnostic.gamut', { count: activeDiagnostics.length })
       : '';
   }
 
@@ -195,6 +199,29 @@
     return label === 'FAIL' ? 'fail' : label === '3:1' ? 'warn' : 'pass';
   }
 
+  function savedPairId(roleId, foreground, background) {
+    return `${roleId}:${foreground}:${background}`;
+  }
+
+  function renderSavedPairs() {
+    $('#savedPairCount').textContent = String(state.savedPairs.length);
+    if (!state.savedPairs.length) {
+      $('#savedPairs').innerHTML = `<p class="saved-pairs-empty">${t('saved.empty')}</p>`;
+      return;
+    }
+    $('#savedPairs').innerHTML = state.savedPairs.map(pair => {
+      const ratio = contrast(pair.foreground, pair.background);
+      const pass = ratio >= state.target;
+      const roleLabel = model.roles[pair.roleId].label;
+      return `<div class="saved-pair">
+        <span class="saved-pair-sample" style="background:${pair.background};color:${pair.foreground}">Aa</span>
+        <span class="saved-pair-copy"><strong>${roleLabel}</strong><small>${pair.foreground} → ${pair.background}</small></span>
+        <em class="${pass ? 'pass' : 'fail'}">${ratio.toFixed(1)}:1 · ${pass ? 'PASS' : 'FAIL'}</em>
+        <button type="button" data-remove-pair="${savedPairId(pair.roleId, pair.foreground, pair.background)}" aria-label="${t('saved.remove')}">×</button>
+      </div>`;
+    }).join('');
+  }
+
   function renderContextStatus() {
     const ratio = contrast(state.context.text, state.context.background);
     const pass = ratio >= 4.5;
@@ -202,7 +229,7 @@
     const element = $('#contextStatus');
     element.classList.toggle('pass', pass);
     element.classList.toggle('fail', !pass);
-    element.innerHTML = `<span class="status-icon" aria-hidden="true">${pass ? '✓' : '!'}</span><span><strong>${pass ? `PASS · ${level}` : 'FAIL'}</strong><small>Text on Background · ${ratio.toFixed(2)}:1<br />Required · 4.5:1</small></span>`;
+    element.innerHTML = `<span class="status-icon" aria-hidden="true">${pass ? '✓' : '!'}</span><span><strong>${pass ? `PASS · ${level}` : 'FAIL'}</strong><small>${t('context.status.text')} · ${ratio.toFixed(2)}:1<br />${t('context.status.required')} · 4.5:1</small></span>`;
     $('#contextCanvas').style.setProperty('--context-bg', state.context.background);
     $('#contextCanvas').style.setProperty('--context-text', state.context.text);
   }
@@ -212,7 +239,7 @@
     $('#pairList').innerHTML = model.roleOrder.map(roleId => {
       const definition = model.roles[roleId];
       if (!roleIsEnabled(roleId)) {
-        return `<div class="pair pair-disabled"><span class="pair-swatch">—</span><span class="pair-copy"><strong>${definition.label}</strong><span>Optional role is disabled</span></span></div>`;
+        return `<div class="pair pair-disabled"><span class="pair-swatch">—</span><span class="pair-copy"><strong>${definition.label}</strong><span>${t('fit.disabled')}</span></span></div>`;
       }
       const color = roleSeed(roleId);
       const onBackground = contrast(color, state.context.background);
@@ -221,15 +248,15 @@
       const measuredOnRatio = contrast(measuredOnColor, color);
       const bgLabel = fitLabel(onBackground, target);
       const onLabel = fitLabel(measuredOnRatio, target);
-      const alias = definition.aliasOf ? ` · uses ${model.roles[definition.aliasOf].label}` : '';
-      return `<button class="pair" data-copy="${definition.label}: ${color}; ${color} on ${state.context.background}; ${measuredOnColor} on ${color}" data-copy-label="Fit result copied" title="复制 ${definition.label} 的 contrast 结果"><span class="pair-swatch" style="background:${color};color:${measuredOnColor}">Aa</span><span class="pair-copy"><strong>${definition.label}<em>${color}${alias}</em></strong><span>${color} on Background · ${onBackground.toFixed(2)}:1<br />Fixed Text on role · ${textOnCandidate.toFixed(2)}:1<br />Measured ${measuredOnColor} on role · ${measuredOnRatio.toFixed(2)}:1</span></span><span class="fit-badges"><i class="fit-badge ${fitClass(bgLabel)}">BG ${bgLabel}</i><i class="fit-badge ${fitClass(onLabel)}">ON ${onLabel}</i></span></button>`;
+      const alias = definition.aliasOf ? ` · ${t('role.uses', { role: model.roles[definition.aliasOf].label })}` : '';
+      return `<button class="pair" data-copy="${definition.label}: ${color}; ${color} on ${state.context.background}; ${measuredOnColor} on ${color}" data-copy-label="${t('toast.fitCopied')}" title="${definition.label} contrast"><span class="pair-swatch" style="background:${color};color:${measuredOnColor}">Aa</span><span class="pair-copy"><strong>${definition.label}<em>${color}${alias}</em></strong><span>${t('fit.onBackground', { color })} · ${onBackground.toFixed(2)}:1<br />${t('fit.fixedText')} · ${textOnCandidate.toFixed(2)}:1<br />${t('fit.measured', { color: measuredOnColor })} · ${measuredOnRatio.toFixed(2)}:1</span></span><span class="fit-badges"><i class="fit-badge ${fitClass(bgLabel)}">BG ${bgLabel}</i><i class="fit-badge ${fitClass(onLabel)}">ON ${onLabel}</i></span></button>`;
     }).join('');
   }
 
   function renderMatrix() {
     if (!scale.length) {
       $('#matrix').innerHTML = '';
-      $('#matrixNote').textContent = '当前角色没有 palette。';
+      $('#matrixNote').textContent = t('matrix.noPalette');
       return;
     }
     const target = state.target;
@@ -237,13 +264,16 @@
     const rows = scale.map(foreground => `<div class="matrix-label"><span style="color:${foreground.hex}">●</span>&nbsp; ${foreground.step} · ${foreground.hex}</div>` + scale.map(background => {
       const ratio = contrast(foreground.hex, background.hex);
       const pass = ratio >= target;
+      const pairId = savedPairId(state.activeRole, foreground.hex, background.hex);
+      const saved = state.savedPairs.some(pair => savedPairId(pair.roleId, pair.foreground, pair.background) === pairId);
       const safeInk = textColor(background.hex);
       const ratioBackground = safeInk === '#FFFFFF' ? 'rgba(0,0,0,.58)' : 'rgba(255,255,255,.72)';
-      return `<button class="matrix-cell ${pass ? 'pass' : 'fail'}" data-copy="${foreground.hex} on ${background.hex}" data-copy-label="Color pair copied" style="background:${background.hex};color:${safeInk};--ratio-bg:${ratioBackground}" title="${foreground.hex} on ${background.hex} · ${ratio.toFixed(2)}:1 · ${pass ? 'Pass' : 'Fail'}" aria-label="${foreground.hex} on ${background.hex}, contrast ${ratio.toFixed(2)} to 1, ${pass ? 'passes' : 'fails'} current target"><span class="matrix-sample" style="color:${foreground.hex}">Aa</span><span class="matrix-ratio">${ratio.toFixed(1)}</span></button>`;
+      return `<button class="matrix-cell ${pass ? 'pass' : 'fail'} ${saved ? 'saved' : ''}" data-save-pair="true" data-pair-role="${state.activeRole}" data-pair-foreground="${foreground.hex}" data-pair-background="${background.hex}" style="background:${background.hex};color:${safeInk};--ratio-bg:${ratioBackground}" title="${foreground.hex} on ${background.hex} · ${ratio.toFixed(2)}:1 · ${pass ? 'PASS' : 'FAIL'}" aria-label="${foreground.hex} on ${background.hex}, contrast ${ratio.toFixed(2)} to 1, ${pass ? 'PASS' : 'FAIL'}${saved ? `, ${t('saved.status')}` : ''}"><span class="matrix-sample" style="color:${foreground.hex}">Aa</span><span class="matrix-ratio">${ratio.toFixed(1)}</span></button>`;
     }).join('')).join('');
     $('#matrix').innerHTML = header + rows;
     const passCount = scale.reduce((sum, foreground) => sum + scale.filter(background => contrast(foreground.hex, background.hex) >= target).length, 0);
-    $('#matrixNote').innerHTML = `<b>${passCount} / ${scale.length * scale.length}</b> pairs pass ${target === 7 ? 'AAA' : target === 3 ? 'AA large text' : 'AA normal text'} · ratio is rounded to one decimal place.`;
+    const targetLabel = target === 7 ? t('target.aaa') : target === 3 ? t('target.large') : t('target.normal');
+    $('#matrixNote').textContent = t('matrix.summary', { passed: passCount, total: scale.length * scale.length, target: targetLabel });
   }
 
   function renderAssignments() {
@@ -251,12 +281,12 @@
     $('#assignmentList').innerHTML = visibleRoles.map(roleId => {
       const definition = model.roles[roleId];
       if (definition.aliasOf) {
-        return `<div class="assignment-row alias-row"><div><strong>${definition.label}</strong><small>Alias of ${model.roles[definition.aliasOf].label}</small></div><span class="assignment-alias">Uses Neutral assignments</span></div>`;
+        return `<div class="assignment-row alias-row"><div><strong>${definition.label}</strong><small>${t('role.aliasOf', { role: model.roles[definition.aliasOf].label })}</small></div><span class="assignment-alias">${t('role.usesAssignments', { role: model.roles[definition.aliasOf].label })}</span></div>`;
       }
       const themes = state.assignments[roleId];
       return `<div class="assignment-row"><div><strong>${definition.label}</strong><small>${roleSeed(roleId)}</small></div>${['light', 'dark'].map(theme => {
         const assignment = themes[theme];
-        return `<div class="assignment-theme"><b>${theme}</b><span title="Subtle ${assignment.subtle.step}" style="--assignment-color:${assignment.subtle.hex}"><i></i>Subtle</span><span title="Border/Icon ${assignment.borderIcon.step} · ${assignment.borderIcon.ratioOnSubtle.toFixed(2)}:1" style="--assignment-color:${assignment.borderIcon.hex}"><i></i>Border ${assignment.borderIcon.pass ? '✓' : '!'}</span><span title="Bold ${assignment.bold.step}" style="--assignment-color:${assignment.bold.hex}"><i></i>Bold</span><span title="On-bold · ${assignment.onBold.ratio.toFixed(2)}:1" style="--assignment-color:${assignment.onBold.hex}"><i></i>On ${assignment.onBold.pass ? '✓' : '!'}</span></div>`;
+        return `<div class="assignment-theme"><b>${t('assignment.theme', { theme: theme.toUpperCase() })}</b><span title="Subtle ${assignment.subtle.step}" style="--assignment-color:${assignment.subtle.hex}"><i></i>${t('assignment.subtle')}</span><span title="Border/Icon ${assignment.borderIcon.step} · ${assignment.borderIcon.ratioOnSubtle.toFixed(2)}:1" style="--assignment-color:${assignment.borderIcon.hex}"><i></i>${t('assignment.border')} ${assignment.borderIcon.pass ? '✓' : '!'}</span><span title="Bold ${assignment.bold.step}" style="--assignment-color:${assignment.bold.hex}"><i></i>${t('assignment.bold')}</span><span title="On-bold · ${assignment.onBold.ratio.toFixed(2)}:1" style="--assignment-color:${assignment.onBold.hex}"><i></i>${t('assignment.on')} ${assignment.onBold.pass ? '✓' : '!'}</span></div>`;
       }).join('')}</div>`;
     }).join('');
   }
@@ -300,36 +330,36 @@
     ].join(';');
 
     return `<div class="product-preview" style="${variables}">
-      <aside class="product-sidebar" aria-label="Workspace navigation">
-        <div class="product-mark"><span>W</span><strong>Workbench</strong></div>
+      <aside class="product-sidebar" aria-label="${t('aria.workspaceNavigation')}">
+        <div class="product-mark"><span>W</span><strong>${t('preview.mark')}</strong></div>
         <nav class="product-nav">
-          <a class="active" href="#preview"><span aria-hidden="true">⌂</span>Overview</a>
-          <a href="#preview"><span aria-hidden="true">✓</span>Tasks <b>4</b></a>
-          <a href="#preview"><span aria-hidden="true">◫</span>Files</a>
-          <a href="#preview"><span aria-hidden="true">↗</span>Activity</a>
+          <a class="active" href="#preview"><span aria-hidden="true">⌂</span>${t('preview.nav.overview')}</a>
+          <a href="#preview"><span aria-hidden="true">✓</span>${t('preview.nav.tasks')} <b>4</b></a>
+          <a href="#preview"><span aria-hidden="true">◫</span>${t('preview.nav.files')}</a>
+          <a href="#preview"><span aria-hidden="true">↗</span>${t('preview.nav.activity')}</a>
         </nav>
-        <div class="product-team"><span class="product-avatar">RM</span><span><strong>Release team</strong><small>6 collaborators</small></span></div>
+        <div class="product-team"><span class="product-avatar">RM</span><span><strong>${t('preview.team')}</strong><small>${t('preview.collaboratorsCount')}</small></span></div>
       </aside>
       <div class="product-main">
-        <header class="product-toolbar"><span>Projects <b>/ Website refresh</b></span><div><button class="product-icon-button" aria-label="Notifications">●</button><span class="product-avatar">JA</span></div></header>
+        <header class="product-toolbar"><span>${t('preview.projects')} <b>/ ${t('preview.projectName')}</b></span><div><button class="product-icon-button" aria-label="${t('aria.notifications')}">●</button><span class="product-avatar">JA</span></div></header>
         <main class="product-body">
-          <section class="product-heading"><div><span class="product-kicker">IN PROGRESS · RELEASE 2.4</span><h3>Website refresh</h3><p>Prepare the accessibility pass before Friday’s release.</p></div><div class="product-actions"><button class="product-secondary-button">Invite</button><button class="product-primary-button">Publish update</button></div></section>
+          <section class="product-heading"><div><span class="product-kicker">${t('preview.kicker')}</span><h3>${t('preview.projectName')}</h3><p>${t('preview.projectDesc')}</p></div><div class="product-actions"><button class="product-secondary-button">${t('preview.invite')}</button><button class="product-primary-button">${t('preview.publish')}</button></div></section>
           <div class="product-grid">
             <section class="product-panel task-panel">
-              <div class="product-panel-head"><div><h4>Release checklist</h4><p>4 of 7 tasks completed</p></div><span class="progress-badge">57%</span></div>
+              <div class="product-panel-head"><div><h4>${t('preview.checklist')}</h4><p>${t('preview.progress')}</p></div><span class="progress-badge">57%</span></div>
               <div class="product-progress"><i></i></div>
               <ul class="task-list">
-                <li class="done"><span class="task-state">✓</span><span><strong>Confirm content hierarchy</strong><small>Completed by Jane</small></span><em>Done</em></li>
-                <li><span class="task-state regular">○</span><span><strong>Review focus order</strong><small>Assigned to Marcus</small></span><em>Regular</em></li>
-                <li class="warning"><span class="task-state">!</span><span><strong>Check empty states</strong><small>Needs review before release</small></span><em>Warning</em></li>
+                <li class="done"><span class="task-state">✓</span><span><strong>${t('preview.task.hierarchy')}</strong><small>${t('preview.task.completedBy')}</small></span><em>${t('preview.task.done')}</em></li>
+                <li><span class="task-state regular">○</span><span><strong>${t('preview.task.focus')}</strong><small>${t('preview.task.assigned')}</small></span><em>${t('preview.task.regular')}</em></li>
+                <li class="warning"><span class="task-state">!</span><span><strong>${t('preview.task.empty')}</strong><small>${t('preview.task.review')}</small></span><em>${t('preview.task.warning')}</em></li>
               </ul>
-              <div class="product-field"><label for="previewReleaseNote-${theme}">Release note</label><input id="previewReleaseNote-${theme}" value="Improved keyboard navigation" readonly /><small><span aria-hidden="true">i</span> Visible focus uses Brand; helper text uses Information.</small></div>
-              <div class="product-field invalid"><label for="previewOwner-${theme}">Owner email</label><input id="previewOwner-${theme}" value="jane@" aria-invalid="true" readonly /><small><span aria-hidden="true">!</span> Enter a complete email address.</small></div>
+              <div class="product-field"><label for="previewReleaseNote-${theme}">${t('preview.releaseNote')}</label><input id="previewReleaseNote-${theme}" value="${t('preview.releaseNoteValue')}" readonly /><small><span aria-hidden="true">i</span>${t('preview.focusHelp')}</small></div>
+              <div class="product-field invalid"><label for="previewOwner-${theme}">${t('preview.ownerEmail')}</label><input id="previewOwner-${theme}" value="jane@" aria-invalid="true" readonly /><small><span aria-hidden="true">!</span>${t('preview.invalidEmail')}</small></div>
             </section>
             <aside class="product-aside">
-              <section class="info-callout"><span aria-hidden="true">i</span><div><strong>Accessibility review</strong><p>Contrast checks update when you change a role.</p></div></section>
-              <section class="product-panel compact-panel"><div class="product-panel-head"><div><h4>Release health</h4><p>Latest automated checks</p></div><span class="success-dot">✓</span></div><dl class="health-list"><div><dt>Components ready</dt><dd>18 / 20</dd></div><div><dt>Contrast checks</dt><dd class="success-text">Passed</dd></div><div><dt>Blocking issues</dt><dd class="danger-text">1 open</dd></div></dl><button class="warning-button">Review warning</button></section>
-              <section class="product-panel people-panel"><div><h4>Collaborators</h4><p>Design, engineering and content</p></div><div class="avatar-stack"><span>JA</span><span>MK</span><span>RL</span><b>+3</b></div></section>
+              <section class="info-callout"><span aria-hidden="true">i</span><div><strong>${t('preview.a11yReview')}</strong><p>${t('preview.contrastUpdate')}</p></div></section>
+              <section class="product-panel compact-panel"><div class="product-panel-head"><div><h4>${t('preview.health')}</h4><p>${t('preview.latestChecks')}</p></div><span class="success-dot">✓</span></div><dl class="health-list"><div><dt>${t('preview.componentsReady')}</dt><dd>18 / 20</dd></div><div><dt>${t('preview.contrastChecks')}</dt><dd class="success-text">${t('preview.passed')}</dd></div><div><dt>${t('preview.blockingIssues')}</dt><dd class="danger-text">${t('preview.open')}</dd></div></dl><button class="warning-button">${t('preview.reviewWarning')}</button></section>
+              <section class="product-panel people-panel"><div><h4>${t('preview.collaborators')}</h4><p>${t('preview.collaboratorsDesc')}</p></div><div class="avatar-stack"><span>JA</span><span>MK</span><span>RL</span><b>+3</b></div></section>
             </aside>
           </div>
         </main>
@@ -376,6 +406,7 @@
     renderDiagnostics();
     renderPairings();
     renderAssignments();
+    renderSavedPairs();
     renderMatrix();
     renderPreviews();
   }
@@ -402,7 +433,7 @@
     });
     state.roles[ownerId].seed = mapped.hex;
     state.roles[ownerId].enabled = true;
-    if (mapped.reduced) showToast('Chroma reduced to fit sRGB');
+    if (mapped.reduced) showToast(t('toast.gamutReduced'));
     renderAll();
   }
 
@@ -418,27 +449,6 @@
     renderAll();
   }
 
-  function regenerateActiveRole() {
-    const roleId = state.activeRole;
-    const ownerId = activeOwnerId();
-    if (state.roles[ownerId].locked) {
-      showToast(`${model.roles[ownerId].label} is locked`);
-      return;
-    }
-    if (roleId === 'secondary') {
-      const suggestions = model.makeSecondarySuggestions(state.roles.brand.seed, state.roles.secondary.strategy);
-      if (!suggestions.length) return;
-      state.secondarySuggestionIndex = (state.secondarySuggestionIndex + 1) % suggestions.length;
-      state.roles.secondary.seed = suggestions[state.secondarySuggestionIndex].hex;
-    } else if (roleId === 'neutral') {
-      const brand = hexToOklch(state.roles.brand.seed);
-      state.roles.neutral.seed = oklchToHex({ L: 0.56, C: 0.025, h: brand.h });
-    } else if (model.semanticRoleIds.includes(roleId)) {
-      state.roles[roleId].seed = model.makeSemanticSuggestion(roleId, state.roles.brand.seed).hex;
-    }
-    renderAll();
-  }
-
   function generateSemanticColors() {
     const suggestions = model.makeSemanticSuggestions(state.roles.brand.seed);
     let changed = 0;
@@ -448,10 +458,10 @@
       changed += 1;
     }
     renderAll();
-    showToast(`${changed} unlocked semantic colors generated`);
+    showToast(t('toast.semanticGenerated', { count: changed }));
   }
 
-  function copy(value, message = 'Copied') {
+  function copy(value, message = t('toast.copied')) {
     const fallback = () => {
       const area = document.createElement('textarea');
       area.value = value;
@@ -473,7 +483,7 @@
             fallback();
             showToast(message);
           } catch (fallbackError) {
-            reportError('Copy failed — please copy manually', { error, fallbackError });
+            reportError(t('toast.copyFailed'), { error, fallbackError });
           }
         });
       return;
@@ -482,7 +492,7 @@
       fallback();
       showToast(message);
     } catch (error) {
-      reportError('Copy failed — please copy manually', error);
+      reportError(t('toast.copyFailed'), error);
     }
   }
 
@@ -515,6 +525,13 @@
     lines.push('  --color-regular-dark-border-icon: var(--color-neutral-dark-border-icon);');
     lines.push('  --color-regular-dark-bold: var(--color-neutral-dark-bold);');
     lines.push('  --color-regular-dark-on-bold: var(--color-neutral-dark-on-bold);');
+    const pairCounts = {};
+    for (const pair of state.savedPairs) {
+      pairCounts[pair.roleId] = (pairCounts[pair.roleId] || 0) + 1;
+      const name = `${pair.roleId}-${pairCounts[pair.roleId]}`;
+      lines.push(`  --pair-${name}-foreground: ${pair.foreground};`);
+      lines.push(`  --pair-${name}-background: ${pair.background};`);
+    }
     lines.push('}');
     return lines.join('\n');
   }
@@ -527,6 +544,11 @@
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
       reference,
       semantic: state.assignments,
+      pairs: state.savedPairs.map(pair => ({
+        ...pair,
+        ratio: Number(contrast(pair.foreground, pair.background).toFixed(2)),
+        passesTarget: contrast(pair.foreground, pair.background) >= state.target,
+      })),
       diagnostics: state.diagnostics,
     }, null, 2);
   }
@@ -559,7 +581,6 @@
     else {
       const suggestions = model.makeSecondarySuggestions(state.roles.brand.seed, strategy);
       state.roles.secondary.seed = suggestions[0].hex;
-      state.secondarySuggestionIndex = 0;
     }
     renderAll();
   });
@@ -568,12 +589,32 @@
     role.locked = !role.locked;
     renderAll();
   });
-  $('#regenerateRole').addEventListener('click', regenerateActiveRole);
   $('#generateSemantics').addEventListener('click', generateSemanticColors);
-  $('#copyCss').addEventListener('click', () => copy(cssOutput(), 'CSS variables copied'));
-  $('#copyJson').addEventListener('click', () => copy(jsonOutput(), 'JSON copied'));
+  $('#copyCss').addEventListener('click', () => copy(cssOutput(), t('toast.cssCopied')));
+  $('#copyJson').addEventListener('click', () => copy(jsonOutput(), t('toast.jsonCopied')));
 
   document.addEventListener('click', event => {
+    const removePairTarget = event.target.closest('[data-remove-pair]');
+    if (removePairTarget) {
+      state.savedPairs = state.savedPairs.filter(pair => savedPairId(pair.roleId, pair.foreground, pair.background) !== removePairTarget.dataset.removePair);
+      renderAll();
+      showToast(t('toast.pairRemoved'));
+      return;
+    }
+    const pairTarget = event.target.closest('[data-save-pair]');
+    if (pairTarget) {
+      const pair = {
+        roleId: pairTarget.dataset.pairRole,
+        foreground: pairTarget.dataset.pairForeground,
+        background: pairTarget.dataset.pairBackground,
+      };
+      const id = savedPairId(pair.roleId, pair.foreground, pair.background);
+      const alreadySaved = state.savedPairs.some(item => savedPairId(item.roleId, item.foreground, item.background) === id);
+      if (!alreadySaved) state.savedPairs.push(pair);
+      renderAll();
+      copy(`${pair.foreground} on ${pair.background}`, t(alreadySaved ? 'toast.pairAlreadySaved' : 'toast.pairSaved'));
+      return;
+    }
     const roleTarget = event.target.closest('[data-select-role]');
     if (roleTarget) {
       state.activeRole = roleTarget.dataset.selectRole;
@@ -589,7 +630,7 @@
     }
     const copyTarget = event.target.closest('[data-copy]');
     if (!copyTarget) return;
-    copy(copyTarget.dataset.copy, copyTarget.dataset.copyLabel || 'Copied');
+    copy(copyTarget.dataset.copy, copyTarget.dataset.copyLabel || t('toast.copied'));
     if (copyTarget.dataset.applyColor) {
       setRoleSeed(copyTarget.dataset.applyColor);
       hexInput.focus({ preventScroll: true });
@@ -611,14 +652,33 @@
   const stepDock = $('#stepDock');
   const stepDockToggle = $('#stepDockToggle');
   const stepLinks = [...document.querySelectorAll('[data-step-link]')];
+  const languageButtons = [...document.querySelectorAll('[data-language]')];
   function setActiveStep(name) {
     stepLinks.forEach(link => link.classList.toggle('active', link.dataset.stepLink === name));
   }
+  function updateStepDockToggleLabel() {
+    const minimized = stepDock.classList.contains('minimized');
+    stepDockToggle.setAttribute('aria-label', t(minimized ? 'aria.expandSteps' : 'aria.minimizeSteps'));
+  }
+  function applyLanguage(language) {
+    i18n.setLanguage(language);
+    state.language = language;
+    document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+    languageButtons.forEach(button => {
+      const active = button.dataset.language === language;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    i18n.apply(document);
+    updateStepDockToggleLabel();
+    renderAll();
+  }
+  languageButtons.forEach(button => button.addEventListener('click', () => applyLanguage(button.dataset.language)));
   stepDockToggle.addEventListener('click', () => {
     const minimized = stepDock.classList.toggle('minimized');
     stepDockToggle.textContent = minimized ? '+' : '−';
     stepDockToggle.setAttribute('aria-expanded', String(!minimized));
-    stepDockToggle.setAttribute('aria-label', minimized ? '展开步骤导航' : '最小化步骤导航');
+    updateStepDockToggleLabel();
   });
   stepLinks.forEach(link => link.addEventListener('click', event => {
     event.preventDefault();
@@ -636,5 +696,5 @@
   observedTargets.forEach(target => stepObserver.observe(target));
 
   targetSelect.value = String(state.target);
-  renderAll();
+  applyLanguage('en');
 })();

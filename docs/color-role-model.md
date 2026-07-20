@@ -114,11 +114,11 @@ The starter flow asks for no more than three direct decisions:
 2. Choose `Neutral` character: warm, balanced, or cool.
 3. Choose a `Secondary` strategy: analogous, contrasting, or none.
 
-The system then suggests `Success`, `Warning`, `Danger`, and `Information`. Each suggestion can be locked, adjusted, or regenerated independently. `Regular` updates automatically with `Neutral`.
+The system then suggests `Success`, `Warning`, `Danger`, and `Information`. Each suggestion can be locked or adjusted. The single Sync semantic colors to Brand action appears only while Brand is active and refreshes unlocked semantic roles; `Regular` updates automatically with `Neutral`.
 
 The quick picker must show the consequence of a choice, not only the swatch. A suggestion is accepted together with its contrast result and representative component usage.
 
-Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. This keeps the starter view focused and leaves Standard responsible only for contrast targets.
+Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. The WCAG target remains globally available in the bottom-right Steps window. Step 03 holds pairs selected from the Contrast matrix rather than owning that target.
 
 The preview is one coherent application workspace, not a gallery of disconnected swatches or cards. Light and Dark render the same markup with different assignments so a user can inspect each role in context:
 
@@ -148,6 +148,7 @@ The first implementation includes:
 - semantic assignments and WCAG evaluation;
 - light context preview and a representative dark-surface preview;
 - a local Light / Dark switch with one preview visible at a time;
+- saved matrix pairs that are re-evaluated against the global target and included in export;
 - CSS and JSON export.
 
 The first implementation does not promise a complete dual-theme token system or color-vision-deficiency simulation. Those are follow-up work after the role model and contrast behavior are stable.

@@ -17,53 +17,53 @@
   const roles = Object.freeze({
     brand: Object.freeze({
       label: 'Brand',
-      description: '核心识别色，用于主要操作与品牌强调。',
+      descriptionKey: 'role.brand.desc',
       paletteOwner: true,
       required: true,
     }),
     neutral: Object.freeze({
       label: 'Neutral',
-      description: '正文、边框、surface 与默认组件的基础颜色。',
+      descriptionKey: 'role.neutral.desc',
       paletteOwner: true,
       required: true,
     }),
     secondary: Object.freeze({
       label: 'Secondary',
-      description: '可选的第二强调色；只有明确用途时才启用。',
+      descriptionKey: 'role.secondary.desc',
       paletteOwner: true,
       required: false,
     }),
     regular: Object.freeze({
       label: 'Regular',
-      description: '默认、非关键、没有明确状态倾向；直接复用 Neutral。',
+      descriptionKey: 'role.regular.desc',
       paletteOwner: false,
       aliasOf: 'neutral',
       required: true,
     }),
     success: Object.freeze({
       label: 'Success',
-      description: '任务或流程成功完成。',
+      descriptionKey: 'role.success.desc',
       paletteOwner: true,
       required: true,
       semanticHue: 145,
     }),
     warning: Object.freeze({
       label: 'Warning',
-      description: '存在潜在风险，用户仍可继续，但后续可能遇到问题。',
+      descriptionKey: 'role.warning.desc',
       paletteOwner: true,
       required: true,
       semanticHue: 80,
     }),
     danger: Object.freeze({
       label: 'Danger',
-      description: '需要立即处理的严重错误，问题解决前通常无法继续。',
+      descriptionKey: 'role.danger.desc',
       paletteOwner: true,
       required: true,
       semanticHue: 27,
     }),
     information: Object.freeze({
       label: 'Information',
-      description: '需要关注的补充信息或进行中状态。',
+      descriptionKey: 'role.information.desc',
       paletteOwner: true,
       required: true,
       semanticHue: 245,
@@ -71,9 +71,9 @@
   });
 
   const secondaryStrategies = Object.freeze({
-    none: Object.freeze({ label: '不使用', offsets: Object.freeze([]) }),
-    analogous: Object.freeze({ label: '近似色', offsets: Object.freeze([-34, 34, 62]) }),
-    contrasting: Object.freeze({ label: '对比色', offsets: Object.freeze([180, 150, 210]) }),
+    none: Object.freeze({ labelKey: 'strategy.none', offsets: Object.freeze([]) }),
+    analogous: Object.freeze({ labelKey: 'strategy.analogous', offsets: Object.freeze([-34, 34, 62]) }),
+    contrasting: Object.freeze({ labelKey: 'strategy.contrasting', offsets: Object.freeze([180, 150, 210]) }),
   });
 
   const semanticRoleIds = Object.freeze(['success', 'warning', 'danger', 'information']);
@@ -96,7 +96,7 @@
     const brand = hexToOklch(brandHex);
     return definition.offsets.map((offset, index) => ({
       id: `${strategy}-${index + 1}`,
-      label: `${definition.label} ${index + 1}`,
+      labelKey: definition.labelKey,
       strategy,
       hex: suggestedHex({
         L: clamp(brand.L, 0.50, 0.72),

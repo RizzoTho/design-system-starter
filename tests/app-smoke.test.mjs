@@ -6,6 +6,7 @@ class FakeClassList {
   values = new Set();
   add(value) { this.values.add(value); }
   remove(value) { this.values.delete(value); }
+  contains(value) { return this.values.has(value); }
   toggle(value, force) {
     const enabled = force === undefined ? !this.values.has(value) : force;
     if (enabled) this.values.add(value);
@@ -54,6 +55,11 @@ const previewButtons = ['light', 'dark'].map(theme => {
   element.dataset.previewTheme = theme;
   return element;
 });
+const languageButtons = ['en', 'zh'].map(language => {
+  const element = new FakeElement();
+  element.dataset.language = language;
+  return element;
+});
 const stepLinks = [
   ['context', '#step-context'],
   ['candidates', '#step-candidates'],
@@ -74,9 +80,11 @@ let lastCreatedElement = null;
 let copiedText = '';
 const document = {
   body: { appendChild() {} },
+  documentElement: { lang: 'en' },
   querySelector(selector) { return selector.startsWith('#') ? elements[selector.slice(1)] || null : null; },
   querySelectorAll(selector) {
     if (selector === '[data-preview-theme]') return previewButtons;
+    if (selector === '[data-language]') return languageButtons;
     if (selector === '[data-step-link]') return stepLinks;
     if (selector === '[data-workflow-step]') return workflowTargets;
     return [];
@@ -104,14 +112,25 @@ sandbox.window.isSecureContext = false;
 sandbox.window.matchMedia = () => ({ matches: true });
 
 const context = vm.createContext(sandbox);
-for (const file of ['../js/color-engine.js', '../js/role-model.js', '../js/app.js']) {
+for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/app.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), context, { filename: file });
 }
+
+assert.equal(document.documentElement.lang, 'en');
+assert.equal(languageButtons[0].attributes['aria-pressed'], 'true');
+assert.equal(languageButtons[1].attributes['aria-pressed'], 'false');
+assert.equal(elements.semanticSyncActions.hidden, false, 'Brand sync action is hidden while Brand is active');
 
 assert.match(elements.roleOverview.innerHTML, /Brand/);
 assert.match(elements.roleOverview.innerHTML, /Regular/);
 assert.match(elements.roleOverview.innerHTML, /Alias of Neutral/);
 assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 11);
+assert.match(elements.contextStatus.innerHTML, /PASS · AAA/);
+elements.textHexInput.value = '#F7F3EB';
+elements.textHexInput.dispatch('change');
+assert.match(elements.contextStatus.innerHTML, /FAIL/);
+elements.textHexInput.value = '#25231F';
+elements.textHexInput.dispatch('change');
 assert.match(elements.contextStatus.innerHTML, /PASS · AAA/);
 assert.match(elements.pairList.innerHTML, /Information/);
 assert.match(elements.assignmentList.innerHTML, /Uses Neutral assignments/);
@@ -130,20 +149,47 @@ assert.equal(new Set(previewIds).size, previewIds.length, 'Light and Dark previe
 assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 4.5);
 assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 4.5);
 
+languageButtons[1].dispatch('click');
+assert.equal(document.documentElement.lang, 'zh-CN');
+assert.equal(languageButtons[0].attributes['aria-pressed'], 'false');
+assert.equal(languageButtons[1].attributes['aria-pressed'], 'true');
+assert.match(elements.activeRoleDescription.textContent, /核心识别色/);
+assert.match(elements.lightPreviewContent.innerHTML, /发布更新/);
+assert.match(elements.contextStatus.innerHTML, /要求 · 4\.5:1/);
+languageButtons[0].dispatch('click');
+assert.equal(document.documentElement.lang, 'en');
+assert.match(elements.lightPreviewContent.innerHTML, /Publish update/);
+
+const savedPairTarget = {
+  dataset: { pairRole: 'brand', pairForeground: '#FFF6F4', pairBackground: '#BF4B2E' },
+};
+const pairClick = {
+  target: { closest: selector => selector === '[data-save-pair]' ? savedPairTarget : null },
+};
+documentListeners.click(pairClick);
+documentListeners.click(pairClick);
+assert.equal(elements.savedPairCount.textContent, '1', 'Duplicate matrix clicks created duplicate saved pairs');
+assert.match(elements.savedPairs.innerHTML, /#FFF6F4 → #BF4B2E/);
+assert.match(elements.matrix.innerHTML, /matrix-cell[^>]*saved/);
+
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
 assert.equal(exportedJson.roles.regular.aliasOf, 'neutral');
 assert.equal('secondary' in exportedJson.reference, false);
 assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
+assert.equal(exportedJson.pairs.length, 1);
+assert.equal(exportedJson.pairs[0].roleId, 'brand');
 elements.copyCss.dispatch('click');
 assert.doesNotMatch(copiedText, /--color-secondary-/);
 assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
+assert.match(copiedText, /--pair-brand-1-foreground: #FFF6F4/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'regular' } } : null },
 });
 assert.match(elements.candidateLabel.textContent, /Regular/);
 assert.match(elements.summaryTitle.textContent, /uses Neutral/);
+assert.equal(elements.semanticSyncActions.hidden, true, 'Brand sync action remained visible for Regular');
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'secondary' } } : null },
@@ -155,7 +201,8 @@ assert.equal((elements.secondarySuggestions.innerHTML.match(/class="suggestion"/
 
 elements.targetSelect.value = '7';
 elements.targetSelect.dispatch('change');
-assert.match(elements.matrixNote.innerHTML, /AAA/);
+assert.match(elements.matrixNote.textContent, /AAA/);
+assert.match(elements.savedPairs.innerHTML, /FAIL/, 'Saved pair status did not follow the global target');
 assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 7);
 assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 7);
 
@@ -178,5 +225,11 @@ documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'danger' } } : null },
 });
 assert.equal(elements.hexInput.value, lockedDanger, 'Generating from a new Brand changed a locked semantic role');
+
+documentListeners.click({
+  target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'brand:#FFF6F4:#BF4B2E' } } : null },
+});
+assert.equal(elements.savedPairCount.textContent, '0');
+assert.match(elements.savedPairs.innerHTML, /No pairs saved yet/);
 
 console.log('app-smoke: startup and core role interactions passed');

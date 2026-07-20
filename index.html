@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,15 +7,20 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="language-switch" aria-label="Language" data-i18n-aria-label="aria.language">
+    <button class="active" type="button" data-language="en" aria-pressed="true">EN</button>
+    <span aria-hidden="true">/</span>
+    <button type="button" data-language="zh" aria-pressed="false">中</button>
+  </div>
   <div class="shell">
     <header>
       <div>
         <h1><span class="title-main">COLOR DESIGN SYSTEM</span><span class="title-sub">for starter</span></h1>
-        <p class="lede">先固定 Background / Text，再建立 Brand、Neutral 与语义角色。每一步都用实际 contrast 验证，不靠色号猜可读性。</p>
-        <div class="wcag-intro" aria-label="WCAG contrast target 简介">
-          <div class="wcag-level"><strong>3:1 · AA 大字</strong><p>只适合约 24px 常规字，或 19px 粗体以上。</p></div>
-          <div class="wcag-level"><strong>4.5:1 · AA 正文</strong><p>多数界面文字的实用起点，默认先过这条。</p></div>
-          <div class="wcag-level"><strong>7:1 · AAA 正文</strong><p>不依赖大字号，小字也更稳，适合更高可读性要求。</p></div>
+        <p class="lede" data-i18n="header.lede">Fix Background / Text first, then build Brand, Neutral, and semantic roles. Every decision is verified with measured contrast.</p>
+        <div class="wcag-intro" aria-label="WCAG contrast target introduction" data-i18n-aria-label="wcag.label">
+          <div class="wcag-level"><strong data-i18n="wcag.large.title">3:1 · AA large text</strong><p data-i18n="wcag.large.desc">Use only around 24px regular or 19px bold and above.</p></div>
+          <div class="wcag-level"><strong data-i18n="wcag.normal.title">4.5:1 · AA normal text</strong><p data-i18n="wcag.normal.desc">A practical baseline for most interface text.</p></div>
+          <div class="wcag-level"><strong data-i18n="wcag.aaa.title">7:1 · AAA normal text</strong><p data-i18n="wcag.aaa.desc">Stronger readability without relying on a large font size.</p></div>
         </div>
       </div>
     </header>
@@ -23,19 +28,19 @@
     <main class="workflow">
       <section id="step-context" class="workflow-section" data-workflow-step="context">
         <aside class="step-controls context">
-          <div class="step-heading"><b>01</b><div><strong>Context</strong><small>先锁定不可变的页面底色和正文色。</small></div></div>
+          <div class="step-heading"><b>01</b><div><strong data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
           <div class="field">
             <label for="backgroundColor">Background <span id="backgroundValue" class="value">#F7F3EB</span></label>
-            <div class="mini-color-row"><div class="mini-picker"><input id="backgroundColor" type="color" value="#f7f3eb" aria-label="选择背景色" /></div><input id="backgroundHexInput" class="text-input value" value="#F7F3EB" spellcheck="false" maxlength="7" aria-label="输入背景 HEX 色值" /></div>
+            <div class="mini-color-row"><div class="mini-picker"><input id="backgroundColor" type="color" value="#f7f3eb" aria-label="Choose Background color" data-i18n-aria-label="aria.chooseBackground" /></div><input id="backgroundHexInput" class="text-input value" value="#F7F3EB" spellcheck="false" maxlength="7" aria-label="Enter Background HEX value" data-i18n-aria-label="aria.enterBackground" /></div>
           </div>
           <div class="field">
             <label for="textColor">Text <span id="textValue" class="value">#25231F</span></label>
-            <div class="mini-color-row"><div class="mini-picker"><input id="textColor" type="color" value="#25231f" aria-label="选择文字色" /></div><input id="textHexInput" class="text-input value" value="#25231F" spellcheck="false" maxlength="7" aria-label="输入文字 HEX 色值" /></div>
+            <div class="mini-color-row"><div class="mini-picker"><input id="textColor" type="color" value="#25231f" aria-label="Choose Text color" data-i18n-aria-label="aria.chooseText" /></div><input id="textHexInput" class="text-input value" value="#25231F" spellcheck="false" maxlength="7" aria-label="Enter Text HEX value" data-i18n-aria-label="aria.enterText" /></div>
           </div>
         </aside>
         <div class="step-content">
           <div id="contextCanvas" class="context-result" style="--context-bg:#F7F3EB;--context-text:#25231F">
-            <div><div class="label">FIXED CONTEXT</div><h2>Context contrast</h2><p>这块画布只使用你已经确定的 Background 和 Text，先确认基础阅读关系，再进入颜色角色。</p></div>
+            <div><div class="label" data-i18n="context.fixed">FIXED CONTEXT</div><h2 data-i18n="context.title">Context contrast</h2><p data-i18n="context.desc">This canvas uses only the confirmed Background and Text. Validate the reading foundation before adding color roles.</p></div>
             <div id="contextStatus" class="context-status"></div>
           </div>
         </div>
@@ -43,66 +48,63 @@
 
       <section id="step-candidates" class="workflow-section" data-workflow-step="candidates">
         <aside class="step-controls candidate">
-          <div class="step-heading"><b>02</b><div><strong>Colors</strong><small>先定 Brand / Neutral，再生成可选与语义角色。</small></div></div>
+          <div class="step-heading"><b>02</b><div><strong data-i18n="step.colors.title">Colors</strong><small data-i18n="step.colors.desc">Set Brand / Neutral, then generate optional and semantic roles.</small></div></div>
           <div class="field">
-            <label>当前角色</label>
-            <div id="roleTabs" class="role-tabs" aria-label="Color roles"></div>
+            <label data-i18n="colors.currentRole">Current role</label>
+            <div id="roleTabs" class="role-tabs" aria-label="Color roles" data-i18n-aria-label="aria.colorRoles"></div>
             <p id="activeRoleDescription" class="field-help"></p>
           </div>
           <div class="field">
             <label for="seedColor"><span id="candidateLabel">Brand color</span> <span id="seedValue" class="value">#D8664A</span></label>
-            <div class="seed-picker"><input id="seedColor" type="color" value="#d8664a" aria-label="选择候选色" /></div>
+            <div class="seed-picker"><input id="seedColor" type="color" value="#d8664a" aria-label="Choose candidate color" data-i18n-aria-label="aria.chooseCandidate" /></div>
           </div>
-          <div class="field"><label for="hexInput">HEX</label><input id="hexInput" class="text-input value" value="#D8664A" spellcheck="false" maxlength="7" aria-label="输入候选 HEX 色值" /></div>
+          <div class="field"><label for="hexInput">HEX</label><input id="hexInput" class="text-input value" value="#D8664A" spellcheck="false" maxlength="7" aria-label="Enter candidate HEX value" data-i18n-aria-label="aria.enterCandidate" /></div>
           <div class="field"><label for="hueRange">Hue <span id="hueValue" class="value">30°</span></label><div class="range-row"><input id="hueRange" class="range" type="range" min="0" max="360" value="30" /><span class="value">360°</span></div></div>
           <div class="field"><label for="chromaRange">Chroma <span id="chromaValue" class="value">0.16</span></label><input id="chromaRange" class="range" type="range" min="0" max="0.3" step="0.001" value="0.16" /></div>
           <div class="field"><label for="lightRange">Lightness <span id="lightValue" class="value">65%</span></label><input id="lightRange" class="range" type="range" min="0.05" max="0.95" step="0.001" value="0.65" /></div>
           <div id="secondaryControls" class="field role-config" hidden>
-            <label for="secondaryStrategy">Secondary strategy</label>
-            <select id="secondaryStrategy"><option value="none">不使用</option><option value="analogous">近似色</option><option value="contrasting">对比色</option></select>
+            <label for="secondaryStrategy" data-i18n="colors.secondaryStrategy">Secondary strategy</label>
+            <select id="secondaryStrategy"><option value="none" data-i18n="strategy.none">None</option><option value="analogous" data-i18n="strategy.analogous">Analogous</option><option value="contrasting" data-i18n="strategy.contrasting">Contrasting</option></select>
             <div id="secondarySuggestions" class="suggestion-list"></div>
           </div>
-          <div class="role-actions">
-            <button id="lockRole" class="button" type="button" aria-pressed="false">Lock role</button>
-            <button id="regenerateRole" class="button" type="button">Regenerate</button>
-          </div>
-          <button id="generateSemantics" class="button primary full-button" type="button">Generate semantic colors</button>
+          <div id="semanticSyncActions" class="role-actions"><button id="generateSemantics" class="button" type="button" data-i18n="action.generateSemantics">Sync semantic colors to Brand</button></div>
+          <button id="lockRole" class="button primary full-button" type="button" aria-pressed="false">Lock role</button>
         </aside>
         <div class="step-content">
           <section class="workflow-block role-overview-block">
-            <div class="section-head"><div><h2>Color roles</h2><p>8 个角色，最多 7 套独立 palette。Regular 直接复用 Neutral；Secondary 没有明确用途时保持关闭。</p></div><span class="mono" style="color:var(--muted);font-size:10px">SELECT TO EDIT</span></div>
+            <div class="section-head"><div><h2 data-i18n="overview.title">Color roles</h2><p data-i18n="overview.desc">8 roles with at most 7 independent palettes. Regular reuses Neutral; keep Secondary off without a clear use case.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="overview.edit">SELECT TO EDIT</span></div>
             <div id="roleOverview" class="role-overview"></div>
           </section>
           <section class="workflow-block candidate-summary">
-            <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · OKLCH</div></div><div id="summaryNote" class="label">500 keeps the exact seed</div></div>
+            <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · OKLCH</div></div><div id="summaryNote" class="label" data-i18n="summary.seedExact">500 keeps the exact seed</div></div>
           </section>
           <section class="workflow-block">
-            <div class="section-head"><div><h2>Generated scale</h2><p>当前选中的 <span id="scaleRole">Brand</span> 推导 50 → 950；点击色块会复制色值，并应用到当前 Colors 输入。</p></div><span id="scaleCount" class="mono" style="color:var(--muted);font-size:10px">11 TOKENS</span></div>
-            <div class="scale-guide" aria-label="色阶推荐用途">
-              <span><b>50–200</b><em>Page / surface</em></span><span><b>300–400</b><em>Border / muted</em></span><span><b>500</b><em>Seed</em></span><span class="recommended"><b>600–700</b><em>Action · 推荐</em></span><span><b>800–950</b><em>Strong / dark</em></span>
+            <div class="section-head"><div><h2 data-i18n="scale.title">Generated scale</h2><p><span data-i18n="scale.desc.before">Derive 50 → 950 from the active</span> <span id="scaleRole">Brand</span> <span data-i18n="scale.desc.after">role. Click a token to copy and apply it to Colors.</span><span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden></span></p></div><span id="scaleCount" class="mono" style="color:var(--muted);font-size:10px">11 TOKENS</span></div>
+            <div class="scale-guide" aria-label="Recommended scale usage" data-i18n-aria-label="aria.scaleUsage">
+              <span><b>50–200</b><em>Page / surface</em></span><span><b>300–400</b><em>Border / muted</em></span><span><b>500</b><em>Seed</em></span><span class="recommended"><b>600–700</b><em data-i18n="scale.actionRecommended">Action · recommended</em></span><span><b>800–950</b><em>Strong / dark</em></span>
             </div>
-            <p class="scale-key">用途是推荐语义，是否可用仍以当前 target 为准。W / K 表示该色分别与 White / Black 的 contrast ratio。</p>
+            <p class="scale-key" data-i18n="scale.key">Usage labels are recommendations. Validate against the current target. W / K show contrast against White / Black.</p>
             <div id="scale" class="scale"></div>
-            <p id="scaleDiagnostics" class="diagnostic-note" hidden></p>
           </section>
         </div>
       </section>
 
       <section id="step-standard" class="workflow-section" data-workflow-step="standard">
         <aside class="step-controls standard">
-          <div class="step-heading"><b>03</b><div><strong>Standard</strong><small>设定验收门槛，检查配色关系。</small></div></div>
-          <div class="field"><label for="targetSelect">Contrast target</label><select id="targetSelect" aria-label="contrast target"><option value="4.5">AA · normal text · 4.5:1</option><option value="3">AA · large text · 3:1</option><option value="7">AAA · normal text · 7:1</option></select></div>
+          <div class="step-heading"><b>03</b><div><strong data-i18n="step.pairs.title">Saved pairs</strong><small data-i18n="step.pairs.desc">Click combinations in the matrix to keep them here and include them in Export.</small></div></div>
+          <div class="saved-pairs-head"><span data-i18n="saved.title">Selected combinations</span><b id="savedPairCount">0</b></div>
+          <div id="savedPairs" class="saved-pairs"></div>
         </aside>
         <div class="step-content">
           <section class="workflow-block fit-report-block">
-            <div class="safe-pair"><h3>Fit report</h3><p>检查每个启用角色与固定 Background 的关系，并显示实际 on-color。Regular 与 Neutral 共用结果。</p><div id="pairList" class="pair-list"></div></div>
+            <div class="safe-pair"><h3 data-i18n="fit.title">Fit report</h3><p data-i18n="fit.desc">Check every enabled role against the fixed Background and show its measured on-color. Regular shares Neutral results.</p><div id="pairList" class="pair-list"></div></div>
           </section>
           <section class="workflow-block assignment-block">
-            <div class="section-head"><div><h2>Semantic assignments</h2><p>Reference scale 是色阶；这里才是组件实际使用的 subtle、border/icon、bold 与 on-bold。Border/Icon 固定检查 3:1，文字使用当前 target。</p></div><span class="mono" style="color:var(--muted);font-size:10px">LIGHT / DARK</span></div>
+            <div class="section-head"><div><h2 data-i18n="assignment.title">Semantic assignments</h2><p data-i18n="assignment.desc">The reference scale is raw material. Components use subtle, border/icon, bold, and on-bold assignments. Border/Icon is checked at 3:1; text uses the current target.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="assignment.modes">LIGHT / DARK</span></div>
             <div id="assignmentList" class="assignment-list"></div>
           </section>
           <section class="workflow-block">
-            <div class="section-head"><div><h2>Contrast matrix</h2><p>目标：至少得到一组浅底深字和一组深底浅字，再从其余达标组合里选择 hover / pressed 等状态。它不是只为按钮服务。行是前景，列是背景；绿色边框表示通过，点击可复制。</p></div><span class="mono" style="color:var(--muted);font-size:10px">CLICK TO COPY</span></div>
+            <div class="section-head"><div><h2 data-i18n="matrix.title">Contrast matrix</h2><p data-i18n="matrix.desc">Click a cell to save its foreground/background pair and copy it. Rows are foregrounds; columns are backgrounds.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="matrix.copy">CLICK TO SAVE</span></div>
             <div class="matrix-wrap"><div id="matrix" class="matrix"></div></div><p id="matrixNote" class="matrix-note"></p>
           </section>
         </div>
@@ -110,28 +112,30 @@
     </main>
 
     <section id="preview" class="preview-section" data-workflow-step="preview">
-      <div class="section-head"><div><h2>Component preview</h2><p>同一套 workspace markup 只切换 theme assignments，检查颜色在导航、操作、focus、任务状态与表单反馈中的实际职责。</p></div><div class="mode preview-tabs" aria-label="Preview theme"><button class="active" data-preview-theme="light" aria-pressed="true">Light</button><button data-preview-theme="dark" aria-pressed="false">Dark</button></div></div>
+      <div class="section-head"><div><h2 data-i18n="preview.title">Component preview</h2><p data-i18n="preview.desc">Use the same workspace markup across themes to inspect navigation, actions, focus, task states, and form feedback.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
       <div class="preview-grid">
-        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Application sample · Light</strong><span>Same markup · Light assignments</span></div><div id="lightPreviewContent"></div></div>
-        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Application sample · Dark</strong><span>Same markup · Dark assignments</span></div><div id="darkPreviewContent"></div></div>
+        <div id="lightPreview" class="preview light"><div class="preview-top"><strong data-i18n="preview.lightTitle">Application sample · Light</strong><span data-i18n="preview.lightMeta">Same markup · Light assignments</span></div><div id="lightPreviewContent"></div></div>
+        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong data-i18n="preview.darkTitle">Application sample · Dark</strong><span data-i18n="preview.darkMeta">Same markup · Dark assignments</span></div><div id="darkPreviewContent"></div></div>
       </div>
     </section>
-    <section id="export" class="export-section"><div class="export-copy"><h2>Export colors</h2><p>把当前颜色和使用关系复制为 CSS variables 或 JSON，交给项目直接使用。</p></div><div class="actions"><button id="copyCss" class="button primary">Copy CSS variables</button><button id="copyJson" class="button">Copy JSON</button></div></section>
+    <section id="export" class="export-section"><div class="export-copy"><h2 data-i18n="export.title">Export colors</h2><p data-i18n="export.desc">Copy the current colors and usage relationships as CSS variables or JSON.</p></div><div class="actions"><button id="copyCss" class="button primary" data-i18n="action.copyCss">Copy CSS variables</button><button id="copyJson" class="button" data-i18n="action.copyJson">Copy JSON</button></div></section>
     <div class="footer">Inspired by <a href="https://mgifford.github.io/ui-palette-generator/" target="_blank" rel="noreferrer">MGifford UI Palette Generator</a> · WCAG contrast ratio uses relative luminance.</div>
   </div>
-  <aside id="stepDock" class="step-dock" aria-label="Workflow navigation">
-    <div class="step-dock-head"><strong>Steps</strong><button id="stepDockToggle" class="step-dock-toggle" type="button" aria-expanded="true" aria-controls="stepDockBody" aria-label="最小化步骤导航">−</button></div>
+  <aside id="stepDock" class="step-dock" aria-label="Workflow navigation" data-i18n-aria-label="aria.workflowNavigation">
+    <div class="step-dock-head"><strong data-i18n="nav.steps">Steps</strong><button id="stepDockToggle" class="step-dock-toggle" type="button" aria-expanded="true" aria-controls="stepDockBody" aria-label="Minimize workflow navigation" data-i18n-aria-label="aria.minimizeSteps">−</button></div>
     <nav id="stepDockBody" class="step-dock-body">
-      <a class="step-link active" href="#step-context" data-step-link="context"><b>01</b><strong>Context</strong></a>
-      <a class="step-link" href="#step-candidates" data-step-link="candidates"><b>02</b><strong>Colors</strong></a>
-      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong>Standard</strong></a>
-      <a class="step-link destination-link destination-start" href="#preview" data-step-link="preview"><span class="step-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.75"></circle></svg></span><strong>Preview</strong></a>
-      <a class="step-link destination-link" href="#export" data-step-link="export"><b aria-hidden="true">↗</b><strong>Export</strong></a>
+      <a class="step-link active" href="#step-context" data-step-link="context"><b>01</b><strong data-i18n="step.context.title">Context</strong></a>
+      <a class="step-link" href="#step-candidates" data-step-link="candidates"><b>02</b><strong data-i18n="step.colors.title">Colors</strong></a>
+      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong data-i18n="step.pairs.title">Saved pairs</strong></a>
+      <a class="step-link destination-link destination-start" href="#preview" data-step-link="preview"><span class="step-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.75"></circle></svg></span><strong data-i18n="nav.preview">Preview</strong></a>
+      <a class="step-link destination-link" href="#export" data-step-link="export"><b aria-hidden="true">↗</b><strong data-i18n="nav.export">Export</strong></a>
     </nav>
+    <div class="global-target"><label for="targetSelect"><span data-i18n="global.target">WCAG target</span><b>GLOBAL</b></label><select id="targetSelect" aria-label="WCAG target"><option value="4.5" data-i18n="target.option.normal">AA · normal text · 4.5:1</option><option value="3" data-i18n="target.option.large">AA · large text · 3:1</option><option value="7" data-i18n="target.option.aaa">AAA · normal text · 7:1</option></select></div>
   </aside>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="js/color-engine.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/role-model.js"></script>
   <script src="js/app.js"></script>
 </body>
