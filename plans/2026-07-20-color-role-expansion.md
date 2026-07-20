@@ -131,11 +131,13 @@ The exact defaults are implementation parameters, not new product decisions. The
 
 ### Phase 0: Establish a recoverable baseline and contracts
 
-- [ ] Confirm whether this standalone directory should become a Git repository.
-- [ ] If approved, initialize Git, commit the current two-file baseline, then create `feat/color-role-expansion` before the source split.
-- [ ] Record the current default state and exported CSS/JSON as regression fixtures.
-- [ ] Run the current static verification commands and record results.
-- [ ] Manually capture desktop and narrow screenshots because automated Browser control cannot inspect the current `file://` page.
+- [x] Confirm whether this standalone directory should become a Git repository.
+- [x] If approved, initialize Git, commit the current baseline, then create `feat/color-role-expansion` before the source split.
+- [x] Record the current default state and exported CSS/JSON as regression fixtures.
+- [x] Run the current static verification commands and record results.
+- [x] Preserve the desktop and narrow visual baseline through the annotated browser screenshots in the 2026-07-20 review thread; automated Browser control cannot inspect the current `file://` page.
+
+Phase 0 result: baseline commit `b310dad` on `main`; implementation continues on `feat/color-role-expansion`. Static source, fixture parsing, and default contrast checks passed before the split.
 
 Exit criteria:
 
@@ -144,13 +146,16 @@ Exit criteria:
 
 ### Phase 1: Split source files without changing behavior
 
-- [ ] Move inline CSS to `styles.css`.
-- [ ] Move pure color functions to `js/color-engine.js`.
-- [ ] Move current role definitions into `js/role-model.js` without adding roles yet.
-- [ ] Move rendering, state, and events to `js/app.js`.
-- [ ] Keep script loading synchronous and ordered for `file://` compatibility.
-- [ ] Update `AGENTS.md` with the new source owners and run commands.
-- [ ] Verify that the split produces the same default UI and export output.
+- [x] Move inline CSS to `styles.css`.
+- [x] Move pure color functions to `js/color-engine.js`.
+- [x] Move current role definitions into `js/role-model.js` without adding roles yet.
+- [x] Move rendering, state, and events to `js/app.js`.
+- [x] Keep script loading synchronous and ordered for `file://` compatibility.
+- [x] Update `AGENTS.md` with the new source owners and run commands.
+- [x] Verify that the split preserves script syntax, default seeds, contrast results, IDs/selectors, and baseline export data at source level.
+- [ ] Confirm visual equivalence after a manual `file://` refresh; automated Browser control cannot inspect this URL.
+
+Phase 1 source result: inline owners were removed, the four linked source files exist, all scripts parse, 42 IDs and 36 JavaScript ID selectors resolve, default contrast remains 14.17:1, and Brand/Neutral `500` remain exact. Manual visual equivalence stays open for final review.
 
 Exit criteria:
 

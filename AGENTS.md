@@ -12,7 +12,11 @@ Do not turn it into a generic color picker. Its core question is:
 
 ## Current source of truth
 
-- `index.html` is the complete runnable product and currently contains HTML, CSS, and JavaScript.
+- `index.html` owns the runnable page structure and loads the standalone source files.
+- `styles.css` owns all visual and responsive styles.
+- `js/color-engine.js` owns pure color parsing, conversion, scale, luminance, and contrast calculations.
+- `js/role-model.js` owns role definitions and default color state.
+- `js/app.js` owns the single mutable state, rendering, interaction, navigation, copy, and export behavior.
 - `AGENTS.md` owns the project intent and maintenance rules.
 - There is currently no build step, package manager, framework, or generated source.
 - The page must continue to work when `index.html` is opened directly through `file://`.
@@ -21,7 +25,7 @@ Do not turn it into a generic color picker. Its core question is:
 
 - `docs/color-role-model.md` owns the accepted product and color decisions for the eight-role expansion.
 - `plans/2026-07-20-color-role-expansion.md` owns the implementation sequence and acceptance gates.
-- The expansion is planned but not yet implemented. Until the source split is completed, `index.html` remains the only runnable source of truth.
+- The source split is complete. The eight-role expansion is planned but not yet implemented.
 
 If the project later adopts a framework or build system, update this file in the same change and identify the new source files and build output explicitly.
 
@@ -84,8 +88,8 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Keep a single state owner for fixed context, candidate colors, active role, scale, and target.
 - New color roles should extend the role model, fit report, preview, and export together. Do not add a disconnected picker that bypasses the existing workflow.
 - Keep design-token generation distinct from semantic usage. A generated number such as `600` is a token; `Brand primary action` is a semantic assignment.
-- Do not add dependencies for work that can remain clear and maintainable in the standalone file.
-- If `index.html` becomes difficult to maintain, split source files deliberately and introduce a documented local run/build command. Do not create a partial split that leaves two competing sources of truth.
+- Do not add dependencies for work that remains clear and maintainable in the current standalone source files.
+- Keep the current split complete. Do not move calculation or application logic back into `index.html`, and do not introduce generated duplicates without identifying source and output owners.
 - Errors must remain observable. Do not add silent fallbacks that hide invalid state, failed copy operations, or broken calculations.
 
 ## Verification before completion
