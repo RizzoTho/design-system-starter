@@ -120,6 +120,13 @@ The quick picker must show the consequence of a choice, not only the swatch. A s
 
 Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. This keeps the starter view focused and leaves Standard responsible only for contrast targets.
 
+The preview is one coherent application workspace, not a gallery of disconnected swatches or cards. Light and Dark render the same markup with different assignments so a user can inspect each role in context:
+
+- Brand owns the selected navigation, visible focus, progress, and primary action.
+- Neutral and its Regular alias own the application shell, default task, borders, and secondary UI.
+- Success, Warning, Danger, and Information appear in task state, validation, health, and guidance patterns with text or icons alongside color.
+- Optional Secondary appears only as an additional product action when enabled.
+
 ## Accessibility invariants
 
 - Context `Text on Background` is always checked against `4.5:1`.

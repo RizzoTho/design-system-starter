@@ -85,6 +85,7 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Main title is centered: `COLOR DESIGN SYSTEM` in uppercase, with lowercase `for starter` at 80% of the main title size.
 - Section titles use direct, starter-friendly phrases such as `Context contrast`, `Generated scale`, `Fit report`, `Contrast matrix`, `Component preview`, and `Export colors`.
 - Components use bounded widths instead of stretching to the viewport. Reading-focused results stay compact. Preview uses the full project content width with one Light or Dark example visible at a time. Data-heavy scales or matrices may use the available workflow width with horizontal scrolling when needed.
+- Preview renders one coherent application workspace using identical markup for Light and Dark. Put roles into navigation, primary and secondary actions, focus, default tasks, status, validation, and guidance; do not regress to isolated color swatches or disconnected component cards.
 - Generated scale metadata uses black text on one continuous light block. Do not put metadata text directly over dark swatches or reintroduce fragmented inline backgrounds.
 - Preserve the restrained editorial palette, thin borders, generous spacing, and visible information hierarchy. Avoid generic dashboard styling, gradients, or ornamental card proliferation.
 - Functional previews may use rounded containers. Workflow sections themselves stay flat on the page background.

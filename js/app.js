@@ -261,34 +261,103 @@
     }).join('');
   }
 
-  function previewStatusMarkup(roleId, theme) {
-    const assignment = state.assignments[roleId][theme];
-    const content = {
-      success: ['✓', 'Saved', 'Your changes are ready.'],
-      warning: ['!', 'Check before continuing', 'This action may affect existing settings.'],
-      danger: ['×', 'Could not publish', 'Resolve the highlighted issue and try again.'],
-      information: ['i', 'Sync in progress', 'We will keep this page updated.'],
-    }[roleId];
-    return `<div class="status-example" style="--status-subtle:${assignment.subtle.hex};--status-border:${assignment.borderIcon.hex};--status-bold:${assignment.bold.hex};--status-on:${assignment.onBold.hex}"><span class="status-symbol" aria-hidden="true">${content[0]}</span><span><strong>${content[1]}</strong><small>${content[2]}</small></span><span class="status-pill">${model.roles[roleId].label}</span></div>`;
-  }
-
   function previewMarkup(theme) {
     const brand = state.assignments.brand[theme];
     const neutral = state.assignments.neutral[theme];
     const secondary = state.assignments.secondary?.[theme];
-    return `<div class="preview-layout"><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button" style="background:${brand.bold.hex};color:${brand.onBold.hex}">Open notes</button><button class="demo-button" style="background:${neutral.bold.hex};color:${neutral.onBold.hex}">Add tag</button>${secondary ? `<button class="demo-button" style="background:${secondary.bold.hex};color:${secondary.onBold.hex}">More</button>` : ''}</div><div class="demo-legend"><span><i style="--legend-color:${brand.bold.hex}"></i>Brand · primary action</span><span><i style="--legend-color:${neutral.bold.hex}"></i>Regular · Neutral alias</span></div></div><div class="status-stack">${model.semanticRoleIds.map(roleId => previewStatusMarkup(roleId, theme)).join('')}</div></div>`;
+    const success = state.assignments.success[theme];
+    const warning = state.assignments.warning[theme];
+    const danger = state.assignments.danger[theme];
+    const information = state.assignments.information[theme];
+    const optionalAction = secondary || neutral;
+    const variables = [
+      `--pv-brand:${brand.bold.hex}`,
+      `--pv-on-brand:${brand.onBold.hex}`,
+      `--pv-brand-soft:${brand.subtle.hex}`,
+      `--pv-brand-line:${brand.borderIcon.hex}`,
+      `--pv-neutral-soft:${neutral.subtle.hex}`,
+      `--pv-neutral-line:${neutral.borderIcon.hex}`,
+      `--pv-neutral-bold:${neutral.bold.hex}`,
+      `--pv-on-neutral:${neutral.onBold.hex}`,
+      `--pv-secondary:${optionalAction.bold.hex}`,
+      `--pv-on-secondary:${optionalAction.onBold.hex}`,
+      `--pv-success-soft:${success.subtle.hex}`,
+      `--pv-success-line:${success.borderIcon.hex}`,
+      `--pv-success:${success.bold.hex}`,
+      `--pv-on-success:${success.onBold.hex}`,
+      `--pv-warning-soft:${warning.subtle.hex}`,
+      `--pv-warning-line:${warning.borderIcon.hex}`,
+      `--pv-warning:${warning.bold.hex}`,
+      `--pv-on-warning:${warning.onBold.hex}`,
+      `--pv-danger-soft:${danger.subtle.hex}`,
+      `--pv-danger-line:${danger.borderIcon.hex}`,
+      `--pv-danger:${danger.bold.hex}`,
+      `--pv-on-danger:${danger.onBold.hex}`,
+      `--pv-info-soft:${information.subtle.hex}`,
+      `--pv-info-line:${information.borderIcon.hex}`,
+      `--pv-info:${information.bold.hex}`,
+      `--pv-on-info:${information.onBold.hex}`,
+    ].join(';');
+
+    return `<div class="product-preview" style="${variables}">
+      <aside class="product-sidebar" aria-label="Workspace navigation">
+        <div class="product-mark"><span>W</span><strong>Workbench</strong></div>
+        <nav class="product-nav">
+          <a class="active" href="#preview"><span aria-hidden="true">⌂</span>Overview</a>
+          <a href="#preview"><span aria-hidden="true">✓</span>Tasks <b>4</b></a>
+          <a href="#preview"><span aria-hidden="true">◫</span>Files</a>
+          <a href="#preview"><span aria-hidden="true">↗</span>Activity</a>
+        </nav>
+        <div class="product-team"><span class="product-avatar">RM</span><span><strong>Release team</strong><small>6 collaborators</small></span></div>
+      </aside>
+      <div class="product-main">
+        <header class="product-toolbar"><span>Projects <b>/ Website refresh</b></span><div><button class="product-icon-button" aria-label="Notifications">●</button><span class="product-avatar">JA</span></div></header>
+        <main class="product-body">
+          <section class="product-heading"><div><span class="product-kicker">IN PROGRESS · RELEASE 2.4</span><h3>Website refresh</h3><p>Prepare the accessibility pass before Friday’s release.</p></div><div class="product-actions"><button class="product-secondary-button">Invite</button><button class="product-primary-button">Publish update</button></div></section>
+          <div class="product-grid">
+            <section class="product-panel task-panel">
+              <div class="product-panel-head"><div><h4>Release checklist</h4><p>4 of 7 tasks completed</p></div><span class="progress-badge">57%</span></div>
+              <div class="product-progress"><i></i></div>
+              <ul class="task-list">
+                <li class="done"><span class="task-state">✓</span><span><strong>Confirm content hierarchy</strong><small>Completed by Jane</small></span><em>Done</em></li>
+                <li><span class="task-state regular">○</span><span><strong>Review focus order</strong><small>Assigned to Marcus</small></span><em>Regular</em></li>
+                <li class="warning"><span class="task-state">!</span><span><strong>Check empty states</strong><small>Needs review before release</small></span><em>Warning</em></li>
+              </ul>
+              <div class="product-field"><label for="previewReleaseNote-${theme}">Release note</label><input id="previewReleaseNote-${theme}" value="Improved keyboard navigation" readonly /><small><span aria-hidden="true">i</span> Visible focus uses Brand; helper text uses Information.</small></div>
+              <div class="product-field invalid"><label for="previewOwner-${theme}">Owner email</label><input id="previewOwner-${theme}" value="jane@" aria-invalid="true" readonly /><small><span aria-hidden="true">!</span> Enter a complete email address.</small></div>
+            </section>
+            <aside class="product-aside">
+              <section class="info-callout"><span aria-hidden="true">i</span><div><strong>Accessibility review</strong><p>Contrast checks update when you change a role.</p></div></section>
+              <section class="product-panel compact-panel"><div class="product-panel-head"><div><h4>Release health</h4><p>Latest automated checks</p></div><span class="success-dot">✓</span></div><dl class="health-list"><div><dt>Components ready</dt><dd>18 / 20</dd></div><div><dt>Contrast checks</dt><dd class="success-text">Passed</dd></div><div><dt>Blocking issues</dt><dd class="danger-text">1 open</dd></div></dl><button class="warning-button">Review warning</button></section>
+              <section class="product-panel people-panel"><div><h4>Collaborators</h4><p>Design, engineering and content</p></div><div class="avatar-stack"><span>JA</span><span>MK</span><span>RL</span><b>+3</b></div></section>
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>`;
   }
 
   function renderPreviews() {
     const lightCanvas = state.context.background;
     const lightText = state.context.text;
-    const lightCard = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
+    const lightCard = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? 2 : 6);
+    const lightMuted = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
     const darkCanvas = shiftLightness(lightCanvas, -70);
     const darkText = textColor(darkCanvas);
     const darkCard = shiftLightness(darkCanvas, 5);
+    const darkMuted = shiftLightness(darkCanvas, 9);
+    const neutralScale = paletteForRole('neutral').scale;
+    const findMutedText = (background, theme) => {
+      const candidateSteps = theme === 'light' ? [600, 700, 800, 900, 950] : [400, 300, 200, 100, 50];
+      const required = Math.max(4.5, state.target);
+      return candidateSteps
+        .map(step => neutralScale.find(token => token.step === step))
+        .find(token => contrast(token.hex, background) >= required)?.hex
+        || textColor(background);
+    };
     const setVariables = (element, values) => Object.entries(values).forEach(([key, value]) => element.style.setProperty(key, value));
-    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--demo-card': lightCard, '--demo-text': lightText });
-    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--demo-card': darkCard, '--demo-text': darkText });
+    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--pv-canvas': lightCanvas, '--pv-panel': lightCard, '--pv-muted-surface': lightMuted, '--pv-text': lightText, '--pv-muted-text': findMutedText(lightCard, 'light'), '--pv-line': shiftLightness(lightText, 62) });
+    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--pv-canvas': darkCanvas, '--pv-panel': darkCard, '--pv-muted-surface': darkMuted, '--pv-text': darkText, '--pv-muted-text': findMutedText(darkCard, 'dark'), '--pv-line': shiftLightness(darkText, -56) });
     $('#lightPreviewContent').innerHTML = previewMarkup('light');
     $('#darkPreviewContent').innerHTML = previewMarkup('dark');
   }

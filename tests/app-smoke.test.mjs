@@ -115,8 +115,20 @@ assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 1
 assert.match(elements.contextStatus.innerHTML, /PASS · AAA/);
 assert.match(elements.pairList.innerHTML, /Information/);
 assert.match(elements.assignmentList.innerHTML, /Uses Neutral assignments/);
-assert.match(elements.lightPreviewContent.innerHTML, /Sync in progress/);
-assert.match(elements.darkPreviewContent.innerHTML, /Could not publish/);
+for (const content of [elements.lightPreviewContent.innerHTML, elements.darkPreviewContent.innerHTML]) {
+  assert.match(content, /Publish update/);
+  assert.match(content, /Review focus order/);
+  assert.match(content, /Check empty states/);
+  assert.match(content, /Enter a complete email address/);
+  assert.match(content, /Accessibility review/);
+  assert.match(content, /Contrast checks/);
+}
+assert.match(elements.lightPreviewContent.innerHTML, /previewReleaseNote-light/);
+assert.match(elements.darkPreviewContent.innerHTML, /previewReleaseNote-dark/);
+const previewIds = [...`${elements.lightPreviewContent.innerHTML}${elements.darkPreviewContent.innerHTML}`.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+assert.equal(new Set(previewIds).size, previewIds.length, 'Light and Dark preview markup contains duplicate IDs');
+assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 4.5);
+assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 4.5);
 
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
@@ -144,6 +156,8 @@ assert.equal((elements.secondarySuggestions.innerHTML.match(/class="suggestion"/
 elements.targetSelect.value = '7';
 elements.targetSelect.dispatch('change');
 assert.match(elements.matrixNote.innerHTML, /AAA/);
+assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 7);
+assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 7);
 
 elements.hexInput.value = 'invalid';
 elements.hexInput.dispatch('change');

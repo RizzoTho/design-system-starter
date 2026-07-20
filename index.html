@@ -110,10 +110,10 @@
     </main>
 
     <section id="preview" class="preview-section" data-workflow-step="preview">
-      <div class="section-head"><div><h2>Component preview</h2><p>在 Light 和 Dark surface 中分别检查当前组件。Button 使用 600，on-text 由实测 contrast 决定。</p></div><div class="mode preview-tabs" aria-label="Preview theme"><button class="active" data-preview-theme="light" aria-pressed="true">Light</button><button data-preview-theme="dark" aria-pressed="false">Dark</button></div></div>
+      <div class="section-head"><div><h2>Component preview</h2><p>同一套 workspace markup 只切换 theme assignments，检查颜色在导航、操作、focus、任务状态与表单反馈中的实际职责。</p></div><div class="mode preview-tabs" aria-label="Preview theme"><button class="active" data-preview-theme="light" aria-pressed="true">Light</button><button data-preview-theme="dark" aria-pressed="false">Dark</button></div></div>
       <div class="preview-grid">
-        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Light components</strong></div><div id="lightPreviewContent"></div></div>
-        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Dark components</strong></div><div id="darkPreviewContent"></div></div>
+        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Application sample · Light</strong><span>Same markup · Light assignments</span></div><div id="lightPreviewContent"></div></div>
+        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Application sample · Dark</strong><span>Same markup · Dark assignments</span></div><div id="darkPreviewContent"></div></div>
       </div>
     </section>
     <section id="export" class="export-section"><div class="export-copy"><h2>Export colors</h2><p>把当前颜色和使用关系复制为 CSS variables 或 JSON，交给项目直接使用。</p></div><div class="actions"><button id="copyCss" class="button primary">Copy CSS variables</button><button id="copyJson" class="button">Copy JSON</button></div></section>
