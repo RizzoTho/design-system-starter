@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>color design system for starter</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+    :root {
+      color-scheme: light;
+      --ink: #29251f;
+      --muted: #7d7468;
+      --line: rgba(54, 45, 35, .16);
+      --panel: #f5f4ec;
+      --panel-soft: #efe5d5;
+      --canvas: #f5f4ec;
+      --ui-highlight: #d8664a;
+      --ui-highlight-strong: #a96b21;
+      --good: #2d6b46;
+      --warn: #a96b21;
+      --bad: #b44c38;
+      --radius: 18px;
+      --font-title: "IBM Plex Sans", "IBM Sans", "Helvetica Neue", sans-serif;
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --width-page: 1240px;
+      --width-reading: 760px;
+      --width-export: 840px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--canvas); }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f5f4ec;
+      font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+
+    button, input, select { font: inherit; }
+    h1, h2, h3, h4 { font-family: var(--font-title); }
+    button { cursor: pointer; }
+    .shell { width: min(var(--width-page), calc(100% - 48px)); margin: 0 auto; padding: 28px 0 64px; }
+
+    header {
+      width: min(100%, 920px);
+      display: grid;
+      justify-items: center;
+      margin: 0 auto;
+      padding: 4px 0 32px;
+      border-bottom: 1px solid var(--line);
+      text-align: center;
+    }
+    .eyebrow, .label, .mono { font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow { color: var(--ui-highlight-strong); font-size: 11px; }
+    h1 { margin: 10px 0 12px; color: #2b241d; font: 500 clamp(38px, 6vw, 76px)/.92 var(--font-title); letter-spacing: -.055em; }
+    .title-main, .title-sub { display: block; }
+    .title-main { text-transform: uppercase; }
+    .title-sub { margin-top: .08em; font-size: .8em; letter-spacing: -.04em; text-transform: lowercase; }
+    .lede { margin: 0 auto; max-width: 720px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .wcag-intro { width: min(820px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 22px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; }
+    .wcag-level { min-width: 0; padding: 13px 16px 14px; border-right: 1px solid var(--line); }
+    .wcag-level:last-child { border-right: 0; }
+    .wcag-level strong { display: block; color: var(--ink); font: 500 12px var(--font-title); }
+    .wcag-level p { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+    .workflow { display: grid; gap: 0; }
+    .workflow-section { display: grid; grid-template-columns: 286px minmax(0, 1fr); gap: 32px; min-width: 0; padding: 48px 0 56px; border-bottom: 1px solid var(--line); background: #f5f4ec; scroll-margin-top: 18px; }
+    .workflow-section:first-child { padding-top: 32px; }
+    .step-controls { --step-accent: #8c7a60; position: sticky; top: 18px; align-self: start; padding: 19px; border: 1px solid var(--line); border-radius: 12px; background: #ece9df; box-shadow: 0 12px 35px rgba(66,53,39,.08); }
+    .step-controls .step-heading { margin-bottom: 18px; }
+    .step-controls .step-heading > b { background: var(--step-accent); }
+    .step-controls .field:first-of-type { margin-top: 0; }
+    .step-content { min-width: 0; display: grid; align-content: start; gap: 40px; }
+    .workflow-block { min-width: 0; padding: 0; border: 0; border-radius: 0; background: #f5f4ec; box-shadow: none; }
+    .candidate-summary, .fit-report-block { width: min(100%, var(--width-reading)); border: 1px solid var(--line); }
+    .candidate-summary .seed-summary { min-height: 300px; }
+    .fit-report-block .safe-pair { border-left: 0; }
+
+    .context-result { width: min(100%, var(--width-reading)); min-height: 330px; display: flex; flex-direction: column; justify-content: space-between; padding: 34px; border: 1px solid var(--line); border-radius: 14px; background: var(--context-bg); color: var(--context-text); }
+    .context-result .label { font-size: 10px; opacity: .58; }
+    .context-result h2 { margin: 18px 0 8px; max-width: 620px; font: 500 clamp(34px, 5vw, 64px)/.98 var(--font-title); letter-spacing: -.05em; }
+    .context-result p { max-width: 520px; margin: 0; font-size: 14px; line-height: 1.55; opacity: .72; }
+    .context-result .context-status { align-self: flex-start; margin-top: 34px; }
+
+    .step-dock { position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 258px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 14px; color: #fffaf2; background: #29251f; box-shadow: 0 18px 50px rgba(41,37,31,.28); transition: width 180ms var(--ease-out); }
+    .step-dock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 10px 14px; }
+    .step-dock-head strong { font: 500 13px var(--font-title); }
+    .step-dock-toggle { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; color: #fffaf2; background: rgba(255,255,255,.06); font: 500 16px/1 var(--font-title); transition: transform 140ms var(--ease-out), background-color 140ms ease; }
+    .step-dock-body { display: grid; gap: 3px; padding: 0 7px 8px; }
+    .step-link { display: grid; grid-template-columns: 28px 1fr; gap: 7px; align-items: center; padding: 9px 8px; border-radius: 8px; color: rgba(255,250,242,.68); text-decoration: none; font-size: 12px; transition: color 140ms ease, background-color 140ms ease, transform 140ms var(--ease-out); }
+    .step-link b { font: 500 10px var(--font-title); opacity: .62; }
+    .step-icon { width: 28px; height: 16px; display: grid; place-items: center; color: currentColor; opacity: .62; }
+    .step-icon svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
+    .step-link strong { font: 500 12px var(--font-title); }
+    .step-link.active { color: #fffaf2; background: rgba(255,255,255,.12); }
+    .step-link.destination-link { color: rgba(255,250,242,.82); }
+    .step-link.destination-start { margin-top: 4px; border-top: 1px solid rgba(255,255,255,.14); border-radius: 0; }
+    .step-dock.minimized { width: 154px; }
+    .step-dock.minimized .step-dock-body { display: none; }
+    .step-dock-toggle:active, .step-link:active { transform: scale(.97); }
+
+    .export-section { width: min(100%, var(--width-export)); display: flex; justify-content: space-between; align-items: center; gap: 24px; margin: 0 auto; padding: 44px 0; border-bottom: 1px solid var(--line); background: #f5f4ec; scroll-margin-top: 18px; }
+    .export-copy { max-width: 520px; }
+    .export-section .export-copy h2 { font-size: 24px; }
+    .preview-section { width: 100%; padding: 48px 0 56px; border-bottom: 1px solid var(--line); background: #f5f4ec; scroll-margin-top: 18px; }
+
+    .step-heading { display: grid; grid-template-columns: 29px 1fr; gap: 8px; align-items: start; margin-bottom: 13px; }
+    .step-heading > b { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 99px; color: #fffaf2; background: var(--ui-highlight-strong); font: 500 10px var(--font-title); }
+    .step-heading strong { display: block; font: 500 13px/1.2 var(--font-title); }
+    .step-heading small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .field { margin-top: 18px; }
+    .field label { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+    .value { color: var(--ink); font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
+    .seed-picker { width: 100%; height: 112px; padding: 0; border: 1px solid rgba(255,255,255,.28); border-radius: 13px; overflow: hidden; background: transparent; }
+    .seed-picker input { width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; }
+    .text-input, select {
+      width: 100%; color: var(--ink); background: #fffaf2; border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; outline: none;
+    }
+    .text-input:focus, select:focus { border-color: var(--ui-highlight-strong); box-shadow: 0 0 0 3px rgba(169,107,33,.12); }
+    .range { width: 100%; accent-color: var(--ui-highlight); }
+    .range-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+    .mode { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 10px; background: #e8ddcc; border: 1px solid var(--line); }
+    .mode button { color: var(--muted); background: transparent; border: 0; border-radius: 7px; padding: 8px 6px; font-size: 11px; }
+    .mode button { transition: transform 140ms var(--ease-out); }
+    .mode button.active { color: var(--ink); background: #fffaf2; box-shadow: inset 0 0 0 1px var(--line); }
+    .role-mode button { text-transform: uppercase; letter-spacing: .06em; }
+    .mini-color-row { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 7px; }
+    .mini-picker { height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.24); }
+    .mini-picker input { display: block; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer; }
+    .context-status { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 9px; align-items: center; margin-top: 10px; padding: 10px 12px; border: 1px solid #29251f; border-radius: 9px; color: #29251f; background: #fffaf2; font: 10px/1.45 "SFMono-Regular", Consolas, monospace; }
+    .context-status .status-icon { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 99px; color: #fff; font: 700 14px/1 var(--font-title); }
+    .context-status strong { display: block; margin-bottom: 2px; color: #29251f; font: 700 11px/1.2 var(--font-title); letter-spacing: .04em; }
+    .context-status small { display: block; color: #5f5a52; font: inherit; }
+    .context-status.pass .status-icon { background: #2d6b46; }
+    .context-status.pass strong { color: #1f603d; }
+    .context-status.fail { border-color: #9c352d; }
+    .context-status.fail .status-icon { background: #9c352d; }
+    .context-status.fail strong { color: #9c352d; }
+    main { min-width: 0; }
+    .seed-summary { padding: 24px; min-height: 250px; display: flex; flex-direction: column; justify-content: space-between; background: var(--seed); color: var(--seed-ink); }
+    .seed-summary .label { font-size: 10px; opacity: .7; }
+    .seed-summary h2 { margin: 42px 0 8px; font: 500 clamp(28px, 4vw, 48px)/.94 var(--font-title); letter-spacing: -.045em; }
+    .seed-summary .hex { font: 12px "SFMono-Regular", Consolas, monospace; opacity: .72; }
+    .safe-pair { padding: 24px; background: #f4eadb; border-left: 1px solid var(--line); }
+    .safe-pair h3, .section-head h2 { margin: 0; font: 500 19px var(--font-title); }
+    .safe-pair p { color: var(--muted); font-size: 12px; margin: 7px 0 17px; line-height: 1.45; }
+    .pair-list { display: grid; gap: 8px; }
+    .pair { display: grid; grid-template-columns: 50px minmax(100px, 1fr) auto; align-items: center; gap: 10px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.38); text-align: left; transition: transform 140ms var(--ease-out); }
+    .pair-swatch { height: 34px; border-radius: 7px; display: grid; place-items: center; font-size: 11px; font-weight: 600; }
+    .pair-copy { min-width: 0; }
+    .pair-copy strong { display: block; font-size: 12px; font-weight: 500; }
+    .pair-copy em { color: var(--muted); font: 10px "SFMono-Regular", Consolas, monospace; font-style: normal; margin-left: 5px; }
+    .pair-copy span { display: block; margin-top: 3px; color: var(--muted); font: 10px "SFMono-Regular", Consolas, monospace; }
+    .badge { font: 10px "SFMono-Regular", Consolas, monospace; border-radius: 99px; padding: 5px 7px; color: var(--good); background: rgba(168,213,162,.1); }
+    .fit-badges { display: grid; gap: 5px; justify-items: end; }
+    .fit-badge { font: 9px "SFMono-Regular", Consolas, monospace; font-style: normal; border-radius: 99px; padding: 4px 6px; color: var(--good); background: rgba(168,213,162,.1); white-space: nowrap; }
+    .fit-badge.warn { color: var(--warn); background: rgba(241,179,92,.1); }
+    .fit-badge.fail { color: var(--bad); background: rgba(237,142,119,.1); }
+
+    .section-head { display:flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .section-head > div:first-child { width: min(100%, var(--width-reading)); }
+    .section-head p { color: var(--muted); font-size: 11px; margin: 0; line-height: 1.5; }
+    .scale-guide { display: grid; grid-template-columns: 1.2fr 1fr .72fr 1.2fr 1fr; margin-bottom: 12px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .scale-guide span { padding: 10px 11px; border-right: 1px solid var(--line); }
+    .scale-guide span:last-child { border-right: 0; }
+    .scale-guide b { display: block; color: #29251f; font: 500 11px var(--font-title); }
+    .scale-guide em { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-style: normal; }
+    .scale-guide .recommended b { color: var(--good); }
+    .scale-key { margin: -4px 0 12px; color: var(--muted); font-size: 10px; }
+    .scale { display: grid; grid-template-columns: repeat(11, minmax(48px, 1fr)); gap: 6px; }
+    .swatch { min-width: 0; padding: 0; border: 1px solid rgba(54,45,35,.12); border-radius: 10px; overflow: hidden; appearance: none; background: transparent; box-shadow: none; transition: transform 140ms var(--ease-out); }
+    .swatch-color { position: relative; height: 92px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; padding: 8px; }
+    .swatch-hex { width: auto; max-width: 100%; padding: 3px 5px; border-radius: 5px; overflow: hidden; color: #29251f; background: rgba(255,255,255,.84); font: 10px "SFMono-Regular", Consolas, monospace; opacity: 1; text-overflow: ellipsis; }
+    .swatch-rec { position: absolute; top: 7px; left: 7px; width: auto; padding: 3px 5px; border-radius: 99px; color: #fff; background: #2d6b46; font: 700 8px/1 var(--font-title); letter-spacing: .06em; }
+    .swatch-meta { display: block; width: 100%; min-height: 67px; padding: 7px 8px 8px; color: #29251f; background: #fffaf2; font: 10px "SFMono-Regular", Consolas, monospace; }
+    .swatch-meta b { display: block; margin-bottom: 3px; font-weight: 600; }
+    .token-use { display: block; overflow: hidden; margin-bottom: 5px; font: 500 10px var(--font-title); text-overflow: ellipsis; white-space: nowrap; }
+    .contrast-values { display: block; color: #29251f; font-size: 9px; opacity: .68; white-space: nowrap; }
+
+    .matrix-wrap { overflow-x: auto; padding-bottom: 3px; }
+    .matrix { min-width: 920px; display: grid; grid-template-columns: 112px repeat(11, 1fr); gap: 5px; }
+    .matrix > div { min-height: 52px; border-radius: 8px; display: flex; align-items: center; justify-content: center; text-align: center; }
+    .matrix-head { flex-direction: column; gap: 3px; font: 10px "SFMono-Regular", Consolas, monospace; color: var(--muted); }
+    .matrix-head i { width: 25px; height: 25px; border-radius: 5px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.13); }
+    .matrix-label { justify-content: flex-start !important; padding-left: 9px; color: var(--muted); font: 10px "SFMono-Regular", Consolas, monospace; }
+    .matrix-cell { position: relative; min-height: 66px; padding: 7px 5px; flex-direction: column; gap: 4px; border: 0; border-radius: 8px; font: 11px "SFMono-Regular", Consolas, monospace; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(35,30,25,.16); overflow: hidden; transition: transform 140ms var(--ease-out), box-shadow 160ms ease, opacity 160ms ease; }
+    .matrix-sample { font: 600 16px/1 var(--font-title); letter-spacing: -.02em; }
+    .matrix-ratio { min-width: 34px; padding: 3px 5px; border-radius: 99px; color: inherit; background: var(--ratio-bg); font-weight: 600; line-height: 1; }
+    .matrix-cell.pass { z-index: 1; box-shadow: inset 0 0 0 3px #2d6b46, 0 4px 12px rgba(45,107,70,.18); }
+    .matrix-cell.pass::after { content: "✓"; position: absolute; top: 5px; right: 5px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 99px; color: #fff; background: #2d6b46; font: 700 10px/1 sans-serif; }
+    .matrix-cell.fail { opacity: .76; }
+    .matrix-note { margin: 14px 0 0; color: var(--muted); font-size: 11px; }
+    .matrix-note b { color: var(--good); font-weight: 500; }
+
+    .preview-tabs { width: 184px; flex: 0 0 auto; }
+    .preview-grid { display: block; }
+    .preview { border-radius: 13px; padding: 18px; min-height: 245px; border: 1px solid var(--line); }
+    .preview[hidden] { display: none; }
+    .preview.light { background: var(--light-canvas); color: var(--light-text); }
+    .preview.dark { background: var(--dark-canvas); color: var(--dark-text); }
+    .preview-top { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
+    .preview-top strong { font: 500 18px var(--font-title); }
+    .demo-card { background: var(--demo-card); color: var(--demo-text); border-radius: 12px; padding: 18px; box-shadow: 0 10px 22px rgba(0,0,0,.1); }
+    .demo-card p { margin: 4px 0 16px; font-size: 13px; line-height: 1.55; opacity: .82; }
+    .demo-card h4 { margin: 0; font-size: 15px; font-weight: 600; }
+    .demo-actions { display:flex; gap: 8px; align-items:center; }
+    .demo-button { border: 0; border-radius: 7px; padding: 9px 13px; font-size: 12px; font-weight: 600; transition: transform 140ms var(--ease-out); }
+    .demo-brand { background: var(--brand-button); color: var(--on-brand); }
+    .demo-neutral { background: var(--neutral-button); color: var(--on-neutral); }
+    .demo-link { color: var(--link); background: transparent; border: 0; padding: 8px 2px; font-size: 12px; font-weight: 500; transition: transform 140ms var(--ease-out); }
+    .demo-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 16px; padding-top: 13px; border-top: 1px solid currentColor; border-color: color-mix(in srgb, currentColor 14%, transparent); font-size: 12px; line-height: 1.4; opacity: .72; }
+    .demo-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .demo-legend i { width: 8px; height: 8px; border-radius: 99px; background: var(--legend-color); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+
+    .export-copy h2 { margin: 0 0 5px; font: 500 19px var(--font-title); }
+    .export-copy p { margin: 0; color: var(--muted); font-size: 11px; }
+    .actions { display:flex; gap: 8px; flex-shrink: 0; }
+    .button { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; color: var(--ink); background: #fffaf2; font-size: 11px; transition: transform 140ms var(--ease-out); }
+    .button.primary { color: #fffaf2; background: var(--ui-highlight-strong); border-color: var(--ui-highlight-strong); }
+    .button:active, .pair:active, .swatch:active, .matrix-cell:active, .demo-button:active, .demo-link:active, .mode button:active { transform: scale(.97); }
+    .toast { position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--ink); color: #fffaf2; border-radius: 99px; padding: 10px 14px; font-size: 12px; transition: opacity 200ms ease, transform 200ms var(--ease-out); box-shadow: 0 8px 25px rgba(0,0,0,.35); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .footer { width: min(100%, var(--width-export)); margin: 16px auto 0; color: #77736c; font: 10px/1.5 "SFMono-Regular", Consolas, monospace; }
+    .footer a { color: var(--ui-highlight-strong); }
+
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(169,107,33,.38); outline-offset: 2px; }
+    @media (hover: hover) and (pointer: fine) {
+      .matrix-cell:hover { outline: 2px solid var(--ui-highlight-strong); outline-offset: 1px; }
+      .button:hover { filter: brightness(1.04); }
+      .step-link:hover { color: #fffaf2; background: rgba(255,255,255,.08); }
+      .step-dock-toggle:hover { background: rgba(255,255,255,.12); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .button, .pair, .swatch, .matrix-cell, .demo-button, .demo-link, .mode button, .step-dock, .step-link, .step-dock-toggle { transition-duration: 0ms; }
+    }
+
+    @media (max-width: 900px) {
+      .shell { width: min(100% - 40px, 660px); padding-top: 18px; }
+      header { padding-bottom: 24px; }
+      .workflow-section { grid-template-columns: 1fr; gap: 24px; padding: 34px 0 42px; }
+      .preview-section { padding: 34px 0 42px; }
+      .step-controls { position: static; }
+      .step-content { gap: 32px; }
+      .step-dock { right: 14px; bottom: 14px; }
+      .export-section { display: block; }
+      .scale-guide { overflow-x: auto; grid-template-columns: repeat(5, 120px); }
+      .scale { overflow-x: auto; grid-template-columns: repeat(11, 76px); padding-bottom: 5px; }
+      .actions { margin-top: 16px; }
+    }
+    @media (max-width: 500px) {
+      .shell { width: calc(100% - 24px); }
+      .safe-pair, .seed-summary { padding: 16px; }
+      .workflow-section { padding: 28px 0 36px; }
+      .preview-section { padding: 28px 0 36px; }
+      .step-controls, .context-result { padding: 16px; }
+      .step-dock { right: 10px; bottom: 10px; width: min(258px, calc(100vw - 20px)); }
+      h1 { font-size: 44px; }
+      .section-head { display: block; }
+      .section-head p { margin-top: 7px; }
+      .preview-tabs { width: 100%; margin-top: 14px; }
+      .wcag-intro { grid-template-columns: 1fr; }
+      .wcag-level { border-right: 0; border-bottom: 1px solid var(--line); }
+      .wcag-level:last-child { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1><span class="title-main">COLOR DESIGN SYSTEM</span><span class="title-sub">for starter</span></h1>
+        <p class="lede">先固定 Background / Text，再判断 Brand / Neutral 是否满足 WCAG 2.2。Normal text 默认以 4.5:1 为验收线。</p>
+        <div class="wcag-intro" aria-label="WCAG contrast target 简介">
+          <div class="wcag-level"><strong>3:1 · AA 大字</strong><p>只适合约 24px 常规字，或 19px 粗体以上。</p></div>
+          <div class="wcag-level"><strong>4.5:1 · AA 正文</strong><p>多数界面文字的实用起点，默认先过这条。</p></div>
+          <div class="wcag-level"><strong>7:1 · AAA 正文</strong><p>不依赖大字号，小字也更稳，适合更高可读性要求。</p></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="workflow">
+      <section id="step-context" class="workflow-section" data-workflow-step="context">
+        <aside class="step-controls context">
+          <div class="step-heading"><b>01</b><div><strong>Context</strong><small>先锁定不可变的页面底色和正文色。</small></div></div>
+          <div class="field">
+            <label for="backgroundColor">Background <span id="backgroundValue" class="value">#F7F3EB</span></label>
+            <div class="mini-color-row"><div class="mini-picker"><input id="backgroundColor" type="color" value="#f7f3eb" aria-label="选择背景色" /></div><input id="backgroundHexInput" class="text-input value" value="#F7F3EB" spellcheck="false" maxlength="7" aria-label="输入背景 HEX 色值" /></div>
+          </div>
+          <div class="field">
+            <label for="textColor">Text <span id="textValue" class="value">#25231F</span></label>
+            <div class="mini-color-row"><div class="mini-picker"><input id="textColor" type="color" value="#25231f" aria-label="选择文字色" /></div><input id="textHexInput" class="text-input value" value="#25231F" spellcheck="false" maxlength="7" aria-label="输入文字 HEX 色值" /></div>
+          </div>
+        </aside>
+        <div class="step-content">
+          <div id="contextCanvas" class="context-result" style="--context-bg:#F7F3EB;--context-text:#25231F">
+            <div><div class="label">FIXED CONTEXT</div><h2>Context contrast</h2><p>这块画布只使用你已经确定的 Background 和 Text，先确认基础阅读关系，再进入颜色角色。</p></div>
+            <div id="contextStatus" class="context-status"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="step-candidates" class="workflow-section" data-workflow-step="candidates">
+        <aside class="step-controls candidate">
+          <div class="step-heading"><b>02</b><div><strong>Colors</strong><small>切换 Brand / Neutral，再用 picker 或 HSL 微调。</small></div></div>
+          <div class="field">
+            <label>正在测试</label>
+            <div class="mode role-mode"><button class="active" data-role="brand">Brand</button><button data-role="neutral">Neutral</button></div>
+          </div>
+          <div class="field">
+            <label for="seedColor"><span id="candidateLabel">Brand color</span> <span id="seedValue" class="value">#D8664A</span></label>
+            <div class="seed-picker"><input id="seedColor" type="color" value="#d8664a" aria-label="选择候选色" /></div>
+          </div>
+          <div class="field"><label for="hexInput">HEX</label><input id="hexInput" class="text-input value" value="#D8664A" spellcheck="false" maxlength="7" aria-label="输入候选 HEX 色值" /></div>
+          <div class="field"><label for="hueRange">Hue <span id="hueValue" class="value">11°</span></label><div class="range-row"><input id="hueRange" class="range" type="range" min="0" max="360" value="11" /><span class="value">360°</span></div></div>
+          <div class="field"><label for="satRange">Saturation <span id="satValue" class="value">64%</span></label><input id="satRange" class="range" type="range" min="0" max="100" value="64" /></div>
+          <div class="field"><label for="lightRange">Lightness <span id="lightValue" class="value">57%</span></label><input id="lightRange" class="range" type="range" min="5" max="95" value="57" /></div>
+        </aside>
+        <div class="step-content">
+          <section class="workflow-block candidate-summary">
+            <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · HSL 11 64 57</div></div><div class="label">automatically recalculates on input</div></div>
+          </section>
+          <section class="workflow-block">
+            <div class="section-head"><div><h2>Generated scale</h2><p>当前选中的 <span id="scaleRole">Brand</span> 推导 50 → 950；点击色块会复制色值，并应用到当前 Colors 输入。</p></div><span id="scaleCount" class="mono" style="color:var(--muted);font-size:10px">11 TOKENS</span></div>
+            <div class="scale-guide" aria-label="色阶推荐用途">
+              <span><b>50–200</b><em>Page / surface</em></span><span><b>300–400</b><em>Border / muted</em></span><span><b>500</b><em>Seed</em></span><span class="recommended"><b>600–700</b><em>Action · 推荐</em></span><span><b>800–950</b><em>Strong / dark</em></span>
+            </div>
+            <p class="scale-key">用途是推荐语义，是否可用仍以当前 target 为准。W / K 表示该色分别与 White / Black 的 contrast ratio。</p>
+            <div id="scale" class="scale"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="step-standard" class="workflow-section" data-workflow-step="standard">
+        <aside class="step-controls standard">
+          <div class="step-heading"><b>03</b><div><strong>Standard</strong><small>设定验收门槛，检查配色关系。</small></div></div>
+          <div class="field"><label for="targetSelect">Contrast target</label><select id="targetSelect" aria-label="contrast target"><option value="4.5">AA · normal text · 4.5:1</option><option value="3">AA · large text · 3:1</option><option value="7">AAA · normal text · 7:1</option></select></div>
+        </aside>
+        <div class="step-content">
+          <section class="workflow-block fit-report-block">
+            <div class="safe-pair"><h3>Fit report</h3><p>用你固定的 Background / Text，分别检查 Brand 和 Neutral 是否达到当前 target。</p><div id="pairList" class="pair-list"></div></div>
+          </section>
+          <section class="workflow-block">
+            <div class="section-head"><div><h2>Contrast matrix</h2><p>目标：找出当前色阶中达到所选 WCAG 标准的前景 / 背景组合，作为文字、surface 和组件状态的配色依据。行是前景色，列是背景色；绿色边框表示通过，点击可复制组合。</p></div><span class="mono" style="color:var(--muted);font-size:10px">CLICK TO COPY</span></div>
+            <div class="matrix-wrap"><div id="matrix" class="matrix"></div></div><p id="matrixNote" class="matrix-note"></p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <section id="preview" class="preview-section" data-workflow-step="preview">
+      <div class="section-head"><div><h2>Component preview</h2><p>在 Light 和 Dark surface 中分别检查当前组件。Button 使用 600，on-text 由实测 contrast 决定。</p></div><div class="mode preview-tabs" aria-label="Preview theme"><button class="active" data-preview-theme="light" aria-pressed="true">Light</button><button data-preview-theme="dark" aria-pressed="false">Dark</button></div></div>
+      <div class="preview-grid">
+        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Fixed context</strong></div><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button demo-brand">Open notes</button><button class="demo-button demo-neutral">Add tag</button><button class="demo-link">Dismiss</button></div><div class="demo-legend"><span><i style="--legend-color:var(--brand-button)"></i>Brand · primary</span><span><i style="--legend-color:var(--neutral-button)"></i>Neutral · secondary</span></div></div></div>
+        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Dark surface</strong></div><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button demo-brand">Open notes</button><button class="demo-button demo-neutral">Add tag</button><button class="demo-link">Dismiss</button></div><div class="demo-legend"><span><i style="--legend-color:var(--brand-button)"></i>Brand · primary</span><span><i style="--legend-color:var(--neutral-button)"></i>Neutral · secondary</span></div></div></div>
+      </div>
+    </section>
+    <section id="export" class="export-section"><div class="export-copy"><h2>Export colors</h2><p>把当前颜色和使用关系复制为 CSS variables 或 JSON，交给项目直接使用。</p></div><div class="actions"><button id="copyCss" class="button primary">Copy CSS variables</button><button id="copyJson" class="button">Copy JSON</button></div></section>
+    <div class="footer">Inspired by <a href="https://mgifford.github.io/ui-palette-generator/" target="_blank" rel="noreferrer">MGifford UI Palette Generator</a> · WCAG contrast ratio uses relative luminance.</div>
+  </div>
+  <aside id="stepDock" class="step-dock" aria-label="Workflow navigation">
+    <div class="step-dock-head"><strong>Steps</strong><button id="stepDockToggle" class="step-dock-toggle" type="button" aria-expanded="true" aria-controls="stepDockBody" aria-label="最小化步骤导航">−</button></div>
+    <nav id="stepDockBody" class="step-dock-body">
+      <a class="step-link active" href="#step-context" data-step-link="context"><b>01</b><strong>Context</strong></a>
+      <a class="step-link" href="#step-candidates" data-step-link="candidates"><b>02</b><strong>Colors</strong></a>
+      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong>Standard</strong></a>
+      <a class="step-link destination-link destination-start" href="#preview" data-step-link="preview"><span class="step-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.75"></circle></svg></span><strong>Preview</strong></a>
+      <a class="step-link destination-link" href="#export" data-step-link="export"><b aria-hidden="true">↗</b><strong>Export</strong></a>
+    </nav>
+  </aside>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+    const seedColor = $('#seedColor');
+    const hexInput = $('#hexInput');
+    const hueRange = $('#hueRange');
+    const satRange = $('#satRange');
+    const lightRange = $('#lightRange');
+    const backgroundColorInput = $('#backgroundColor');
+    const backgroundHexInput = $('#backgroundHexInput');
+    const textColorInput = $('#textColor');
+    const textHexInput = $('#textHexInput');
+    const targetSelect = $('#targetSelect');
+    const steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+    let current = { hex: '#D8664A', h: 11, s: 64, l: 57 };
+    const candidates = { brand: '#D8664A', neutral: '#3B7A78' };
+    const context = { background: '#F7F3EB', text: '#25231F' };
+    let activeRole = 'brand';
+    let scale = [];
+
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+    function hexToRgb(hex) {
+      const clean = hex.replace('#', '').trim();
+      if (!/^[0-9a-f]{6}$/i.test(clean)) return null;
+      return [parseInt(clean.slice(0,2),16), parseInt(clean.slice(2,4),16), parseInt(clean.slice(4,6),16)];
+    }
+    function rgbToHex([r, g, b]) { return '#' + [r,g,b].map(v => Math.round(v).toString(16).padStart(2,'0')).join('').toUpperCase(); }
+    function hslToRgb(h, s, l) {
+      s /= 100; l /= 100;
+      const k = n => (n + h / 30) % 12;
+      const a = s * Math.min(l, 1 - l);
+      const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return [255 * f(0), 255 * f(8), 255 * f(4)];
+    }
+    function rgbToHsl([r, g, b]) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (d) {
+        s = d / (1 - Math.abs(2*l - 1));
+        switch (max) { case r: h = 60 * (((g-b)/d) % 6); break; case g: h = 60 * ((b-r)/d + 2); break; default: h = 60 * ((r-g)/d + 4); }
+      }
+      return { h: Math.round((h + 360) % 360), s: Math.round(s*100), l: Math.round(l*100) };
+    }
+    function shiftLightness(hex, amount) {
+      const hsl = rgbToHsl(hexToRgb(hex));
+      return rgbToHex(hslToRgb(hsl.h, hsl.s, clamp(hsl.l + amount, 4, 96)));
+    }
+    function luminance(hex) {
+      const rgb = hexToRgb(hex);
+      if (!rgb) throw new Error('Invalid HEX color');
+      return rgb.reduce((sum, value, i) => {
+        const channel = value / 255;
+        const linear = channel <= .03928 ? channel / 12.92 : Math.pow((channel + .055) / 1.055, 2.4);
+        return sum + linear * [0.2126, 0.7152, 0.0722][i];
+      }, 0);
+    }
+    function contrast(foreground, background) {
+      const a = luminance(foreground), b = luminance(background);
+      return (Math.max(a,b) + .05) / (Math.min(a,b) + .05);
+    }
+    function textColor(background) { return contrast('#FFFFFF', background) >= contrast('#111111', background) ? '#FFFFFF' : '#111111'; }
+    function readableForeground(background, target) {
+      const candidates = ['#FFFFFF', '#111111', ...scale.map(item => item.hex)];
+      const passing = candidates.filter(candidate => contrast(candidate, background) >= target);
+      return (passing.length ? passing : candidates).sort((a,b) => contrast(b, background) - contrast(a, background))[0];
+    }
+    function makeScaleFor(hex) {
+      const hsl = rgbToHsl(hexToRgb(hex));
+      const lightnessByStep = [97, 94, 88, 79, 68, hsl.l, 44, 35, 26, 18, 12];
+      const saturationByStep = [Math.max(hsl.s - 20, 12), Math.max(hsl.s - 16, 15), Math.max(hsl.s - 10, 18), Math.max(hsl.s - 4, 20), hsl.s, hsl.s, hsl.s + 2, hsl.s + 2, hsl.s + 3, hsl.s + 3, hsl.s + 3];
+      return steps.map((step, index) => {
+        const stepHex = step === 500
+          ? rgbToHex(hexToRgb(hex))
+          : rgbToHex(hslToRgb(hsl.h, clamp(saturationByStep[index], 0, 100), lightnessByStep[index]));
+        return { step, hex: stepHex, ink: textColor(stepHex), ratioOnWhite: contrast('#FFFFFF', stepHex), ratioOnBlack: contrast('#111111', stepHex) };
+      });
+    }
+    function makeScale() { return makeScaleFor(current.hex); }
+    function updateInputs() {
+      seedColor.value = current.hex.toLowerCase();
+      hexInput.value = current.hex;
+      hueRange.value = current.h; satRange.value = current.s; lightRange.value = current.l;
+      $('#seedValue').textContent = current.hex; $('#hueValue').textContent = `${current.h}°`; $('#satValue').textContent = `${current.s}%`; $('#lightValue').textContent = `${current.l}%`;
+      $('#summaryHex').textContent = `${current.hex} · HSL ${current.h} ${current.s} ${current.l}`;
+      $('#candidateLabel').textContent = `${activeRole === 'brand' ? 'Brand' : 'Neutral'} color`;
+      $('#summaryLabel').textContent = `ACTIVE ${activeRole.toUpperCase()}`;
+      $('#summaryTitle').textContent = activeRole === 'brand' ? 'Brand color' : 'Neutral color';
+      $('#scaleRole').textContent = activeRole === 'brand' ? 'Brand' : 'Neutral';
+      backgroundColorInput.value = context.background.toLowerCase(); backgroundHexInput.value = context.background;
+      textColorInput.value = context.text.toLowerCase(); textHexInput.value = context.text;
+      $('#backgroundValue').textContent = context.background; $('#textValue').textContent = context.text;
+    }
+    function update() {
+      scale = makeScale();
+      const seedInk = textColor(current.hex);
+      $('#seedSummary').style.setProperty('--seed', current.hex); $('#seedSummary').style.setProperty('--seed-ink', seedInk);
+      renderContextStatus(); renderScale(); renderPairings(); renderMatrix(); renderPreviews();
+    }
+    function setFromHex(value, sync = true) {
+      const rgb = hexToRgb(value.toUpperCase());
+      if (!rgb) { hexInput.setAttribute('aria-invalid', 'true'); return; }
+      hexInput.removeAttribute('aria-invalid');
+      current.hex = rgbToHex(rgb); Object.assign(current, rgbToHsl(rgb)); candidates[activeRole] = current.hex;
+      if (sync) updateInputs();
+      update();
+    }
+    function setContextFromHex(kind, value) {
+      const rgb = hexToRgb(value.toUpperCase());
+      const input = kind === 'background' ? backgroundHexInput : textHexInput;
+      if (!rgb) { input.setAttribute('aria-invalid', 'true'); return; }
+      input.removeAttribute('aria-invalid'); context[kind] = rgbToHex(rgb); updateInputs(); update();
+    }
+    function renderScale() {
+      const usage = { 50:'Page', 100:'Surface', 200:'Hover', 300:'Border', 400:'Muted', 500:'Seed', 600:'Action', 700:'Pressed', 800:'Strong', 900:'Dark', 950:'Deep' };
+      $('#scale').innerHTML = scale.map(item => `<button class="swatch" data-copy="${item.hex}" data-apply-color="${item.hex}" data-copy-label="Applied and copied" title="${item.step} · ${usage[item.step]} · 应用并复制 ${item.hex}"><span class="swatch-color" style="background:${item.hex}">${item.step === 600 ? '<span class="swatch-rec">REC</span>' : ''}<span class="swatch-hex">${item.hex}</span></span><span class="swatch-meta"><b>${item.step}</b><span class="token-use">${usage[item.step]}</span><span class="contrast-values">W ${item.ratioOnWhite.toFixed(1)} · K ${item.ratioOnBlack.toFixed(1)}</span></span></button>`).join('');
+    }
+    function fitLabel(ratio, target) {
+      if (ratio >= 7) return 'AAA';
+      if (ratio >= target) return 'PASS';
+      if (ratio >= 3) return '3:1';
+      return 'FAIL';
+    }
+    function fitClass(label) { return label === 'FAIL' ? 'fail' : label === '3:1' ? 'warn' : 'pass'; }
+    function renderContextStatus() {
+      const ratio = contrast(context.text, context.background), pass = ratio >= 4.5;
+      const level = ratio >= 7 ? 'AAA' : pass ? 'AA' : '';
+      const el = $('#contextStatus');
+      el.classList.toggle('pass', pass); el.classList.toggle('fail', !pass);
+      el.innerHTML = `<span class="status-icon" aria-hidden="true">${pass ? '✓' : '!'}</span><span><strong>${pass ? `PASS · ${level}` : 'FAIL'}</strong><small>Text on Background · ${ratio.toFixed(2)}:1<br />Required · 4.5:1</small></span>`;
+      $('#contextCanvas').style.setProperty('--context-bg', context.background);
+      $('#contextCanvas').style.setProperty('--context-text', context.text);
+    }
+    function renderPairings() {
+      const target = Number(targetSelect.value);
+      $('#pairList').innerHTML = ['brand', 'neutral'].map(role => {
+        const name = role === 'brand' ? 'Brand' : 'Neutral', color = candidates[role];
+        const onBackground = contrast(color, context.background), textOnCandidate = contrast(context.text, color);
+        const bgLabel = fitLabel(onBackground, target), textLabel = fitLabel(textOnCandidate, target);
+        return `<button class="pair" data-copy="${name}: ${color}; ${color} on ${context.background}; ${context.text} on ${color}" data-copy-label="Fit result copied" title="复制 ${name} 的 contrast 结果"><span class="pair-swatch" style="background:${color};color:${textColor(color)}">Aa</span><span class="pair-copy"><strong>${name} <em>${color}</em></strong><span>${color} on Background · ${onBackground.toFixed(2)}:1<br />Text on ${name} · ${textOnCandidate.toFixed(2)}:1</span></span><span class="fit-badges"><i class="fit-badge ${fitClass(bgLabel)}">BG ${bgLabel}</i><i class="fit-badge ${fitClass(textLabel)}">TEXT ${textLabel}</i></span></button>`;
+      }).join('');
+    }
+    function renderMatrix() {
+      const target = Number(targetSelect.value); const header = `<div></div>` + scale.map(item => `<div class="matrix-head"><i style="background:${item.hex}"></i>${item.step}</div>`).join('');
+      const rows = scale.map(fg => `<div class="matrix-label"><span style="color:${fg.hex}">●</span>&nbsp; ${fg.step} · ${fg.hex}</div>` + scale.map(bg => {
+        const ratio = contrast(fg.hex, bg.hex), pass = ratio >= target, safeInk = textColor(bg.hex);
+        const ratioBg = safeInk === '#FFFFFF' ? 'rgba(0,0,0,.58)' : 'rgba(255,255,255,.72)';
+        return `<button class="matrix-cell ${pass ? 'pass' : 'fail'}" data-copy="${fg.hex} on ${bg.hex}" data-copy-label="Color pair copied" style="background:${bg.hex};color:${safeInk};--ratio-bg:${ratioBg}" title="${fg.hex} on ${bg.hex} · ${ratio.toFixed(2)}:1 · ${pass ? 'Pass' : 'Fail'}" aria-label="${fg.hex} on ${bg.hex}, contrast ${ratio.toFixed(2)} to 1, ${pass ? 'passes' : 'fails'} current target"><span class="matrix-sample" style="color:${fg.hex}">Aa</span><span class="matrix-ratio">${ratio.toFixed(1)}</span></button>`;
+      }).join('')).join('');
+      $('#matrix').innerHTML = header + rows;
+      const passCount = scale.reduce((sum, fg) => sum + scale.filter(bg => contrast(fg.hex,bg.hex) >= target).length, 0);
+      $('#matrixNote').innerHTML = `<b>${passCount} / ${scale.length * scale.length}</b> pairs pass ${target === 7 ? 'AAA' : target === 3 ? 'AA large text' : 'AA normal text'} · ratio is rounded to one decimal place.`;
+    }
+    function buttonTextFor(background) {
+      const light = '#FFF9F0';
+      return contrast(light, background) >= 4.5 ? light : textColor(background);
+    }
+    function renderPreviews() {
+      const brandScale = makeScaleFor(candidates.brand), neutralScale = makeScaleFor(candidates.neutral);
+      const brandButton = brandScale[6].hex, neutralButton = neutralScale[6].hex;
+      const lightCanvas = context.background, lightText = context.text;
+      const lightCard = shiftLightness(lightCanvas, rgbToHsl(hexToRgb(lightCanvas)).l > 50 ? -3 : 6);
+      const darkCanvas = shiftLightness(lightCanvas, -70), darkText = textColor(darkCanvas), darkCard = shiftLightness(darkCanvas, 5);
+      const setVars = (el, values) => Object.entries(values).forEach(([key, value]) => el.style.setProperty(key, value));
+      setVars($('#lightPreview'), {'--brand-button': brandButton, '--on-brand': buttonTextFor(brandButton), '--neutral-button': neutralButton, '--on-neutral': buttonTextFor(neutralButton), '--candidate-marker': candidates.neutral, '--light-canvas': lightCanvas, '--light-text': lightText, '--demo-card': lightCard, '--demo-text': lightText, '--link': candidates.brand});
+      setVars($('#darkPreview'), {'--brand-button': brandButton, '--on-brand': buttonTextFor(brandButton), '--neutral-button': neutralButton, '--on-neutral': buttonTextFor(neutralButton), '--candidate-marker': candidates.neutral, '--dark-canvas': darkCanvas, '--dark-text': darkText, '--demo-card': darkCard, '--demo-text': darkText, '--link': candidates.brand});
+    }
+    function copy(value, message = 'Copied') {
+      const fallback = () => {
+        const area = document.createElement('textarea');
+        area.value = value; area.setAttribute('readonly', ''); area.style.position = 'fixed'; area.style.opacity = '0';
+        document.body.appendChild(area); area.select();
+        const copied = document.execCommand('copy'); area.remove();
+        if (!copied) throw new Error('Clipboard copy was rejected');
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(value).then(() => showToast(message)).catch(() => { try { fallback(); showToast(message); } catch (error) { showToast('Copy failed — please copy manually'); } });
+        return;
+      }
+      try { fallback(); showToast(message); } catch (error) { showToast('Copy failed — please copy manually'); }
+    }
+    function cssOutput() { return `:root {\n  --color-background: ${context.background};\n  --color-text: ${context.text};\n  --color-brand: ${candidates.brand};\n  --color-neutral: ${candidates.neutral};\n${scale.map(item => `  --color-primary-${item.step}: ${item.hex};`).join('\n')}\n  --color-on-primary: ${textColor(current.hex)};\n  --color-canvas: ${context.background};\n}`; }
+    function jsonOutput() { return JSON.stringify({ context, candidates, activeRole, target: Number(targetSelect.value), activeScale: Object.fromEntries(scale.map(item => [item.step, item.hex])) }, null, 2); }
+    let toastTimer;
+    function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1700); }
+
+    seedColor.addEventListener('input', e => setFromHex(e.target.value));
+    hexInput.addEventListener('change', e => setFromHex(e.target.value));
+    [hueRange, satRange, lightRange].forEach(input => input.addEventListener('input', () => { current.h = Number(hueRange.value); current.s = Number(satRange.value); current.l = Number(lightRange.value); current.hex = rgbToHex(hslToRgb(current.h,current.s,current.l)); candidates[activeRole] = current.hex; updateInputs(); update(); }));
+    backgroundColorInput.addEventListener('input', e => setContextFromHex('background', e.target.value));
+    backgroundHexInput.addEventListener('change', e => setContextFromHex('background', e.target.value));
+    textColorInput.addEventListener('input', e => setContextFromHex('text', e.target.value));
+    textHexInput.addEventListener('change', e => setContextFromHex('text', e.target.value));
+    document.querySelectorAll('.role-mode button').forEach(button => button.addEventListener('click', () => {
+      candidates[activeRole] = current.hex;
+      activeRole = button.dataset.role;
+      const nextHex = candidates[activeRole];
+      current = { hex: nextHex, ...rgbToHsl(hexToRgb(nextHex)) };
+      document.querySelectorAll('.role-mode button').forEach(item => item.classList.toggle('active', item === button));
+      updateInputs(); update();
+    }));
+    targetSelect.addEventListener('change', update);
+    document.addEventListener('click', e => {
+      const copyTarget = e.target.closest('[data-copy]');
+      if (!copyTarget) return;
+      const appliedColor = copyTarget.dataset.applyColor;
+      copy(copyTarget.dataset.copy, copyTarget.dataset.copyLabel || 'Copied');
+      if (appliedColor) {
+        setFromHex(appliedColor);
+        hexInput.focus({ preventScroll: true });
+        hexInput.select();
+      }
+    });
+    $('#copyCss').addEventListener('click', () => copy(cssOutput(), 'CSS variables copied'));
+    $('#copyJson').addEventListener('click', () => copy(jsonOutput(), 'JSON copied'));
+    document.querySelectorAll('[data-preview-theme]').forEach(button => button.addEventListener('click', () => {
+      const theme = button.dataset.previewTheme;
+      document.querySelectorAll('[data-preview-theme]').forEach(item => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      $('#lightPreview').hidden = theme !== 'light';
+      $('#darkPreview').hidden = theme !== 'dark';
+    }));
+
+    const stepDock = $('#stepDock'), stepDockToggle = $('#stepDockToggle');
+    const stepLinks = [...document.querySelectorAll('[data-step-link]')];
+    function setActiveStep(name) { stepLinks.forEach(link => link.classList.toggle('active', link.dataset.stepLink === name)); }
+    stepDockToggle.addEventListener('click', () => {
+      const minimized = stepDock.classList.toggle('minimized');
+      stepDockToggle.textContent = minimized ? '+' : '−';
+      stepDockToggle.setAttribute('aria-expanded', String(!minimized));
+      stepDockToggle.setAttribute('aria-label', minimized ? '展开步骤导航' : '最小化步骤导航');
+    });
+    stepLinks.forEach(link => link.addEventListener('click', event => {
+      event.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      setActiveStep(link.dataset.stepLink);
+    }));
+    const observedTargets = [...document.querySelectorAll('[data-workflow-step]'), $('#export')];
+    const stepObserver = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      setActiveStep(visible.target.id === 'export' ? 'export' : visible.target.dataset.workflowStep);
+    }, { rootMargin: '-20% 0px -58% 0px', threshold: [0, .15, .4] });
+    observedTargets.forEach(target => stepObserver.observe(target));
+
+    updateInputs(); update();
+  </script>
+</body>
+</html>
