@@ -258,6 +258,8 @@ Exit criteria:
 - [x] Include diagnostics in JSON or the UI report, not as silent console-only warnings.
 - [ ] Run the full project verification checklist.
 
+Automated verification result on 2026-07-20: JavaScript syntax, static HTML/selector contracts, deterministic color-engine checks, application startup, role switching, Secondary state, locked semantic regeneration, assignment output, and CSS/JSON export checks pass. Automated Browser control rejected the local `file://` URL by policy, so manual desktop and narrow visual review remains open and the full checklist is not marked complete.
+
 Exit criteria:
 
 - CSS and JSON agree with the visible state.
@@ -305,17 +307,17 @@ Mitigation: resolve repository setup before the source split. Do not begin the s
 
 ## Full success criteria
 
-- [ ] Background and Text remain fixed context inputs.
-- [ ] Brand, Neutral, optional Secondary, Success, Warning, Danger, and Information own independent palettes.
-- [ ] Regular aliases Neutral and does not own a palette.
-- [ ] Every independent palette has 11 tokens from `50` to `950`.
-- [ ] Every `500` token exactly matches its accepted seed.
-- [ ] Semantic suggestions use OKLCH alignment and recognizable hue families.
-- [ ] Every semantic role has measured surface, border/icon, bold, and on-bold assignments.
-- [ ] Normal text, large text, and meaningful non-text indicators are evaluated against the correct targets.
-- [ ] Semantic meaning is not communicated by color alone.
-- [ ] Preview covers all roles in representative components.
-- [ ] CSS and JSON exports separate reference palettes from semantic tokens.
+- [x] Background and Text remain fixed context inputs.
+- [x] Brand, Neutral, optional Secondary, Success, Warning, Danger, and Information own independent palettes.
+- [x] Regular aliases Neutral and does not own a palette.
+- [x] Every independent palette has 11 tokens from `50` to `950`.
+- [x] Every `500` token exactly matches its accepted seed.
+- [x] Semantic suggestions use OKLCH alignment and recognizable hue families.
+- [x] Every semantic role has measured surface, border/icon, bold, and on-bold assignments.
+- [x] Normal text, large text, and meaningful non-text indicators are evaluated against the correct targets.
+- [x] Semantic meaning is not communicated by color alone.
+- [x] Preview covers all roles in representative components.
+- [x] CSS and JSON exports separate reference palettes from semantic tokens.
 - [ ] Direct `file://` opening continues to work.
 - [ ] Static checks and browser checks are reported separately.
 
