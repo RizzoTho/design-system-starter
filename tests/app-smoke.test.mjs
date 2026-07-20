@@ -70,6 +70,8 @@ const workflowTargets = ['step-context', 'step-candidates', 'step-standard', 'pr
 workflowTargets.forEach((element, index) => { element.dataset.workflowStep = ['context', 'candidates', 'standard', 'preview'][index]; });
 
 const documentListeners = {};
+let lastCreatedElement = null;
+let copiedText = '';
 const document = {
   body: { appendChild() {} },
   querySelector(selector) { return selector.startsWith('#') ? elements[selector.slice(1)] || null : null; },
@@ -80,8 +82,8 @@ const document = {
     return [];
   },
   addEventListener(type, listener) { documentListeners[type] = listener; },
-  createElement() { return new FakeElement(); },
-  execCommand() { return true; },
+  createElement() { lastCreatedElement = new FakeElement(); return lastCreatedElement; },
+  execCommand() { copiedText = lastCreatedElement?.value || ''; return true; },
 };
 
 class FakeIntersectionObserver {
@@ -112,6 +114,18 @@ assert.match(elements.roleOverview.innerHTML, /Alias of Neutral/);
 assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 11);
 assert.match(elements.contextStatus.innerHTML, /PASS · AAA/);
 assert.match(elements.pairList.innerHTML, /Information/);
+assert.match(elements.assignmentList.innerHTML, /Uses Neutral assignments/);
+assert.match(elements.lightPreviewContent.innerHTML, /Sync in progress/);
+assert.match(elements.darkPreviewContent.innerHTML, /Could not publish/);
+
+elements.copyJson.dispatch('click');
+const exportedJson = JSON.parse(copiedText);
+assert.equal(exportedJson.roles.regular.aliasOf, 'neutral');
+assert.equal('secondary' in exportedJson.reference, false);
+assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
+elements.copyCss.dispatch('click');
+assert.doesNotMatch(copiedText, /--color-secondary-/);
+assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'regular' } } : null },

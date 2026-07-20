@@ -12,7 +12,6 @@
     contrast,
     textColor,
     makePalette,
-    makeScaleFor,
   } = window.ColorEngine;
   const model = window.ColorRoleModel;
 
@@ -22,6 +21,7 @@
     activeRole: model.defaults.activeRole,
     roles: model.createInitialRoles(),
     palettes: {},
+    assignments: {},
     diagnostics: [],
     secondarySuggestionIndex: 0,
   };
@@ -77,6 +77,7 @@
     }
     state.palettes = palettes;
     state.diagnostics = diagnostics;
+    state.assignments = model.resolveAssignments(palettes, state.roles, state.target);
     scale = paletteForRole(state.activeRole)?.scale || [];
   }
 
@@ -245,16 +246,40 @@
     $('#matrixNote').innerHTML = `<b>${passCount} / ${scale.length * scale.length}</b> pairs pass ${target === 7 ? 'AAA' : target === 3 ? 'AA large text' : 'AA normal text'} · ratio is rounded to one decimal place.`;
   }
 
-  function buttonTextFor(background) {
-    const light = '#FFF9F0';
-    return contrast(light, background) >= 4.5 ? light : textColor(background);
+  function renderAssignments() {
+    const visibleRoles = model.roleOrder.filter(roleId => roleIsEnabled(roleId));
+    $('#assignmentList').innerHTML = visibleRoles.map(roleId => {
+      const definition = model.roles[roleId];
+      if (definition.aliasOf) {
+        return `<div class="assignment-row alias-row"><div><strong>${definition.label}</strong><small>Alias of ${model.roles[definition.aliasOf].label}</small></div><span class="assignment-alias">Uses Neutral assignments</span></div>`;
+      }
+      const themes = state.assignments[roleId];
+      return `<div class="assignment-row"><div><strong>${definition.label}</strong><small>${roleSeed(roleId)}</small></div>${['light', 'dark'].map(theme => {
+        const assignment = themes[theme];
+        return `<div class="assignment-theme"><b>${theme}</b><span title="Subtle ${assignment.subtle.step}" style="--assignment-color:${assignment.subtle.hex}"><i></i>Subtle</span><span title="Border/Icon ${assignment.borderIcon.step} · ${assignment.borderIcon.ratioOnSubtle.toFixed(2)}:1" style="--assignment-color:${assignment.borderIcon.hex}"><i></i>Border ${assignment.borderIcon.pass ? '✓' : '!'}</span><span title="Bold ${assignment.bold.step}" style="--assignment-color:${assignment.bold.hex}"><i></i>Bold</span><span title="On-bold · ${assignment.onBold.ratio.toFixed(2)}:1" style="--assignment-color:${assignment.onBold.hex}"><i></i>On ${assignment.onBold.pass ? '✓' : '!'}</span></div>`;
+      }).join('')}</div>`;
+    }).join('');
+  }
+
+  function previewStatusMarkup(roleId, theme) {
+    const assignment = state.assignments[roleId][theme];
+    const content = {
+      success: ['✓', 'Saved', 'Your changes are ready.'],
+      warning: ['!', 'Check before continuing', 'This action may affect existing settings.'],
+      danger: ['×', 'Could not publish', 'Resolve the highlighted issue and try again.'],
+      information: ['i', 'Sync in progress', 'We will keep this page updated.'],
+    }[roleId];
+    return `<div class="status-example" style="--status-subtle:${assignment.subtle.hex};--status-border:${assignment.borderIcon.hex};--status-bold:${assignment.bold.hex};--status-on:${assignment.onBold.hex}"><span class="status-symbol" aria-hidden="true">${content[0]}</span><span><strong>${content[1]}</strong><small>${content[2]}</small></span><span class="status-pill">${model.roles[roleId].label}</span></div>`;
+  }
+
+  function previewMarkup(theme) {
+    const brand = state.assignments.brand[theme];
+    const neutral = state.assignments.neutral[theme];
+    const secondary = state.assignments.secondary?.[theme];
+    return `<div class="preview-layout"><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button" style="background:${brand.bold.hex};color:${brand.onBold.hex}">Open notes</button><button class="demo-button" style="background:${neutral.bold.hex};color:${neutral.onBold.hex}">Add tag</button>${secondary ? `<button class="demo-button" style="background:${secondary.bold.hex};color:${secondary.onBold.hex}">More</button>` : ''}</div><div class="demo-legend"><span><i style="--legend-color:${brand.bold.hex}"></i>Brand · primary action</span><span><i style="--legend-color:${neutral.bold.hex}"></i>Regular · Neutral alias</span></div></div><div class="status-stack">${model.semanticRoleIds.map(roleId => previewStatusMarkup(roleId, theme)).join('')}</div></div>`;
   }
 
   function renderPreviews() {
-    const brandScale = paletteForRole('brand').scale;
-    const neutralScale = paletteForRole('neutral').scale;
-    const brandButton = brandScale[6].hex;
-    const neutralButton = neutralScale[6].hex;
     const lightCanvas = state.context.background;
     const lightText = state.context.text;
     const lightCard = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
@@ -262,8 +287,10 @@
     const darkText = textColor(darkCanvas);
     const darkCard = shiftLightness(darkCanvas, 5);
     const setVariables = (element, values) => Object.entries(values).forEach(([key, value]) => element.style.setProperty(key, value));
-    setVariables($('#lightPreview'), { '--brand-button': brandButton, '--on-brand': buttonTextFor(brandButton), '--neutral-button': neutralButton, '--on-neutral': buttonTextFor(neutralButton), '--candidate-marker': roleSeed('neutral'), '--light-canvas': lightCanvas, '--light-text': lightText, '--demo-card': lightCard, '--demo-text': lightText, '--link': roleSeed('brand') });
-    setVariables($('#darkPreview'), { '--brand-button': brandButton, '--on-brand': buttonTextFor(brandButton), '--neutral-button': neutralButton, '--on-neutral': buttonTextFor(neutralButton), '--candidate-marker': roleSeed('neutral'), '--dark-canvas': darkCanvas, '--dark-text': darkText, '--demo-card': darkCard, '--demo-text': darkText, '--link': roleSeed('brand') });
+    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--demo-card': lightCard, '--demo-text': lightText });
+    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--demo-card': darkCard, '--demo-text': darkText });
+    $('#lightPreviewContent').innerHTML = previewMarkup('light');
+    $('#darkPreviewContent').innerHTML = previewMarkup('dark');
   }
 
   function renderAll() {
@@ -279,6 +306,7 @@
     renderScale();
     renderDiagnostics();
     renderPairings();
+    renderAssignments();
     renderMatrix();
     renderPreviews();
   }
@@ -400,7 +428,24 @@
       if (!palette) continue;
       for (const token of palette.scale) lines.push(`  --color-${roleId}-${token.step}: ${token.hex};`);
     }
-    lines.push('  --color-regular-500: var(--color-neutral-500);');
+    for (const [roleId, themes] of Object.entries(state.assignments)) {
+      if (roleId === 'regular') continue;
+      for (const theme of ['light', 'dark']) {
+        const assignment = themes[theme];
+        lines.push(`  --color-${roleId}-${theme}-subtle: ${assignment.subtle.hex};`);
+        lines.push(`  --color-${roleId}-${theme}-border-icon: ${assignment.borderIcon.hex};`);
+        lines.push(`  --color-${roleId}-${theme}-bold: ${assignment.bold.hex};`);
+        lines.push(`  --color-${roleId}-${theme}-on-bold: ${assignment.onBold.hex};`);
+      }
+    }
+    lines.push('  --color-regular-light-subtle: var(--color-neutral-light-subtle);');
+    lines.push('  --color-regular-light-border-icon: var(--color-neutral-light-border-icon);');
+    lines.push('  --color-regular-light-bold: var(--color-neutral-light-bold);');
+    lines.push('  --color-regular-light-on-bold: var(--color-neutral-light-on-bold);');
+    lines.push('  --color-regular-dark-subtle: var(--color-neutral-dark-subtle);');
+    lines.push('  --color-regular-dark-border-icon: var(--color-neutral-dark-border-icon);');
+    lines.push('  --color-regular-dark-bold: var(--color-neutral-dark-bold);');
+    lines.push('  --color-regular-dark-on-bold: var(--color-neutral-dark-on-bold);');
     lines.push('}');
     return lines.join('\n');
   }
@@ -412,6 +457,7 @@
       target: state.target,
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
       reference,
+      semantic: state.assignments,
       diagnostics: state.diagnostics,
     }, null, 2);
   }

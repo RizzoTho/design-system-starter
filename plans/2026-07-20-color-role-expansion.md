@@ -170,7 +170,7 @@ Exit criteria:
 - [x] Implement `Regular` as a read-through alias of `Neutral`.
 - [x] Make `Secondary` optional with `none`, `analogous`, and `contrasting` strategies.
 - [x] Add clear role definitions and usage guidance to the UI.
-- [ ] Ensure a role cannot bypass the shared palette, report, preview, and export pipeline.
+- [x] Ensure a role cannot bypass the shared palette, report, preview, and export pipeline.
 - [x] Preserve independent seeds and locks when switching roles.
 
 Exit criteria:
@@ -220,12 +220,12 @@ Exit criteria:
 
 ### Phase 5: Resolve semantic assignments
 
-- [ ] Resolve subtle surface, border/icon, bold surface, and on-bold foreground for each semantic role.
-- [ ] Add a semantic assignment report separate from the reference scale.
-- [ ] Extend previews to include neutral/default, success, warning, danger, and information components.
-- [ ] Keep one full-width preview visible at a time and switch Light / Dark locally inside Preview.
-- [ ] Keep color from being the only semantic signal by including text and icons.
-- [ ] Update the matrix to inspect the active palette without naming or assigning hue semantics inside the matrix.
+- [x] Resolve subtle surface, border/icon, bold surface, and on-bold foreground for each semantic role.
+- [x] Add a semantic assignment report separate from the reference scale.
+- [x] Extend previews to include neutral/default, success, warning, danger, and information components.
+- [x] Keep one full-width preview visible at a time and switch Light / Dark locally inside Preview.
+- [x] Keep color from being the only semantic signal by including text and icons.
+- [x] Update the matrix to inspect the active palette without naming or assigning hue semantics inside the matrix.
 
 Exit criteria:
 
@@ -235,13 +235,13 @@ Exit criteria:
 
 ### Phase 6: Build the starter quick-pick flow
 
-- [ ] Keep the ordered workflow: Context, Colors, Standard.
-- [ ] In Colors, present Brand first, Neutral second, and Secondary as optional.
-- [ ] Put generated semantic roles behind one concise suggestion action.
-- [ ] Provide an overview showing all eight roles without opening eight full editors.
-- [ ] Reveal detailed scale controls only for the active role.
-- [ ] Keep Preview and Export as unnumbered result destinations.
-- [ ] Keep theme switching inside Preview; Standard owns only the WCAG target.
+- [x] Keep the ordered workflow: Context, Colors, Standard.
+- [x] In Colors, present Brand first, Neutral second, and Secondary as optional.
+- [x] Put generated semantic roles behind one concise suggestion action.
+- [x] Provide an overview showing all eight roles without opening eight full editors.
+- [x] Reveal detailed scale controls only for the active role.
+- [x] Keep Preview and Export as unnumbered result destinations.
+- [x] Keep theme switching inside Preview; Standard owns only the WCAG target.
 
 Exit criteria:
 
@@ -251,11 +251,11 @@ Exit criteria:
 
 ### Phase 7: Extend export and complete verification
 
-- [ ] Export all enabled reference palettes.
-- [ ] Export semantic assignments separately from reference tokens.
-- [ ] Represent Regular as an alias in JSON rather than duplicated values.
-- [ ] Omit disabled Secondary tokens cleanly.
-- [ ] Include diagnostics in JSON or the UI report, not as silent console-only warnings.
+- [x] Export all enabled reference palettes.
+- [x] Export semantic assignments separately from reference tokens.
+- [x] Represent Regular as an alias in JSON rather than duplicated values.
+- [x] Omit disabled Secondary tokens cleanly.
+- [x] Include diagnostics in JSON or the UI report, not as silent console-only warnings.
 - [ ] Run the full project verification checklist.
 
 Exit criteria:

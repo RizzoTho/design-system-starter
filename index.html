@@ -95,7 +95,11 @@
         </aside>
         <div class="step-content">
           <section class="workflow-block fit-report-block">
-            <div class="safe-pair"><h3>Fit report</h3><p>用你固定的 Background / Text，分别检查 Brand 和 Neutral 是否达到当前 target。</p><div id="pairList" class="pair-list"></div></div>
+            <div class="safe-pair"><h3>Fit report</h3><p>检查每个启用角色与固定 Background 的关系，并显示实际 on-color。Regular 与 Neutral 共用结果。</p><div id="pairList" class="pair-list"></div></div>
+          </section>
+          <section class="workflow-block assignment-block">
+            <div class="section-head"><div><h2>Semantic assignments</h2><p>Reference scale 是色阶；这里才是组件实际使用的 subtle、border/icon、bold 与 on-bold。Border/Icon 固定检查 3:1，文字使用当前 target。</p></div><span class="mono" style="color:var(--muted);font-size:10px">LIGHT / DARK</span></div>
+            <div id="assignmentList" class="assignment-list"></div>
           </section>
           <section class="workflow-block">
             <div class="section-head"><div><h2>Contrast matrix</h2><p>目标：至少得到一组浅底深字和一组深底浅字，再从其余达标组合里选择 hover / pressed 等状态。它不是只为按钮服务。行是前景，列是背景；绿色边框表示通过，点击可复制。</p></div><span class="mono" style="color:var(--muted);font-size:10px">CLICK TO COPY</span></div>
@@ -108,8 +112,8 @@
     <section id="preview" class="preview-section" data-workflow-step="preview">
       <div class="section-head"><div><h2>Component preview</h2><p>在 Light 和 Dark surface 中分别检查当前组件。Button 使用 600，on-text 由实测 contrast 决定。</p></div><div class="mode preview-tabs" aria-label="Preview theme"><button class="active" data-preview-theme="light" aria-pressed="true">Light</button><button data-preview-theme="dark" aria-pressed="false">Dark</button></div></div>
       <div class="preview-grid">
-        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Fixed context</strong></div><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button demo-brand">Open notes</button><button class="demo-button demo-neutral">Add tag</button><button class="demo-link">Dismiss</button></div><div class="demo-legend"><span><i style="--legend-color:var(--brand-button)"></i>Brand · primary</span><span><i style="--legend-color:var(--neutral-button)"></i>Neutral · secondary</span></div></div></div>
-        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Dark surface</strong></div><div class="demo-card"><h4>Weekly review</h4><p>Three things worth carrying into next week.</p><div class="demo-actions"><button class="demo-button demo-brand">Open notes</button><button class="demo-button demo-neutral">Add tag</button><button class="demo-link">Dismiss</button></div><div class="demo-legend"><span><i style="--legend-color:var(--brand-button)"></i>Brand · primary</span><span><i style="--legend-color:var(--neutral-button)"></i>Neutral · secondary</span></div></div></div>
+        <div id="lightPreview" class="preview light"><div class="preview-top"><strong>Light components</strong></div><div id="lightPreviewContent"></div></div>
+        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong>Dark components</strong></div><div id="darkPreviewContent"></div></div>
       </div>
     </section>
     <section id="export" class="export-section"><div class="export-copy"><h2>Export colors</h2><p>把当前颜色和使用关系复制为 CSS variables 或 JSON，交给项目直接使用。</p></div><div class="actions"><button id="copyCss" class="button primary">Copy CSS variables</button><button id="copyJson" class="button">Copy JSON</button></div></section>

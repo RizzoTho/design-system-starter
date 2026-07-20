@@ -15,7 +15,7 @@ Do not turn it into a generic color picker. Its core question is:
 - `index.html` owns the runnable page structure and loads the standalone source files.
 - `styles.css` owns all visual and responsive styles.
 - `js/color-engine.js` owns pure color parsing, conversion, scale, luminance, and contrast calculations.
-- `js/role-model.js` owns role definitions and default color state.
+- `js/role-model.js` owns role definitions, suggestions, palette aliases, semantic assignment resolution, and default color state.
 - `js/app.js` owns the single mutable state, rendering, interaction, navigation, copy, and export behavior.
 - `AGENTS.md` owns the project intent and maintenance rules.
 - There is currently no build step, package manager, framework, or generated source.
@@ -104,7 +104,7 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 For every behavior or layout change:
 
 1. Run `node --check` on every JavaScript owner.
-2. Run `node tests/static-contract.test.mjs` and `node tests/color-engine.test.mjs`.
+2. Run `node tests/static-contract.test.mjs`, `node tests/color-engine.test.mjs`, and `node tests/app-smoke.test.mjs`.
 3. Manually verify Context PASS and FAIL states with at least one high-contrast and one low-contrast pair.
 4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.

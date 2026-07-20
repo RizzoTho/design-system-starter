@@ -64,4 +64,21 @@ for (const roleId of model.semanticRoleIds) {
   assert.ok(distance < 3, `${roleId} drifted from its semantic hue family`);
 }
 
+const roleState = model.createInitialRoles();
+const palettes = {};
+for (const roleId of model.paletteOwnerIds) {
+  const role = roleState[roleId];
+  if (role.enabled && role.seed) palettes[roleId] = engine.makePalette(role.seed, { family: roleId });
+}
+const assignments = model.resolveAssignments(palettes, roleState, 4.5);
+assert.equal(assignments.regular.aliasOf, 'neutral');
+assert.equal('secondary' in assignments, false);
+for (const roleId of ['brand', 'neutral', ...model.semanticRoleIds]) {
+  for (const theme of ['light', 'dark']) {
+    assert.equal(assignments[roleId][theme].borderIcon.pass, true, `${roleId} ${theme} border failed 3:1`);
+    assert.equal(assignments[roleId][theme].onBold.pass, true, `${roleId} ${theme} on-bold failed target`);
+  }
+}
+assert.equal(assignments.warning.light.onBold.hex, '#111111');
+
 console.log('color-engine: all deterministic checks passed');

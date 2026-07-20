@@ -147,6 +147,62 @@
     };
   }
 
+  function tokenAt(palette, step) {
+    const token = palette.scale.find(item => item.step === step);
+    if (!token) throw new Error(`Palette is missing token ${step}`);
+    return token;
+  }
+
+  function strongestContrastToken(palette, candidates, against) {
+    return candidates
+      .map(step => tokenAt(palette, step))
+      .sort((first, second) => window.ColorEngine.contrast(second.hex, against) - window.ColorEngine.contrast(first.hex, against))[0];
+  }
+
+  function resolveAssignment(roleId, palette, target, theme = 'light') {
+    const dark = theme === 'dark';
+    const subtle = tokenAt(palette, dark ? 900 : 100);
+    const borderCandidates = dark ? [700, 600, 500, 400, 300] : [400, 500, 600, 700];
+    const boldCandidates = dark ? [400, 300, 500, 600] : [600, 700, 800, 500];
+    const border = borderCandidates
+      .map(step => tokenAt(palette, step))
+      .find(token => window.ColorEngine.contrast(token.hex, subtle.hex) >= 3)
+      || strongestContrastToken(palette, borderCandidates, subtle.hex);
+    const bold = boldCandidates
+      .map(step => tokenAt(palette, step))
+      .find(token => {
+        const onColor = window.ColorEngine.textColor(token.hex);
+        return window.ColorEngine.contrast(onColor, token.hex) >= target
+          && window.ColorEngine.contrast(token.hex, subtle.hex) >= 3;
+      })
+      || strongestContrastToken(palette, boldCandidates, subtle.hex);
+    const onBold = window.ColorEngine.textColor(bold.hex);
+    const borderRatio = window.ColorEngine.contrast(border.hex, subtle.hex);
+    const onBoldRatio = window.ColorEngine.contrast(onBold, bold.hex);
+
+    return {
+      roleId,
+      theme,
+      subtle: { step: subtle.step, hex: subtle.hex },
+      borderIcon: { step: border.step, hex: border.hex, ratioOnSubtle: borderRatio, pass: borderRatio >= 3 },
+      bold: { step: bold.step, hex: bold.hex },
+      onBold: { hex: onBold, ratio: onBoldRatio, pass: onBoldRatio >= target },
+    };
+  }
+
+  function resolveAssignments(palettes, roleState, target) {
+    const assignments = {};
+    for (const roleId of paletteOwnerIds) {
+      if (!palettes[roleId] || roleState[roleId].enabled === false) continue;
+      assignments[roleId] = {
+        light: resolveAssignment(roleId, palettes[roleId], target, 'light'),
+        dark: resolveAssignment(roleId, palettes[roleId], target, 'dark'),
+      };
+    }
+    assignments.regular = { aliasOf: 'neutral' };
+    return assignments;
+  }
+
   const defaults = Object.freeze({
     current: Object.freeze({ hex: '#D8664A', h: 11, s: 64, l: 57 }),
     candidates: Object.freeze({ brand: '#D8664A', neutral: '#6F736E' }),
@@ -168,5 +224,7 @@
     makeSemanticSuggestion,
     makeSemanticSuggestions,
     createInitialRoles,
+    resolveAssignment,
+    resolveAssignments,
   });
 })();
