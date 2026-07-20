@@ -4,11 +4,11 @@
 
 This project is a small, standalone color design system tool inspired by MGifford UI Palette Generator.
 
-The user already knows the page `Background` and `Text` colors. The tool helps them evaluate and tune `Brand` and `Neutral` colors against that fixed context, generate usable scales, inspect WCAG contrast relationships, preview components, and export tokens.
+The user already knows the page `Background` and `Text` colors. The tool helps them define `Brand` and `Neutral`, decide whether an optional `Secondary` is needed, generate four recognizable semantic families, inspect WCAG contrast relationships, preview components, and export usable colors.
 
 Do not turn it into a generic color picker. Its core question is:
 
-> Given a fixed background and text color, are these Brand and Neutral colors suitable for this interface?
+> Given a fixed background and text color, can this starter palette become a coherent, accessible interface color system?
 
 ## Current source of truth
 
@@ -21,11 +21,14 @@ Do not turn it into a generic color picker. Its core question is:
 - There is currently no build step, package manager, framework, or generated source.
 - The page must continue to work when `index.html` is opened directly through `file://`.
 
-## Planned role expansion
+## Eight-role model
 
 - `docs/color-role-model.md` owns the accepted product and color decisions for the eight-role expansion.
 - `plans/2026-07-20-color-role-expansion.md` owns the implementation sequence and acceptance gates.
-- The source split is complete. The eight-role expansion is planned but not yet implemented.
+- Eight visible roles are `Brand`, `Neutral`, optional `Secondary`, `Regular`, `Success`, `Warning`, `Danger`, and `Information`.
+- `Regular` is a read-through alias of `Neutral`; it never owns a duplicate palette.
+- Semantic families keep recognizable hue ranges. Brand may influence their tonal and chroma character, but not rename or replace their semantic identity.
+- Hue-family names such as Coral, Teal, or Amber are not part of the user-facing model. The UI names purpose; HEX and OKLCH own the actual color.
 
 If the project later adopts a framework or build system, update this file in the same change and identify the new source files and build output explicitly.
 
@@ -34,12 +37,12 @@ If the project later adopts a framework or build system, update this file in the
 The workflow has three ordered steps plus two separate result destinations:
 
 1. `Context`: set the fixed Background and Text colors and show an explicit PASS or FAIL result for normal text at 4.5:1.
-2. `Colors`: switch between Brand and Neutral, tune the candidate, and generate a 50–950 scale.
+2. `Colors`: define Brand and Neutral, optionally add Secondary, generate semantic suggestions, and inspect each active 50–950 scale.
 3. `Standard`: choose the WCAG target, inspect the fit report, and inspect the contrast matrix.
 
 After those steps:
 
-- `Preview`: review Brand and Neutral in light and dark component examples. It is an unnumbered result destination, not a workflow step. Light and Dark are switched locally inside Preview and are not shown simultaneously.
+- `Preview`: review the current system in light and dark component examples. It is an unnumbered result destination, not a workflow step. Light and Dark are switched locally inside Preview and are not shown simultaneously.
 - `Export`: copy CSS variables or JSON. It is an unnumbered result destination alongside Preview.
 
 The floating Steps window is the navigation owner for this sequence. Only Context, Colors, and Standard carry step numbers. `Preview` and `Export` remain separate, unnumbered entries at the same navigation level after the steps. Every destination must have a stable anchor and participate in active-section tracking.
@@ -48,7 +51,9 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 - WCAG contrast uses relative luminance. Keep the calculation deterministic and centralized in `luminance()` and `contrast()`.
 - `Context` always evaluates `Text on Background` against 4.5:1 and reports `PASS · AA`, `PASS · AAA`, or `FAIL` visibly. Do not communicate status through color alone.
-- The selectable target controls Brand, Neutral, and matrix evaluation. Current targets are AA normal text 4.5:1, AA large text 3:1, and AAA normal text 7:1.
+- The selectable target controls active roles, fit reports, semantic assignments, and matrix evaluation. Current targets are AA normal text 4.5:1, AA large text 3:1, and AAA normal text 7:1.
+- Reference palettes are generated in OKLCH. Keep the exact input seed at `500`, use one shared tonal rhythm, and apply per-family chroma limits.
+- If an OKLCH request is outside sRGB, reduce chroma while preserving lightness and hue as far as possible, and expose a diagnostic instead of silently clipping.
 - Generated scale usage labels are recommendations, not guarantees:
   - 50–200: page and surface
   - 300–400: border and muted
@@ -62,9 +67,11 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 ## Interaction contract
 
-- Background, Text, Brand, and Neutral accept direct HEX input and native color input.
+- Background, Text, and every enabled palette owner accept direct HEX input and native color input.
 - Invalid HEX must be marked invalid without silently changing the last valid color.
-- Clicking a Generated scale token copies its HEX value and applies it to the active Brand or Neutral input.
+- Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
+- Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
+- Disabling Secondary must remove its palettes and exports without leaving stale tokens.
 - Clicking a matrix cell copies the foreground/background pair.
 - Copy feedback must be short, use white text, and must not obscure the main task.
 - Generated scale tokens have no hover movement. Avoid decorative motion that suggests a state change where none exists.
@@ -96,24 +103,18 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 For every behavior or layout change:
 
-1. Parse the inline script with Node or run the project's future syntax/build check.
-2. Check for duplicate HTML IDs and JavaScript selectors pointing to missing IDs.
+1. Run `node --check` on every JavaScript owner.
+2. Run `node tests/static-contract.test.mjs` and `node tests/color-engine.test.mjs`.
 3. Manually verify Context PASS and FAIL states with at least one high-contrast and one low-contrast pair.
-4. Verify Brand and Neutral retain separate values when switching roles.
+4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.
 6. Change the WCAG target and confirm Fit report and Contrast matrix update together.
 7. Check the Steps links, minimize control, Preview entry, and Export entry.
 8. Check desktop and narrow layouts. The scale and matrix may scroll horizontally, but controls and copy must remain usable.
 9. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
 
-## Moving to a standalone side project
+## Repository continuity
 
-This directory currently lives under `rizagent/outputs/`, which is treated as generated/local output by the parent workspace and is normally ignored by Git.
-
-When moving it into its own repository:
-
-- Move `AGENTS.md` with the project.
-- Decide explicitly whether `index.html` remains the source of truth or becomes generated output.
-- Add a README for human-facing setup and product explanation; do not duplicate this entire maintenance contract there.
-- Add Git, hosting, package, or deployment files only when the standalone project actually needs them.
-- Re-run the full verification checklist after the move before calling the migration complete.
+- This directory is the standalone repository. Keep `AGENTS.md`, the decision doc, tests, and source changes together.
+- `index.html` remains the direct runnable entry point; it is not generated output.
+- Add hosting, package, or deployment files only when the project actually needs them.

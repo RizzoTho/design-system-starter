@@ -8,11 +8,11 @@ The accepted product and color decisions live in [`docs/color-role-model.md`](..
 
 ## Current state
 
-- `index.html` is the complete runnable product.
+- `index.html` is the direct runnable entry point; source ownership is split across HTML, CSS, and three JavaScript files.
 - The project has no build step, package manager, or framework.
 - The page must continue to work when opened through `file://`.
-- The current UI supports fixed Background and Text, Brand and Neutral candidates, one active generated scale, fit reporting, a contrast matrix, previews, and export.
-- This directory is not currently a Git repository. The planned source split qualifies as a substantial refactor, so a recoverable baseline is required before execution.
+- Phase 0 and Phase 1 established the Git baseline and split the standalone sources without adding a build step.
+- Phase 2 through Phase 4 are in progress: the eight-role state, OKLCH engine, role overview, Secondary strategies, semantic suggestions, locks, and regenerate controls are implemented; semantic component assignments and complete Preview coverage remain later phases.
 
 ## Constraints
 
@@ -166,12 +166,12 @@ Exit criteria:
 
 ### Phase 2: Introduce the role model
 
-- [ ] Add all eight visible roles to the central model.
-- [ ] Implement `Regular` as a read-through alias of `Neutral`.
-- [ ] Make `Secondary` optional with `none`, `analogous`, and `contrasting` strategies.
-- [ ] Add clear role definitions and usage guidance to the UI.
+- [x] Add all eight visible roles to the central model.
+- [x] Implement `Regular` as a read-through alias of `Neutral`.
+- [x] Make `Secondary` optional with `none`, `analogous`, and `contrasting` strategies.
+- [x] Add clear role definitions and usage guidance to the UI.
 - [ ] Ensure a role cannot bypass the shared palette, report, preview, and export pipeline.
-- [ ] Preserve independent seeds and locks when switching roles.
+- [x] Preserve independent seeds and locks when switching roles.
 
 Exit criteria:
 
@@ -181,22 +181,22 @@ Exit criteria:
 
 ### Phase 3: Replace HSL scale generation with OKLCH
 
-- [ ] Implement sRGB ↔ OKLab ↔ OKLCH conversion.
-- [ ] Define one shared tonal curve for `50` through `950`.
-- [ ] Define per-family chroma limits rather than forcing one saturation value.
-- [ ] Preserve the exact seed HEX at `500`.
-- [ ] Reduce chroma for out-of-gamut results while preserving lightness and hue as far as possible.
-- [ ] Emit a diagnostic when gamut reduction occurs.
-- [ ] Add deterministic Node tests.
+- [x] Implement sRGB ↔ OKLab ↔ OKLCH conversion.
+- [x] Define one shared tonal curve for `50` through `950`.
+- [x] Define per-family chroma limits rather than forcing one saturation value.
+- [x] Preserve the exact seed HEX at `500`.
+- [x] Reduce chroma for out-of-gamut results while preserving lightness and hue as far as possible.
+- [x] Emit a diagnostic when gamut reduction occurs.
+- [x] Add deterministic Node tests.
 
 Required tests:
 
-- [ ] HEX parsing rejects invalid values.
-- [ ] Conversion round trips stay within the agreed tolerance.
-- [ ] `500` equals the input seed exactly for every palette owner.
-- [ ] The 11 scale steps are monotonic in perceived lightness.
-- [ ] Gamut reduction returns valid sRGB and records a diagnostic.
-- [ ] Contrast is calculated from unrounded values.
+- [x] HEX parsing rejects invalid values.
+- [x] Conversion round trips stay within the agreed tolerance.
+- [x] `500` equals the input seed exactly for every palette owner.
+- [x] The 11 scale steps are monotonic in perceived lightness.
+- [x] Gamut reduction returns valid sRGB and records a diagnostic.
+- [x] Contrast is calculated from unrounded values.
 
 Exit criteria:
 
@@ -205,12 +205,12 @@ Exit criteria:
 
 ### Phase 4: Generate Secondary and semantic suggestions
 
-- [ ] Generate up to three Secondary suggestions from the chosen strategy.
-- [ ] Generate Success, Warning, Danger, and Information from fixed semantic hue families.
-- [ ] Let Brand influence tonal rhythm and chroma character, not semantic hue identity.
-- [ ] Add lock, adjust, and regenerate controls per independent role.
-- [ ] Keep Warning's dark on-color option when light text fails.
-- [ ] Show why a suggestion is usable: representative component, ratio, and PASS/FAIL.
+- [x] Generate up to three Secondary suggestions from the chosen strategy.
+- [x] Generate Success, Warning, Danger, and Information from fixed semantic hue families.
+- [x] Let Brand influence tonal rhythm and chroma character, not semantic hue identity.
+- [x] Add lock, adjust, and regenerate controls per independent role.
+- [x] Keep Warning's dark on-color option when light text fails.
+- [x] Show why a suggestion is usable: representative component, ratio, and PASS/FAIL.
 
 Exit criteria:
 

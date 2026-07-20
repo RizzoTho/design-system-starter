@@ -11,7 +11,7 @@
     <header>
       <div>
         <h1><span class="title-main">COLOR DESIGN SYSTEM</span><span class="title-sub">for starter</span></h1>
-        <p class="lede">先固定 Background / Text，再判断 Brand / Neutral 是否满足 WCAG 2.2。Normal text 默认以 4.5:1 为验收线。</p>
+        <p class="lede">先固定 Background / Text，再建立 Brand、Neutral 与语义角色。每一步都用实际 contrast 验证，不靠色号猜可读性。</p>
         <div class="wcag-intro" aria-label="WCAG contrast target 简介">
           <div class="wcag-level"><strong>3:1 · AA 大字</strong><p>只适合约 24px 常规字，或 19px 粗体以上。</p></div>
           <div class="wcag-level"><strong>4.5:1 · AA 正文</strong><p>多数界面文字的实用起点，默认先过这条。</p></div>
@@ -43,23 +43,38 @@
 
       <section id="step-candidates" class="workflow-section" data-workflow-step="candidates">
         <aside class="step-controls candidate">
-          <div class="step-heading"><b>02</b><div><strong>Colors</strong><small>切换 Brand / Neutral，再用 picker 或 HSL 微调。</small></div></div>
+          <div class="step-heading"><b>02</b><div><strong>Colors</strong><small>先定 Brand / Neutral，再生成可选与语义角色。</small></div></div>
           <div class="field">
-            <label>正在测试</label>
-            <div class="mode role-mode"><button class="active" data-role="brand">Brand</button><button data-role="neutral">Neutral</button></div>
+            <label>当前角色</label>
+            <div id="roleTabs" class="role-tabs" aria-label="Color roles"></div>
+            <p id="activeRoleDescription" class="field-help"></p>
           </div>
           <div class="field">
             <label for="seedColor"><span id="candidateLabel">Brand color</span> <span id="seedValue" class="value">#D8664A</span></label>
             <div class="seed-picker"><input id="seedColor" type="color" value="#d8664a" aria-label="选择候选色" /></div>
           </div>
           <div class="field"><label for="hexInput">HEX</label><input id="hexInput" class="text-input value" value="#D8664A" spellcheck="false" maxlength="7" aria-label="输入候选 HEX 色值" /></div>
-          <div class="field"><label for="hueRange">Hue <span id="hueValue" class="value">11°</span></label><div class="range-row"><input id="hueRange" class="range" type="range" min="0" max="360" value="11" /><span class="value">360°</span></div></div>
-          <div class="field"><label for="satRange">Saturation <span id="satValue" class="value">64%</span></label><input id="satRange" class="range" type="range" min="0" max="100" value="64" /></div>
-          <div class="field"><label for="lightRange">Lightness <span id="lightValue" class="value">57%</span></label><input id="lightRange" class="range" type="range" min="5" max="95" value="57" /></div>
+          <div class="field"><label for="hueRange">Hue <span id="hueValue" class="value">30°</span></label><div class="range-row"><input id="hueRange" class="range" type="range" min="0" max="360" value="30" /><span class="value">360°</span></div></div>
+          <div class="field"><label for="chromaRange">Chroma <span id="chromaValue" class="value">0.16</span></label><input id="chromaRange" class="range" type="range" min="0" max="0.3" step="0.001" value="0.16" /></div>
+          <div class="field"><label for="lightRange">Lightness <span id="lightValue" class="value">65%</span></label><input id="lightRange" class="range" type="range" min="0.05" max="0.95" step="0.001" value="0.65" /></div>
+          <div id="secondaryControls" class="field role-config" hidden>
+            <label for="secondaryStrategy">Secondary strategy</label>
+            <select id="secondaryStrategy"><option value="none">不使用</option><option value="analogous">近似色</option><option value="contrasting">对比色</option></select>
+            <div id="secondarySuggestions" class="suggestion-list"></div>
+          </div>
+          <div class="role-actions">
+            <button id="lockRole" class="button" type="button" aria-pressed="false">Lock role</button>
+            <button id="regenerateRole" class="button" type="button">Regenerate</button>
+          </div>
+          <button id="generateSemantics" class="button primary full-button" type="button">Generate semantic colors</button>
         </aside>
         <div class="step-content">
+          <section class="workflow-block role-overview-block">
+            <div class="section-head"><div><h2>Color roles</h2><p>8 个角色，最多 7 套独立 palette。Regular 直接复用 Neutral；Secondary 没有明确用途时保持关闭。</p></div><span class="mono" style="color:var(--muted);font-size:10px">SELECT TO EDIT</span></div>
+            <div id="roleOverview" class="role-overview"></div>
+          </section>
           <section class="workflow-block candidate-summary">
-            <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · HSL 11 64 57</div></div><div class="label">automatically recalculates on input</div></div>
+            <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · OKLCH</div></div><div id="summaryNote" class="label">500 keeps the exact seed</div></div>
           </section>
           <section class="workflow-block">
             <div class="section-head"><div><h2>Generated scale</h2><p>当前选中的 <span id="scaleRole">Brand</span> 推导 50 → 950；点击色块会复制色值，并应用到当前 Colors 输入。</p></div><span id="scaleCount" class="mono" style="color:var(--muted);font-size:10px">11 TOKENS</span></div>
@@ -68,6 +83,7 @@
             </div>
             <p class="scale-key">用途是推荐语义，是否可用仍以当前 target 为准。W / K 表示该色分别与 White / Black 的 contrast ratio。</p>
             <div id="scale" class="scale"></div>
+            <p id="scaleDiagnostics" class="diagnostic-note" hidden></p>
           </section>
         </div>
       </section>
@@ -82,7 +98,7 @@
             <div class="safe-pair"><h3>Fit report</h3><p>用你固定的 Background / Text，分别检查 Brand 和 Neutral 是否达到当前 target。</p><div id="pairList" class="pair-list"></div></div>
           </section>
           <section class="workflow-block">
-            <div class="section-head"><div><h2>Contrast matrix</h2><p>目标：找出当前色阶中达到所选 WCAG 标准的前景 / 背景组合，作为文字、surface 和组件状态的配色依据。行是前景色，列是背景色；绿色边框表示通过，点击可复制组合。</p></div><span class="mono" style="color:var(--muted);font-size:10px">CLICK TO COPY</span></div>
+            <div class="section-head"><div><h2>Contrast matrix</h2><p>目标：至少得到一组浅底深字和一组深底浅字，再从其余达标组合里选择 hover / pressed 等状态。它不是只为按钮服务。行是前景，列是背景；绿色边框表示通过，点击可复制。</p></div><span class="mono" style="color:var(--muted);font-size:10px">CLICK TO COPY</span></div>
             <div class="matrix-wrap"><div id="matrix" class="matrix"></div></div><p id="matrixNote" class="matrix-note"></p>
           </section>
         </div>

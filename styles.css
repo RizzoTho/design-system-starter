@@ -93,7 +93,7 @@ h1 { margin: 10px 0 12px; color: #2b241d; font: 500 clamp(38px, 6vw, 76px)/.92 v
 .step-dock-body { display: grid; gap: 3px; padding: 0 7px 8px; }
 .step-link { display: grid; grid-template-columns: 28px 1fr; gap: 7px; align-items: center; padding: 9px 8px; border-radius: 8px; color: rgba(255,250,242,.68); text-decoration: none; font-size: 12px; transition: color 140ms ease, background-color 140ms ease, transform 140ms var(--ease-out); }
 .step-link b { font: 500 10px var(--font-title); opacity: .62; }
-.step-icon { width: 28px; height: 16px; display: grid; place-items: center; color: currentColor; opacity: .62; }
+.step-icon { width: 14px; height: 14px; display: grid; place-items: center; justify-self: start; color: currentColor; opacity: .62; }
 .step-icon svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
 .step-link strong { font: 500 12px var(--font-title); }
 .step-link.active { color: #fffaf2; background: rgba(255,255,255,.12); }
@@ -114,6 +114,7 @@ h1 { margin: 10px 0 12px; color: #2b241d; font: 500 clamp(38px, 6vw, 76px)/.92 v
 .step-heading small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.35; }
 .field { margin-top: 18px; }
 .field label { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+.field-help { margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .value { color: var(--ink); font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
 .seed-picker { width: 100%; height: 112px; padding: 0; border: 1px solid rgba(255,255,255,.28); border-radius: 13px; overflow: hidden; background: transparent; }
 .seed-picker input { width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; }
@@ -127,7 +128,22 @@ h1 { margin: 10px 0 12px; color: #2b241d; font: 500 clamp(38px, 6vw, 76px)/.92 v
 .mode button { color: var(--muted); background: transparent; border: 0; border-radius: 7px; padding: 8px 6px; font-size: 11px; }
 .mode button { transition: transform 140ms var(--ease-out); }
 .mode button.active { color: var(--ink); background: #fffaf2; box-shadow: inset 0 0 0 1px var(--line); }
-.role-mode button { text-transform: uppercase; letter-spacing: .06em; }
+.role-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.role-tab { min-width: 0; display: grid; grid-template-columns: 10px minmax(0, 1fr); align-items: center; gap: 7px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: rgba(255,250,242,.55); text-align: left; font-size: 10px; }
+.role-tab i { width: 10px; height: 10px; border-radius: 99px; background: var(--role-color); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.role-tab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.role-tab em { grid-column: 2; margin-top: -5px; color: var(--muted); font: 8px "SFMono-Regular", Consolas, monospace; font-style: normal; text-transform: uppercase; }
+.role-tab.active { border-color: var(--ui-highlight-strong); background: #fffaf2; box-shadow: 0 0 0 2px rgba(169,107,33,.1); }
+.role-tab.disabled-role { color: var(--muted); }
+.role-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 18px; }
+.role-actions .button { min-width: 0; padding-inline: 7px; }
+.full-button { width: 100%; margin-top: 8px; }
+.button:disabled, input:disabled { cursor: not-allowed; opacity: .5; }
+.role-config select { margin-bottom: 8px; }
+.suggestion-list { display: grid; gap: 6px; }
+.suggestion { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #fffaf2; text-align: left; font-size: 9px; }
+.suggestion i { width: 18px; height: 18px; border-radius: 5px; }
+.suggestion b { color: var(--muted); font: 8px "SFMono-Regular", Consolas, monospace; font-weight: 400; }
 .mini-color-row { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 7px; }
 .mini-picker { height: 42px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.24); }
 .mini-picker input { display: block; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer; }
@@ -145,11 +161,23 @@ main { min-width: 0; }
 .seed-summary .label { font-size: 10px; opacity: .7; }
 .seed-summary h2 { margin: 42px 0 8px; font: 500 clamp(28px, 4vw, 48px)/.94 var(--font-title); letter-spacing: -.045em; }
 .seed-summary .hex { font: 12px "SFMono-Regular", Consolas, monospace; opacity: .72; }
+.role-overview-block { width: min(100%, 980px); }
+.role-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.role-card { min-width: 0; display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: rgba(255,250,242,.46); text-align: left; }
+.role-card.active { border-color: var(--ui-highlight-strong); box-shadow: 0 0 0 2px rgba(169,107,33,.1); }
+.role-card-swatch { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 8px; font: 600 10px var(--font-title); }
+.role-card strong, .role-card small { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-card strong { font: 500 11px var(--font-title); }
+.role-card small { margin-top: 4px; color: var(--muted); font: 8px "SFMono-Regular", Consolas, monospace; }
+.empty-state { grid-column: 1 / -1; min-height: 120px; display: grid; place-items: center; padding: 24px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 11px; text-align: center; }
+.diagnostic-note { margin: 12px 0 0; padding: 9px 11px; border-left: 3px solid var(--warn); color: var(--muted); background: rgba(241,179,92,.08); font-size: 10px; line-height: 1.45; }
 .safe-pair { padding: 24px; background: #f4eadb; border-left: 1px solid var(--line); }
 .safe-pair h3, .section-head h2 { margin: 0; font: 500 19px var(--font-title); }
 .safe-pair p { color: var(--muted); font-size: 12px; margin: 7px 0 17px; line-height: 1.45; }
 .pair-list { display: grid; gap: 8px; }
 .pair { display: grid; grid-template-columns: 50px minmax(100px, 1fr) auto; align-items: center; gap: 10px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.38); text-align: left; transition: transform 140ms var(--ease-out); }
+.pair-disabled { color: var(--muted); }
+.pair-disabled .pair-swatch { color: var(--muted); background: #e5ded2; }
 .pair-swatch { height: 34px; border-radius: 7px; display: grid; place-items: center; font-size: 11px; font-weight: 600; }
 .pair-copy { min-width: 0; }
 .pair-copy strong { display: block; font-size: 12px; font-weight: 500; }
@@ -197,7 +225,7 @@ main { min-width: 0; }
 .matrix-note b { color: var(--good); font-weight: 500; }
 
 .preview-tabs { width: 184px; flex: 0 0 auto; }
-.preview-grid { display: block; }
+.preview-grid { width: 100%; display: block; }
 .preview { border-radius: 13px; padding: 18px; min-height: 245px; border: 1px solid var(--line); }
 .preview[hidden] { display: none; }
 .preview.light { background: var(--light-canvas); color: var(--light-text); }
@@ -238,6 +266,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .button, .pair, .swatch, .matrix-cell, .demo-button, .demo-link, .mode button, .step-dock, .step-link, .step-dock-toggle { transition-duration: 0ms; }
 }
 
+@media (min-width: 1200px) {
+  .preview-grid { max-width: 750px; }
+}
+
 @media (max-width: 900px) {
   .shell { width: min(100% - 40px, 660px); padding-top: 18px; }
   header { padding-bottom: 24px; }
@@ -250,6 +282,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .scale-guide { overflow-x: auto; grid-template-columns: repeat(5, 120px); }
   .scale { overflow-x: auto; grid-template-columns: repeat(11, 76px); padding-bottom: 5px; }
   .actions { margin-top: 16px; }
+  .role-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 500px) {
   .shell { width: calc(100% - 24px); }
@@ -265,4 +298,5 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .wcag-intro { grid-template-columns: 1fr; }
   .wcag-level { border-right: 0; border-bottom: 1px solid var(--line); }
   .wcag-level:last-child { border-bottom: 0; }
+  .role-overview { grid-template-columns: 1fr; }
 }
