@@ -80,6 +80,7 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
 - Disabling Secondary must remove its palettes and exports without leaving stale tokens.
 - Clicking a matrix cell saves and copies the foreground/background pair. Saved pairs are deduplicated, removable from Step 03, re-evaluated when the global target changes, and included in CSS and JSON export.
+- A Saved pair is a palette snapshot with an explicit `Static` or `Interactive` use. `Interactive` derives stable Default, Hover, and Pressed backgrounds from the saved scale plus a Brand focus ring. Every exported state keeps its measured contrast result; later palette edits must not silently change an existing snapshot.
 - Copy feedback must be short, use white text, and must not obscure the main task.
 - Generated scale tokens have no hover movement. Avoid decorative motion that suggests a state change where none exists.
 - The floating Steps window can be minimized and restored. Navigation should respect `prefers-reduced-motion`.
@@ -92,7 +93,8 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Main title is centered: `COLOR DESIGN SYSTEM` in uppercase, with lowercase `for starter` at 80% of the main title size.
 - Section titles use direct, starter-friendly phrases such as `Context contrast`, `Generated scale`, `Fit report`, `Contrast matrix`, `Component preview`, and `Export colors`.
 - Components use bounded widths instead of stretching to the viewport. Reading-focused results stay compact. Preview uses the full project content width with one Light or Dark example visible at a time. Data-heavy scales or matrices may use the available workflow width with horizontal scrolling when needed.
-- Preview renders one coherent application workspace using identical markup for Light and Dark. Put roles into navigation, primary and secondary actions, focus, default tasks, status, validation, and guidance; do not regress to isolated color swatches or disconnected component cards.
+- Preview renders one coherent application workspace using identical markup for Light and Dark. Put roles into navigation, primary and secondary actions, focus, default tasks, status, validation, guidance, structured data, empty states, and a compact semantic assignment card; do not regress to isolated component demos or a raw 50–950 gallery.
+- Preview input states follow one model: Default uses a Neutral border, Focus adds a Brand outer ring, Invalid uses a Danger border and helper treatment, and Invalid + Focus keeps the Danger border with the Brand ring.
 - Generated scale metadata uses black text on one continuous light block. Do not put metadata text directly over dark swatches or reintroduce fragmented inline backgrounds.
 - Preserve the restrained editorial palette, thin borders, generous spacing, and visible information hierarchy. Avoid generic dashboard styling, gradients, or ornamental card proliferation.
 - Functional previews may use rounded containers. Workflow sections themselves stay flat on the page background.
@@ -117,7 +119,7 @@ For every behavior or layout change:
 4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.
 6. Change the global WCAG target and confirm Fit report, saved-pair status, and Contrast matrix update together.
-7. Save a matrix cell, confirm it appears once in Step 03, remove it, and verify saved pairs are included in CSS and JSON export.
+7. Save a matrix cell, confirm it appears once in Step 03, switch it between Static and Interactive, verify the Interactive state family and focus ring in CSS and JSON, then remove it.
 8. Check the Steps links, minimize control, global target, Preview entry, and Export entry.
 9. Check desktop and narrow layouts. The scale and matrix may scroll horizontally, but controls and copy must remain usable.
 10. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.

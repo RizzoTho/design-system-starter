@@ -141,6 +141,11 @@ for (const content of [elements.lightPreviewContent.innerHTML, elements.darkPrev
   assert.match(content, /Enter a complete email address/);
   assert.match(content, /Accessibility review/);
   assert.match(content, /Contrast checks/);
+  assert.match(content, /Theme palette/);
+  assert.match(content, /Release signals/);
+  assert.match(content, /No archived releases/);
+  assert.match(content, /class="product-field focused"/);
+  assert.match(content, /class="product-field invalid"/);
 }
 assert.match(elements.lightPreviewContent.innerHTML, /previewReleaseNote-light/);
 assert.match(elements.darkPreviewContent.innerHTML, /previewReleaseNote-dark/);
@@ -170,7 +175,19 @@ documentListeners.click(pairClick);
 documentListeners.click(pairClick);
 assert.equal(elements.savedPairCount.textContent, '1', 'Duplicate matrix clicks created duplicate saved pairs');
 assert.match(elements.savedPairs.innerHTML, /#FFF6F4 → #BF4B2E/);
+assert.match(elements.savedPairs.innerHTML, /Static/);
 assert.match(elements.matrix.innerHTML, /matrix-cell[^>]*saved/);
+
+const pairUsageTarget = {
+  value: 'interactive',
+  dataset: { pairUsage: 'brand:#FFF6F4:#BF4B2E' },
+  closest: selector => selector === '[data-pair-usage]' ? pairUsageTarget : null,
+};
+documentListeners.change({ target: pairUsageTarget });
+assert.match(elements.savedPairs.innerHTML, /Interactive/);
+assert.match(elements.savedPairs.innerHTML, /Hover/);
+assert.match(elements.savedPairs.innerHTML, /Pressed/);
+assert.match(elements.savedPairs.innerHTML, /Focus/);
 
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
@@ -179,10 +196,18 @@ assert.equal('secondary' in exportedJson.reference, false);
 assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
 assert.equal(exportedJson.pairs.length, 1);
 assert.equal(exportedJson.pairs[0].roleId, 'brand');
+assert.equal(exportedJson.pairs[0].usage, 'interactive');
+assert.equal(exportedJson.pairs[0].states.default.background, '#BF4B2E');
+assert.ok(exportedJson.pairs[0].states.hover.background);
+assert.ok(exportedJson.pairs[0].states.pressed.background);
+assert.ok(exportedJson.pairs[0].focusRing.hex);
 elements.copyCss.dispatch('click');
 assert.doesNotMatch(copiedText, /--color-secondary-/);
 assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
 assert.match(copiedText, /--pair-brand-1-foreground: #FFF6F4/);
+assert.match(copiedText, /--pair-brand-1-background-hover:/);
+assert.match(copiedText, /--pair-brand-1-background-pressed:/);
+assert.match(copiedText, /--pair-brand-1-focus-ring:/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'regular' } } : null },

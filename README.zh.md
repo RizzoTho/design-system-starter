@@ -10,7 +10,7 @@ English: [README.md](README.md)
 
 一个没有依赖的浏览器工具，用固定界面上下文定义 `Brand`、`Neutral`、可选 `Secondary` 与语义颜色角色。
 
-它会生成基于 OKLCH 的 50–950 色阶，检查 WCAG contrast，预览 Light / Dark 组件 assignments，保存前景 / 背景 pair，并导出 CSS variables 或 JSON。界面支持英文和中文。
+它会生成基于 OKLCH 的 50–950 色阶，检查 WCAG contrast，预览 Light / Dark 组件 assignments，保存静态或交互型前景 / 背景 pair，并导出 CSS variables 或 JSON。交互型 pair 包含 Default、Hover、Pressed 与 focus ring。界面支持英文和中文。
 
 ## 本地运行
 
@@ -62,7 +62,7 @@ scripts/            部署 artifact 准备
 ## 限制
 
 - 状态只保留在当前 session，刷新页面后会重置。
-- Saved pairs 是明确保存的快照，不会自动变成 semantic assignments。
+- Saved pairs 是明确保存的快照；交互型 pair 会从保存时的色阶推导状态值，但两种类型都不会自动变成 semantic assignments。
 - 当前面向 sRGB，尚未提供色觉缺陷模拟。
 - 生成的用途标签只是建议，最终以 WCAG 检查结果为验收信号。
 

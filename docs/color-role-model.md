@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-07-20
 - Scope: Accessible Color Picker role expansion
-- Implementation status: Planned, not yet implemented
+- Implementation status: Implemented with follow-up verification in progress
 
 ## Decision
 
@@ -126,6 +126,19 @@ The preview is one coherent application workspace, not a gallery of disconnected
 - Neutral and its Regular alias own the application shell, default task, borders, and secondary UI.
 - Success, Warning, Danger, and Information appear in task state, validation, health, and guidance patterns with text or icons alongside color.
 - Optional Secondary appears only as an additional product action when enabled.
+- A compact Theme palette panel shows the enabled roles through their active semantic assignments. It is part of the workspace and not a duplicate raw scale.
+- Structured release signals and an empty state extend the sample beyond isolated controls while keeping one coherent product context.
+
+Text-input states use consistent ownership: Neutral draws the default boundary, Brand owns the focus ring, and Danger owns invalid borders and helper content. When an invalid field is focused, Danger remains on the inner border and Brand remains on the outer ring.
+
+## Saved pair state families
+
+A matrix selection is saved as a palette snapshot, not a live semantic assignment. Each pair has an explicit use:
+
+- `Static` exports the selected foreground and background only.
+- `Interactive` preserves that Default pair, derives adjacent Hover and Pressed backgrounds from the saved role scale, and derives a separate Brand focus ring that targets 3:1 non-text contrast against the Default background.
+
+Default, Hover, and Pressed retain the selected foreground and expose their measured contrast against the global target. A later palette edit does not rewrite the saved snapshot. This prevents reviewed interaction states from changing silently while still allowing target changes to re-evaluate their pass state.
 
 ## Accessibility invariants
 
@@ -148,7 +161,7 @@ The first implementation includes:
 - semantic assignments and WCAG evaluation;
 - light context preview and a representative dark-surface preview;
 - a local Light / Dark switch with one preview visible at a time;
-- saved matrix pairs that are re-evaluated against the global target and included in export;
+- saved matrix pairs with Static or Interactive usage, target-aware state results, and CSS / JSON export;
 - CSS and JSON export.
 
 The first implementation does not promise a complete dual-theme token system or color-vision-deficiency simulation. Those are follow-up work after the role model and contrast behavior are stable.

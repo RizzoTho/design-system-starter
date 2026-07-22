@@ -203,6 +203,45 @@
     return `${roleId}:${foreground}:${background}`;
   }
 
+  function pairState(roleId, foreground, background) {
+    const ratio = contrast(foreground, background);
+    return {
+      foreground,
+      background,
+      ratio: Number(ratio.toFixed(2)),
+      passesTarget: ratio >= state.target,
+    };
+  }
+
+  function derivePairStateFamily(pair) {
+    const palette = paletteForRole(pair.roleId);
+    if (!palette) throw new Error(`Missing palette for saved pair role: ${pair.roleId}`);
+    const pairScale = pair.paletteSnapshot || palette.scale;
+    const defaultIndex = pairScale.findIndex(token => token.hex === pair.background);
+    if (defaultIndex < 0) throw new Error(`Saved pair snapshot is missing its background: ${pair.background}`);
+    const direction = defaultIndex + 2 < pairScale.length ? 1 : -1;
+    const hoverIndex = Math.max(0, Math.min(pairScale.length - 1, defaultIndex + direction));
+    const pressedIndex = Math.max(0, Math.min(pairScale.length - 1, defaultIndex + direction * 2));
+    const brandScale = pair.brandPaletteSnapshot || paletteForRole('brand')?.scale;
+    if (!brandScale) throw new Error('Missing Brand palette for focus-ring derivation.');
+    const focusCandidates = [500, 600, 700, 400, 800, 300, 900, 200, 950, 100, 50]
+      .map(step => brandScale.find(token => token.step === step))
+      .filter(Boolean)
+      .map(token => ({ hex: token.hex, ratio: contrast(token.hex, pair.background) }));
+    const focus = focusCandidates.find(candidate => candidate.ratio >= 3)
+      || focusCandidates.sort((a, b) => b.ratio - a.ratio)[0];
+    return {
+      default: pairState(pair.roleId, pair.foreground, pair.background),
+      hover: pairState(pair.roleId, pair.foreground, pairScale[hoverIndex].hex),
+      pressed: pairState(pair.roleId, pair.foreground, pairScale[pressedIndex].hex),
+      focusRing: {
+        hex: focus.hex,
+        ratio: Number(focus.ratio.toFixed(2)),
+        passesNonTextTarget: focus.ratio >= 3,
+      },
+    };
+  }
+
   function renderSavedPairs() {
     $('#savedPairCount').textContent = String(state.savedPairs.length);
     if (!state.savedPairs.length) {
@@ -210,14 +249,25 @@
       return;
     }
     $('#savedPairs').innerHTML = state.savedPairs.map(pair => {
-      const ratio = contrast(pair.foreground, pair.background);
-      const pass = ratio >= state.target;
+      const family = derivePairStateFamily(pair);
+      const { ratio, passesTarget: pass } = family.default;
       const roleLabel = model.roles[pair.roleId].label;
-      return `<div class="saved-pair">
+      const pairId = savedPairId(pair.roleId, pair.foreground, pair.background);
+      const usage = pair.usage || 'static';
+      const stateSamples = usage === 'interactive' ? `<div class="saved-pair-states">
+        ${['default', 'hover', 'pressed'].map(stateName => {
+          const sample = family[stateName];
+          return `<span><i style="background:${sample.background};color:${sample.foreground}">Aa</i><small>${t(`saved.${stateName}`)} · ${sample.ratio.toFixed(1)}:1</small></span>`;
+        }).join('')}
+        <span><i class="focus-ring-sample" style="--focus-ring:${family.focusRing.hex}"></i><small>${t('saved.focus')} · ${family.focusRing.ratio.toFixed(1)}:1</small></span>
+      </div>` : '';
+      return `<div class="saved-pair ${usage === 'interactive' ? 'interactive' : ''}">
         <span class="saved-pair-sample" style="background:${pair.background};color:${pair.foreground}">Aa</span>
         <span class="saved-pair-copy"><strong>${roleLabel}</strong><small>${pair.foreground} → ${pair.background}</small></span>
+        <label class="saved-pair-usage"><span>${t('saved.usage')}</span><select data-pair-usage="${pairId}"><option value="static" ${usage === 'static' ? 'selected' : ''}>${t('saved.static')}</option><option value="interactive" ${usage === 'interactive' ? 'selected' : ''}>${t('saved.interactive')}</option></select></label>
         <em class="${pass ? 'pass' : 'fail'}">${ratio.toFixed(1)}:1 · ${pass ? 'PASS' : 'FAIL'}</em>
-        <button type="button" data-remove-pair="${savedPairId(pair.roleId, pair.foreground, pair.background)}" aria-label="${t('saved.remove')}">×</button>
+        <button type="button" data-remove-pair="${pairId}" aria-label="${t('saved.remove')}">×</button>
+        ${stateSamples}
       </div>`;
     }).join('');
   }
@@ -300,6 +350,7 @@
     const danger = state.assignments.danger[theme];
     const information = state.assignments.information[theme];
     const optionalAction = secondary || neutral;
+    const paletteRoles = model.paletteOwnerIds.filter(roleId => roleIsEnabled(roleId));
     const variables = [
       `--pv-brand:${brand.bold.hex}`,
       `--pv-on-brand:${brand.onBold.hex}`,
@@ -353,7 +404,7 @@
                 <li><span class="task-state regular">○</span><span><strong>${t('preview.task.focus')}</strong><small>${t('preview.task.assigned')}</small></span><em>${t('preview.task.regular')}</em></li>
                 <li class="warning"><span class="task-state">!</span><span><strong>${t('preview.task.empty')}</strong><small>${t('preview.task.review')}</small></span><em>${t('preview.task.warning')}</em></li>
               </ul>
-              <div class="product-field"><label for="previewReleaseNote-${theme}">${t('preview.releaseNote')}</label><input id="previewReleaseNote-${theme}" value="${t('preview.releaseNoteValue')}" readonly /><small><span aria-hidden="true">i</span>${t('preview.focusHelp')}</small></div>
+              <div class="product-field focused"><label for="previewReleaseNote-${theme}">${t('preview.releaseNote')}</label><input id="previewReleaseNote-${theme}" value="${t('preview.releaseNoteValue')}" readonly /><small><span aria-hidden="true">i</span>${t('preview.focusHelp')}</small></div>
               <div class="product-field invalid"><label for="previewOwner-${theme}">${t('preview.ownerEmail')}</label><input id="previewOwner-${theme}" value="jane@" aria-invalid="true" readonly /><small><span aria-hidden="true">!</span>${t('preview.invalidEmail')}</small></div>
             </section>
             <aside class="product-aside">
@@ -361,6 +412,20 @@
               <section class="product-panel compact-panel"><div class="product-panel-head"><div><h4>${t('preview.health')}</h4><p>${t('preview.latestChecks')}</p></div><span class="success-dot">✓</span></div><dl class="health-list"><div><dt>${t('preview.componentsReady')}</dt><dd>18 / 20</dd></div><div><dt>${t('preview.contrastChecks')}</dt><dd class="success-text">${t('preview.passed')}</dd></div><div><dt>${t('preview.blockingIssues')}</dt><dd class="danger-text">${t('preview.open')}</dd></div></dl><button class="warning-button">${t('preview.reviewWarning')}</button></section>
               <section class="product-panel people-panel"><div><h4>${t('preview.collaborators')}</h4><p>${t('preview.collaboratorsDesc')}</p></div><div class="avatar-stack"><span>JA</span><span>MK</span><span>RL</span><b>+3</b></div></section>
             </aside>
+          </div>
+          <div class="product-insights">
+            <section class="product-panel palette-panel">
+              <div class="product-panel-head"><div><h4>${t('preview.paletteTitle')}</h4><p>${t('preview.paletteDesc')}</p></div><span class="palette-count">${paletteRoles.length}</span></div>
+              <div class="semantic-card-grid">${paletteRoles.map(roleId => {
+                const assignment = state.assignments[roleId][theme];
+                return `<div class="semantic-card"><span class="semantic-card-swatch" style="--semantic-subtle:${assignment.subtle.hex};--semantic-border:${assignment.borderIcon.hex};--semantic-bold:${assignment.bold.hex};--semantic-on:${assignment.onBold.hex}"><i></i><b>Aa</b></span><span><strong>${model.roles[roleId].label}</strong><small>${assignment.bold.hex}</small></span></div>`;
+              }).join('')}</div>
+            </section>
+            <section class="product-panel signals-panel">
+              <div class="product-panel-head"><div><h4>${t('preview.signalsTitle')}</h4><p>${t('preview.signalsDesc')}</p></div><span class="information-dot">i</span></div>
+              <div class="signal-bars" aria-label="${t('preview.signalsTitle')}"><span><i style="--signal-width:78%;--signal-color:var(--pv-success)"></i><b>78%</b><small>${t('preview.signal.completed')}</small></span><span><i style="--signal-width:42%;--signal-color:var(--pv-warning)"></i><b>42%</b><small>${t('preview.signal.risk')}</small></span><span><i style="--signal-width:14%;--signal-color:var(--pv-danger)"></i><b>14%</b><small>${t('preview.signal.blocked')}</small></span></div>
+              <div class="product-empty"><span aria-hidden="true">□</span><div><strong>${t('preview.emptyTitle')}</strong><small>${t('preview.emptyDesc')}</small></div></div>
+            </section>
           </div>
         </main>
       </div>
@@ -531,6 +596,12 @@
       const name = `${pair.roleId}-${pairCounts[pair.roleId]}`;
       lines.push(`  --pair-${name}-foreground: ${pair.foreground};`);
       lines.push(`  --pair-${name}-background: ${pair.background};`);
+      if ((pair.usage || 'static') === 'interactive') {
+        const family = derivePairStateFamily(pair);
+        lines.push(`  --pair-${name}-background-hover: ${family.hover.background};`);
+        lines.push(`  --pair-${name}-background-pressed: ${family.pressed.background};`);
+        lines.push(`  --pair-${name}-focus-ring: ${family.focusRing.hex};`);
+      }
     }
     lines.push('}');
     return lines.join('\n');
@@ -544,11 +615,22 @@
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
       reference,
       semantic: state.assignments,
-      pairs: state.savedPairs.map(pair => ({
-        ...pair,
-        ratio: Number(contrast(pair.foreground, pair.background).toFixed(2)),
-        passesTarget: contrast(pair.foreground, pair.background) >= state.target,
-      })),
+      pairs: state.savedPairs.map(pair => {
+        const family = derivePairStateFamily(pair);
+        const { paletteSnapshot, brandPaletteSnapshot, ...publicPair } = pair;
+        return {
+          ...publicPair,
+          usage: pair.usage || 'static',
+          ratio: family.default.ratio,
+          passesTarget: family.default.passesTarget,
+          states: (pair.usage || 'static') === 'interactive' ? {
+            default: family.default,
+            hover: family.hover,
+            pressed: family.pressed,
+          } : { default: family.default },
+          focusRing: (pair.usage || 'static') === 'interactive' ? family.focusRing : null,
+        };
+      }),
       diagnostics: state.diagnostics,
     }, null, 2);
   }
@@ -593,6 +675,15 @@
   $('#copyCss').addEventListener('click', () => copy(cssOutput(), t('toast.cssCopied')));
   $('#copyJson').addEventListener('click', () => copy(jsonOutput(), t('toast.jsonCopied')));
 
+  document.addEventListener('change', event => {
+    const usageTarget = event.target.closest('[data-pair-usage]');
+    if (!usageTarget) return;
+    const pair = state.savedPairs.find(item => savedPairId(item.roleId, item.foreground, item.background) === usageTarget.dataset.pairUsage);
+    if (!pair) throw new Error(`Saved pair not found: ${usageTarget.dataset.pairUsage}`);
+    pair.usage = usageTarget.value;
+    renderAll();
+  });
+
   document.addEventListener('click', event => {
     const removePairTarget = event.target.closest('[data-remove-pair]');
     if (removePairTarget) {
@@ -607,6 +698,9 @@
         roleId: pairTarget.dataset.pairRole,
         foreground: pairTarget.dataset.pairForeground,
         background: pairTarget.dataset.pairBackground,
+        usage: 'static',
+        paletteSnapshot: paletteForRole(pairTarget.dataset.pairRole).scale.map(token => ({ step: token.step, hex: token.hex })),
+        brandPaletteSnapshot: paletteForRole('brand').scale.map(token => ({ step: token.step, hex: token.hex })),
       };
       const id = savedPairId(pair.roleId, pair.foreground, pair.background);
       const alreadySaved = state.savedPairs.some(item => savedPairId(item.roleId, item.foreground, item.background) === id);

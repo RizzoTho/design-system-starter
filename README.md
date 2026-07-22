@@ -10,7 +10,7 @@ Color work is difficult because visual harmony and measured accessibility do not
 
 A dependency-free browser tool for defining `Brand`, `Neutral`, optional `Secondary`, and semantic color roles against a fixed interface context.
 
-It generates OKLCH-based 50–950 scales, evaluates WCAG contrast, previews Light and Dark component assignments, saves foreground/background pairs, and exports CSS variables or JSON. The interface supports English and Chinese.
+It generates OKLCH-based 50–950 scales, evaluates WCAG contrast, previews Light and Dark component assignments, saves static or interactive foreground/background pairs, and exports CSS variables or JSON. Interactive pairs include Default, Hover, Pressed, and focus-ring values. The interface supports English and Chinese.
 
 ## Run locally
 
@@ -62,7 +62,7 @@ scripts/            Deployment artifact preparation
 ## Limitations
 
 - State is session-only and resets when the page reloads.
-- Saved pairs are explicit snapshots; they do not automatically become semantic assignments.
+- Saved pairs are explicit snapshots; Interactive pairs derive state values from the saved scale, but neither type automatically becomes a semantic assignment.
 - The tool targets sRGB and does not yet simulate color-vision deficiencies.
 - Generated usage labels are recommendations; WCAG results remain the acceptance signal.
 

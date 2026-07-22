@@ -267,6 +267,13 @@ Exit criteria:
 - No stale role remains after Secondary is disabled.
 - All static, calculation, interaction, desktop, and narrow checks are reported separately.
 
+## Deferred backlog
+
+- [x] Extend Saved pairs with a usage choice: `Static` or `Interactive`. Keep Matrix cells as raw foreground/background contrast evidence. For an Interactive pair, derive and expose a state family with `Default`, `Hover`, and `Pressed`, plus a separate focus-ring assignment. Re-evaluate every state combination against the applicable WCAG target and include the state family in CSS and JSON export. Do not force hover colors onto static content pairs.
+- [x] Correct the Preview text-input state model. Default fields use a Neutral border with no permanent outline. Focus uses a Brand outer ring. Invalid uses a Danger border and Danger helper treatment. Invalid + Focus keeps the Danger inner border while retaining the consistent Brand outer ring. Bind the visuals to explicit state classes or real `:focus-visible`; do not make readonly fields look focused by default.
+- [x] Increase Preview scenario coverage using the [MGifford UI Palette Generator](https://github.com/mgifford/ui-palette-generator) as a reference for content density, not as markup to copy. Cover representative profile, form, action, notification, navigation, list, table or structured-data, empty, and simple data-visualization states. Keep this project's existing boundary: one coherent application workspace, identical markup across themes, and a local Light / Dark switch that displays one theme at a time.
+- [x] Add a compact semantic color card inside the Preview workspace. It should update with the active theme and show the enabled roles and their component assignments, including Brand, Neutral, optional Secondary, Success, Warning, Danger, and Information. Integrate it as a useful workspace panel rather than a disconnected raw 50-950 swatch gallery, and ensure every label and description is added to both English and Chinese catalogs.
+
 ## Milestones
 
 | Date | Milestone | Deliverable |
