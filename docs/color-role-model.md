@@ -71,7 +71,7 @@ Reasons:
 - semantic palettes can share a tonal rhythm without sharing a hue;
 - gamut reduction can preserve hue while reducing chroma.
 
-Every independent palette keeps the existing `50` to `950` token scale. Token `500` must preserve the exact input seed HEX. The remaining steps are derived from OKLCH lightness and chroma curves, then converted to in-gamut sRGB values.
+Every independent palette keeps the existing `50` to `950` token scale. Token `500` must preserve the exact input seed HEX. The remaining steps are derived from OKLCH lightness and chroma curves, then converted to in-gamut sRGB values. Chroma is expressed relative to the maximum sRGB chroma available for each step's `L` and `H`, with a family-specific absolute cap, so semantic hues keep comparable vividness without borrowing another hue's absolute `C`.
 
 Out-of-gamut colors must be handled observably. The generator should report when chroma was reduced; it must not silently replace a color with an unrelated fallback.
 
@@ -118,7 +118,7 @@ The system then suggests `Success`, `Warning`, `Danger`, and `Information`. Each
 
 The quick picker must show the consequence of a choice, not only the swatch. A suggestion is accepted together with its contrast result and representative component usage.
 
-Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. The WCAG target remains globally available in the bottom-right Steps window. Step 03 holds pairs selected from the Contrast matrix rather than owning that target.
+Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. The WCAG target remains globally available in the bottom-right Steps window. Role checks stay in Step 02 Colors because they validate generated roles. Step 03 is a compact Pair editor rather than a second matrix selection surface.
 
 The preview is one coherent application workspace, not a gallery of disconnected swatches or cards. Light and Dark render the same markup with different assignments so a user can inspect each role in context:
 
@@ -133,12 +133,18 @@ Text-input states use consistent ownership: Neutral draws the default boundary, 
 
 ## Saved pair state families
 
-A matrix selection is saved as a palette snapshot, not a live semantic assignment. Each pair has an explicit use:
+Each pair is a palette snapshot, not a live semantic assignment. Step 03 starts with `Brand 50 on Brand 600` and exposes Role, Foreground token, Background token, and Usage fields. Each pair has an explicit use:
 
 - `Static` exports the selected foreground and background only.
 - `Interactive` preserves that Default pair, derives adjacent Hover and Pressed backgrounds from the saved role scale, and derives a separate Brand focus ring that targets 3:1 non-text contrast against the Default background.
 
 Default, Hover, and Pressed retain the selected foreground and expose their measured contrast against the global target. A later palette edit does not rewrite the saved snapshot. This prevents reviewed interaction states from changing silently while still allowing target changes to re-evaluate their pass state.
+
+Pair identity uses the role plus foreground and background token steps. HEX is stored as the measured color value, but it is not a unique identifier because multiple OKLCH scale steps may reduce to the same sRGB HEX. Editing a pair field deliberately refreshes its current palette snapshot and re-evaluates its states. Duplicate coordinates show a visible message and are not exported twice.
+
+Add pair creates another editable row, and Remove remains available from Step 03. Role checks are an editing route rather than a copy surface: every below-target row names the failing Background or recommended-foreground relationship, shows its measured gap, and opens the corresponding role in Colors.
+
+Semantic assignments remain part of the data model and export contract, but they do not need a standalone workflow report. Preview's Theme palette shows the active component assignments in context, while CSS and JSON expose the full assignment values.
 
 ## Accessibility invariants
 
@@ -161,7 +167,7 @@ The first implementation includes:
 - semantic assignments and WCAG evaluation;
 - light context preview and a representative dark-surface preview;
 - a local Light / Dark switch with one preview visible at a time;
-- saved matrix pairs with Static or Interactive usage, target-aware state results, and CSS / JSON export;
+- default and editable pairs with Static or Interactive usage, target-aware state results, and CSS / JSON export;
 - CSS and JSON export.
 
 The first implementation does not promise a complete dual-theme token system or color-vision-deficiency simulation. Those are follow-up work after the role model and contrast behavior are stable.

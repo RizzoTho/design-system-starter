@@ -2,8 +2,9 @@
   'use strict';
 
   const steps = Object.freeze([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]);
-  const lightnessOffsets = Object.freeze([0.44, 0.36, 0.28, 0.20, 0.10, 0, -0.08, -0.16, -0.24, -0.32, -0.40]);
+  const lightnessFractions = Object.freeze([1, 0.82, 0.64, 0.46, 0.23, 0, 0.20, 0.40, 0.60, 0.80, 1]);
   const chromaMultipliers = Object.freeze([0.18, 0.28, 0.44, 0.62, 0.82, 1, 1.04, 1.06, 1.02, 0.92, 0.78]);
+  const maxChromaSearch = 0.5;
   const familyChromaLimits = Object.freeze({
     brand: 0.25,
     secondary: 0.23,
@@ -147,6 +148,34 @@
       .every(channel => channel >= -1e-7 && channel <= 1 + 1e-7);
   }
 
+  function maxChromaAt(L, h) {
+    const lightness = clamp(L, 0, 1);
+    const hue = normalizeHue(h);
+    let low = 0;
+    let high = maxChromaSearch;
+
+    while (inSrgbGamut({ L: lightness, C: high, h: hue }) && high < 1) {
+      high = Math.min(1, high * 2);
+    }
+    if (inSrgbGamut({ L: lightness, C: high, h: hue })) return high;
+
+    for (let index = 0; index < 24; index += 1) {
+      const mid = (low + high) / 2;
+      if (inSrgbGamut({ L: lightness, C: mid, h: hue })) low = mid;
+      else high = mid;
+    }
+    return low;
+  }
+
+  function paletteLightness(seedLightness, index) {
+    const fraction = lightnessFractions[index];
+    const maxLightness = Math.max(seedLightness, Math.min(0.95, seedLightness + 0.40));
+    const minLightness = Math.min(seedLightness, Math.max(0.05, seedLightness - 0.40));
+    if (index < 5) return seedLightness + (maxLightness - seedLightness) * fraction;
+    if (index === 5) return seedLightness;
+    return seedLightness - (seedLightness - minLightness) * fraction;
+  }
+
   function mapOklchToSrgb(oklch) {
     const requested = {
       L: clamp(oklch.L, 0, 1),
@@ -154,20 +183,9 @@
       h: normalizeHue(oklch.h),
     };
 
-    let mapped = requested;
-    let reduced = false;
-    if (!inSrgbGamut(requested)) {
-      reduced = true;
-      let low = 0;
-      let high = requested.C;
-      for (let index = 0; index < 24; index += 1) {
-        const mid = (low + high) / 2;
-        const candidate = { ...requested, C: mid };
-        if (inSrgbGamut(candidate)) low = mid;
-        else high = mid;
-      }
-      mapped = { ...requested, C: low };
-    }
+    const actualChroma = maxChromaAt(requested.L, requested.h);
+    const reduced = requested.C > actualChroma + 1e-7;
+    const mapped = { ...requested, C: reduced ? actualChroma : requested.C };
 
     return {
       hex: rgbToHex(oklabToRgb(oklchToOklab(mapped))),
@@ -175,6 +193,7 @@
       reduced,
       requestedChroma: requested.C,
       actualChroma: mapped.C,
+      maxChroma: actualChroma,
     };
   }
 
@@ -212,6 +231,8 @@
     const seedOklch = hexToOklch(seed);
     const chromaLimit = options.chromaLimit ?? familyChromaLimits[family] ?? familyChromaLimits.brand;
     const baseChroma = Math.min(seedOklch.C, chromaLimit);
+    const seedMaxChroma = maxChromaAt(seedOklch.L, seedOklch.h);
+    const baseChromaPercent = seedMaxChroma > 0 ? clamp(baseChroma / seedMaxChroma, 0, 1) : 0;
     const diagnostics = [];
 
     const scale = steps.map((step, index) => {
@@ -227,10 +248,11 @@
       }
 
       const requested = {
-        L: clamp(seedOklch.L + lightnessOffsets[index], 0.04, 0.98),
-        C: Math.min(baseChroma * chromaMultipliers[index], chromaLimit),
+        L: paletteLightness(seedOklch.L, index),
         h: seedOklch.h,
       };
+      const requestedChromaPercent = baseChromaPercent * chromaMultipliers[index];
+      requested.C = Math.min(maxChromaAt(requested.L, requested.h) * requestedChromaPercent, chromaLimit);
       const mapped = mapOklchToSrgb(requested);
       if (mapped.reduced) {
         diagnostics.push(Object.freeze({
@@ -239,6 +261,7 @@
           step,
           requestedChroma: mapped.requestedChroma,
           actualChroma: mapped.actualChroma,
+          requestedChromaPercent,
         }));
       }
       return {
@@ -260,8 +283,9 @@
 
   window.ColorEngine = Object.freeze({
     steps,
-    lightnessOffsets,
+    lightnessFractions,
     chromaMultipliers,
+    maxChromaAt,
     familyChromaLimits,
     clamp,
     normalizeHue,

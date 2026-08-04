@@ -32,8 +32,8 @@ Then open `http://localhost:8000`.
 1. Confirm the fixed `Background` and `Text` colors.
 2. Set `Brand` and `Neutral`; enable `Secondary` only when it has a clear use.
 3. Sync unlocked semantic colors to `Brand`, then tune or lock individual roles.
-4. Choose the global WCAG target and inspect Fit report, assignments, and Contrast matrix.
-5. Save useful foreground/background pairs, inspect Component preview, and export.
+4. Choose the global WCAG target and inspect Role checks inside Colors.
+5. Start with the default Brand pair, adjust its Role, token values, and Usage directly, then inspect Component preview and export.
 
 ## GitHub Pages
 
