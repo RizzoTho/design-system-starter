@@ -63,7 +63,7 @@ No ES module is required in the browser. The JavaScript files should use small e
 
 - the complete visual system;
 - responsive behavior;
-- role picker, role overview, scale, report, matrix, preview, and export styles.
+- role picker, role overview, scale, report, Pair editor, preview, and export styles.
 
 `js/color-engine.js`
 
@@ -225,7 +225,7 @@ Exit criteria:
 - [x] Extend previews to include neutral/default, success, warning, danger, and information components.
 - [x] Keep one full-width preview visible at a time and switch Light / Dark locally inside Preview.
 - [x] Keep color from being the only semantic signal by including text and icons.
-- [x] Update the matrix to inspect the active palette without naming or assigning hue semantics inside the matrix.
+- [x] Keep Role checks in Colors and make Step 03 a compact Pair editor without a second matrix selection surface.
 
 Exit criteria:
 
@@ -242,7 +242,7 @@ Exit criteria:
 - [x] Reveal detailed scale controls only for the active role.
 - [x] Keep Preview and Export as unnumbered result destinations.
 - [x] Keep theme switching inside Preview; the bottom-right Steps window owns the global WCAG target.
-- [x] Save deduplicated matrix pairs into Step 03 and include them in CSS and JSON export.
+- [x] Start Step 03 with a default Brand pair, expose direct Role/token/Usage fields, and include editable pairs in CSS and JSON export.
 
 Exit criteria:
 
@@ -269,7 +269,7 @@ Exit criteria:
 
 ## Deferred backlog
 
-- [x] Extend Saved pairs with a usage choice: `Static` or `Interactive`. Keep Matrix cells as raw foreground/background contrast evidence. For an Interactive pair, derive and expose a state family with `Default`, `Hover`, and `Pressed`, plus a separate focus-ring assignment. Re-evaluate every state combination against the applicable WCAG target and include the state family in CSS and JSON export. Do not force hover colors onto static content pairs.
+- [x] Extend Saved pairs with a usage choice: `Static` or `Interactive`. For an Interactive pair, derive and expose a state family with `Default`, `Hover`, and `Pressed`, plus a separate focus-ring assignment. Re-evaluate every state combination against the applicable WCAG target and include the state family in CSS and JSON export. Do not force hover colors onto static content pairs.
 - [x] Correct the Preview text-input state model. Default fields use a Neutral border with no permanent outline. Focus uses a Brand outer ring. Invalid uses a Danger border and Danger helper treatment. Invalid + Focus keeps the Danger inner border while retaining the consistent Brand outer ring. Bind the visuals to explicit state classes or real `:focus-visible`; do not make readonly fields look focused by default.
 - [x] Increase Preview scenario coverage using the [MGifford UI Palette Generator](https://github.com/mgifford/ui-palette-generator) as a reference for content density, not as markup to copy. Cover representative profile, form, action, notification, navigation, list, table or structured-data, empty, and simple data-visualization states. Keep this project's existing boundary: one coherent application workspace, identical markup across themes, and a local Light / Dark switch that displays one theme at a time.
 - [x] Add a compact semantic color card inside the Preview workspace. It should update with the active theme and show the enabled roles and their component assignments, including Brand, Neutral, optional Secondary, Success, Warning, Danger, and Information. Integrate it as a useful workspace panel rather than a disconnected raw 50-950 swatch gallery, and ensure every label and description is added to both English and Chinese catalogs.
@@ -281,7 +281,7 @@ Exit criteria:
 | 2026-07-20 | Role contract | Accepted decision doc and implementation plan |
 | 2026-07-21 to 2026-07-22 | Source and core palette | Recoverable baseline, deliberate file split, Brand and Neutral on OKLCH |
 | 2026-07-23 to 2026-07-24 | Semantic generator | Optional Secondary and four semantic suggestions |
-| 2026-07-27 | Semantic assignments | Surface, border/icon, bold, and on-bold roles with contrast results |
+| 2026-07-27 | Semantic assignment engine | Surface, border/icon, bold, and on-bold data surfaced through Role checks, Preview, and Export; no duplicate standalone report |
 | 2026-07-28 | Quick picker and export | Three-decision flow, overview, CSS and JSON |
 | 2026-07-29 | Verification | Static checks, calculation tests, interaction checks, desktop and narrow review |
 

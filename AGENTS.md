@@ -40,8 +40,8 @@ If the project later adopts a framework or build system, update this file in the
 The workflow has three ordered steps plus two separate result destinations:
 
 1. `Context`: set the fixed Background and Text colors and show an explicit PASS or FAIL result for normal text at 4.5:1.
-2. `Colors`: define Brand and Neutral, optionally add Secondary, generate semantic suggestions, and inspect each active 50–950 scale.
-3. `Saved pairs`: inspect the fit report and contrast matrix, then keep useful foreground/background combinations for export.
+2. `Colors`: define Brand and Neutral, optionally add Secondary, generate semantic suggestions, inspect each active 50–950 scale, and review role checks against the current target.
+3. `Saved pairs`: start with a default pair, adjust a few token values directly, and keep useful foreground/background combinations for export.
 
 After those steps:
 
@@ -54,9 +54,10 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 - WCAG contrast uses relative luminance. Keep the calculation deterministic and centralized in `luminance()` and `contrast()`.
 - `Context` always evaluates `Text on Background` against 4.5:1 and reports `PASS · AA`, `PASS · AAA`, or `FAIL` visibly. Do not communicate status through color alone.
-- The selectable target controls active roles, fit reports, semantic assignments, and matrix evaluation. Current targets are AA normal text 4.5:1, AA large text 3:1, and AAA normal text 7:1.
+- The selectable target controls active role checks, generated semantic assignment data, and saved-pair evaluation. Current targets are AA normal text 4.5:1, AA large text 3:1, and AAA normal text 7:1.
 - Reference palettes are generated in OKLCH. Keep the exact input seed at `500`, use one shared tonal rhythm, and apply per-family chroma limits.
-- If an OKLCH request is outside sRGB, reduce chroma while preserving lightness and hue as far as possible, and expose a diagnostic instead of silently clipping.
+- For every non-seed step, derive chroma as a family-relative percentage of the sRGB maximum for that step's `L` and `H`; do not reuse Brand's absolute `C` across semantic hues.
+- If an OKLCH request is outside sRGB, reduce chroma while preserving lightness and hue as far as possible, and expose a diagnostic with the requested and actual chroma instead of silently clipping.
 - Generated scale usage labels are recommendations, not guarantees:
   - 50–200: page and surface
   - 300–400: border and muted
@@ -64,8 +65,8 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
   - 600–700: action and pressed state
   - 800–950: strong and dark surfaces
 - `W` and `K` show each token's contrast ratio against White and Black.
-- In the contrast matrix, the row is the foreground color and the column is the background color. `Aa` is the actual foreground-on-background sample. The number is the contrast ratio.
-- A green matrix outline and check mean the pair reaches the selected target. Non-passing cells must remain readable enough to inspect even when the represented pair itself fails.
+- In Step 03, the pair editor exposes Role, Foreground token, Background token, and Usage. `Aa` is the actual foreground-on-background sample and the number is the contrast ratio.
+- Step 03 starts with Brand `50` on Brand `600`. Editing a field re-evaluates the pair immediately; duplicate coordinates must remain visible as a clear message instead of silently creating duplicate exports.
 - Button text must be selected by measured contrast. Do not assume a fixed light or dark text color from token number alone.
 
 ## Interaction contract
@@ -79,8 +80,11 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
 - Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
 - Disabling Secondary must remove its palettes and exports without leaving stale tokens.
-- Clicking a matrix cell saves and copies the foreground/background pair. Saved pairs are deduplicated, removable from Step 03, re-evaluated when the global target changes, and included in CSS and JSON export.
+- Step 03 starts with one default `Brand 50 on Brand 600` pair. Role, Foreground token, Background token, and Static/Interactive Usage are directly editable; changes re-evaluate the pair immediately. Add pair creates another editable row, and saved pairs remain removable from Step 03.
+- Saved pairs are re-evaluated when the global target changes and are included in CSS and JSON export.
 - A Saved pair is a palette snapshot with an explicit `Static` or `Interactive` use. `Interactive` derives stable Default, Hover, and Pressed backgrounds from the saved scale plus a Brand focus ring. Every exported state keeps its measured contrast result; later palette edits must not silently change an existing snapshot.
+- Step 03 must explain the usage boundary before selection: `Static` is for non-interactive text, surfaces, and icons; `Interactive` is for controls that need Default, Hover, Pressed, and Focus states.
+- Role checks belong to Step 02 Colors. Results below the active target are optimization tasks, not passive diagnostics. Show a visible task summary, name the failing relationship and measured gap, and label each affected role with text or icon in addition to color. Clicking a check row opens that role in Colors; check rows must not copy diagnostic text.
 - Copy feedback must be short, use white text, and must not obscure the main task.
 - Generated scale tokens have no hover movement. Avoid decorative motion that suggests a state change where none exists.
 - The floating Steps window can be minimized and restored. Navigation should respect `prefers-reduced-motion`.
@@ -91,8 +95,9 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - All left-side settings panels use the same warm grey-beige background and the same numbered badge color. Do not assign different panel colors per step.
 - Titles use IBM Plex Sans through `--font-title`.
 - Main title is centered: `COLOR DESIGN SYSTEM` in uppercase, with lowercase `for starter` at 80% of the main title size.
-- Section titles use direct, starter-friendly phrases such as `Context contrast`, `Generated scale`, `Fit report`, `Contrast matrix`, `Component preview`, and `Export colors`.
-- Components use bounded widths instead of stretching to the viewport. Reading-focused results stay compact. Preview uses the full project content width with one Light or Dark example visible at a time. Data-heavy scales or matrices may use the available workflow width with horizontal scrolling when needed.
+- Section titles use direct, starter-friendly phrases such as `Context contrast`, `Generated scale`, `Role checks`, `Pair editor`, `Component preview`, and `Export colors`.
+- Do not add a standalone `Semantic assignments` report to the workflow. Its component-level assignment data is surfaced through Preview's Theme palette and Export, which avoids duplicating Color roles and Role checks.
+- Components use bounded widths instead of stretching to the viewport. Reading-focused results stay compact. Preview uses the full project content width with one Light or Dark example visible at a time. The scale may use the available workflow width with horizontal scrolling when needed; Pair editor fields and copy/remove controls must remain usable.
 - Preview renders one coherent application workspace using identical markup for Light and Dark. Put roles into navigation, primary and secondary actions, focus, default tasks, status, validation, guidance, structured data, empty states, and a compact semantic assignment card; do not regress to isolated component demos or a raw 50–950 gallery.
 - Preview input states follow one model: Default uses a Neutral border, Focus adds a Brand outer ring, Invalid uses a Danger border and helper treatment, and Invalid + Focus keeps the Danger border with the Brand ring.
 - Generated scale metadata uses black text on one continuous light block. Do not put metadata text directly over dark swatches or reintroduce fragmented inline backgrounds.
@@ -103,7 +108,7 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 
 - Keep calculation logic separate from rendering functions.
 - Keep a single state owner for fixed context, candidate colors, active role, scale, and target.
-- New color roles should extend the role model, fit report, preview, and export together. Do not add a disconnected picker that bypasses the existing workflow.
+- New color roles should extend the role model, role checks, pair editor, preview, and export together. Do not add a disconnected picker that bypasses the existing workflow.
 - Keep design-token generation distinct from semantic usage. A generated number such as `600` is a token; `Brand primary action` is a semantic assignment.
 - Do not add dependencies for work that remains clear and maintainable in the current standalone source files.
 - Keep the current split complete. Do not move calculation or application logic back into `index.html`, and do not introduce generated duplicates without identifying source and output owners.
@@ -118,10 +123,10 @@ For every behavior or layout change:
 3. Manually verify Context PASS and FAIL states with at least one high-contrast and one low-contrast pair.
 4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.
-6. Change the global WCAG target and confirm Fit report, saved-pair status, and Contrast matrix update together.
-7. Save a matrix cell, confirm it appears once in Step 03, switch it between Static and Interactive, verify the Interactive state family and focus ring in CSS and JSON, then remove it.
+6. Change the global WCAG target and confirm Role checks, saved-pair status, and Interactive state results update together.
+7. Confirm the default Brand `50` on `600` pair, edit Role/Foreground/Background/Usage fields, add a second pair, verify the Interactive state family and focus ring in CSS and JSON, then remove it.
 8. Check the Steps links, minimize control, global target, Preview entry, and Export entry.
-9. Check desktop and narrow layouts. The scale and matrix may scroll horizontally, but controls and copy must remain usable.
+9. Check desktop and narrow layouts. The scale may scroll horizontally, but pair fields and copy must remain usable.
 10. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
 
 ## Repository continuity

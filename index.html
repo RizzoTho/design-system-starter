@@ -86,26 +86,27 @@
             <p class="scale-key" data-i18n="scale.key">Usage labels are recommendations. Validate against the current target. W / K show contrast against White / Black.</p>
             <div id="scale" class="scale"></div>
           </section>
+          <section class="workflow-block fit-report-block">
+            <div class="safe-pair"><div class="fit-report-head"><div><h3 data-i18n="fit.title">Role checks</h3><p data-i18n="fit.desc">Check whether each enabled role works on the fixed Background and whether its recommended foreground meets the current target. Regular shares Neutral results.</p></div><button id="optimizeSemantics" class="button" type="button" data-i18n="action.optimizeSemantics">Optimize semantic roles</button></div><p class="fit-optimize-hint" data-i18n="fit.optimizeHint">Keeps each semantic Hue, adjusts Lightness first, and reduces Chroma only when needed. Locked roles are preserved.</p><div id="pairList" class="pair-list"></div></div>
+          </section>
         </div>
       </section>
 
       <section id="step-standard" class="workflow-section" data-workflow-step="standard">
         <aside class="step-controls standard">
-          <div class="step-heading"><b>03</b><div><strong data-i18n="step.pairs.title">Saved pairs</strong><small data-i18n="step.pairs.desc">Click combinations in the matrix to keep them here and include them in Export.</small></div></div>
+          <div class="step-heading"><b>03</b><div><strong data-i18n="step.pairs.title">Saved pairs</strong><small data-i18n="step.pairs.desc">Start with a default Brand pair, then adjust a few token values for export.</small></div></div>
+          <div class="saved-usage-guide">
+            <div><strong data-i18n="saved.static">Static</strong><span data-i18n="saved.staticMeaning">For text, surfaces, icons, or other content without interaction states.</span></div>
+            <div><strong data-i18n="saved.interactive">Interactive</strong><span data-i18n="saved.interactiveMeaning">For controls that need Default, Hover, Pressed, and Focus colors.</span></div>
+          </div>
           <div class="saved-pairs-head"><span data-i18n="saved.title">Selected combinations</span><b id="savedPairCount">0</b></div>
-          <div id="savedPairs" class="saved-pairs"></div>
+          <p class="saved-default-hint" data-i18n="saved.defaultHint">Starts with Brand 50 on Brand 600. Change Role, Foreground, Background, or Usage and the result updates immediately.</p>
         </aside>
         <div class="step-content">
-          <section class="workflow-block fit-report-block">
-            <div class="safe-pair"><h3 data-i18n="fit.title">Fit report</h3><p data-i18n="fit.desc">Check every enabled role against the fixed Background and show its measured on-color. Regular shares Neutral results.</p><div id="pairList" class="pair-list"></div></div>
-          </section>
-          <section class="workflow-block assignment-block">
-            <div class="section-head"><div><h2 data-i18n="assignment.title">Semantic assignments</h2><p data-i18n="assignment.desc">The reference scale is raw material. Components use subtle, border/icon, bold, and on-bold assignments. Border/Icon is checked at 3:1; text uses the current target.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="assignment.modes">LIGHT / DARK</span></div>
-            <div id="assignmentList" class="assignment-list"></div>
-          </section>
           <section class="workflow-block">
-            <div class="section-head"><div><h2 data-i18n="matrix.title">Contrast matrix</h2><p data-i18n="matrix.desc">Click a cell to save its foreground/background pair and copy it. Rows are foregrounds; columns are backgrounds.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="matrix.copy">CLICK TO SAVE</span></div>
-            <div class="matrix-wrap"><div id="matrix" class="matrix"></div></div><p id="matrixNote" class="matrix-note"></p>
+            <div class="section-head"><div><h2 data-i18n="saved.editor.title">Pair editor</h2><p data-i18n="saved.editor.desc">Use a small set of token values to define pairs. Contrast and interactive states update as you edit.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="saved.editor.badge">EDIT VALUES</span></div>
+            <div id="savedPairs" class="saved-pairs"></div>
+            <button id="addPair" class="button" type="button" data-i18n="saved.add">Add pair</button>
           </section>
         </div>
       </section>

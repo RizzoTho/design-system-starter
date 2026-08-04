@@ -1,7 +1,16 @@
 (() => {
   'use strict';
 
-  const { clamp, hexToOklch, mapOklchToSrgb, normalizeHue, familyChromaLimits } = window.ColorEngine;
+  const {
+    clamp,
+    contrast,
+    hexToOklch,
+    mapOklchToSrgb,
+    maxChromaAt,
+    normalizeHue,
+    textColor,
+    familyChromaLimits,
+  } = window.ColorEngine;
 
   const roleOrder = Object.freeze([
     'brand',
@@ -89,18 +98,33 @@
     return mapOklchToSrgb({ L, C, h }).hex;
   }
 
+  function relativeChroma({ L, C, h }) {
+    const maximum = maxChromaAt(L, h);
+    return maximum > 0 ? clamp(C / maximum, 0, 1) : 0;
+  }
+
+  function chromaAtPercent(L, h, percent, limit) {
+    return Math.min(maxChromaAt(L, h) * clamp(percent, 0, 1), limit);
+  }
+
   function makeSecondarySuggestions(brandHex, strategy = 'analogous') {
     const definition = secondaryStrategies[strategy];
     if (!definition) throw new Error(`Unknown Secondary strategy: ${strategy}`);
     if (strategy === 'none') return [];
     const brand = hexToOklch(brandHex);
+    const brandChromaPercent = relativeChroma(brand);
     return definition.offsets.map((offset, index) => ({
       id: `${strategy}-${index + 1}`,
       labelKey: definition.labelKey,
       strategy,
       hex: suggestedHex({
         L: clamp(brand.L, 0.50, 0.72),
-        C: clamp(brand.C * (index === 0 ? 0.92 : 0.82), 0.07, familyChromaLimits.secondary),
+        C: chromaAtPercent(
+          clamp(brand.L, 0.50, 0.72),
+          normalizeHue(brand.h + offset),
+          Math.max(brandChromaPercent * (index === 0 ? 0.92 : 0.82), 0.35),
+          familyChromaLimits.secondary,
+        ),
         h: normalizeHue(brand.h + offset),
       }),
     }));
@@ -111,12 +135,14 @@
     if (!semanticRoleIds.includes(roleId)) throw new Error(`Role has no semantic hue family: ${roleId}`);
     const brand = hexToOklch(brandHex);
     const familyLimit = familyChromaLimits[roleId];
-    const chromaFloor = roleId === 'warning' ? 0.12 : 0.10;
     const lightnessShift = roleId === 'warning' ? 0.05 : 0;
+    const lightness = clamp(brand.L + lightnessShift, 0.54, 0.72);
+    const semanticHue = definition.semanticHue;
+    const semanticChromaPercent = Math.max(relativeChroma(brand) * 0.90, roleId === 'warning' ? 0.55 : 0.45);
     const requested = {
-      L: clamp(brand.L + lightnessShift, 0.54, 0.72),
-      C: clamp(brand.C * 0.90, chromaFloor, familyLimit),
-      h: definition.semanticHue,
+      L: lightness,
+      C: chromaAtPercent(lightness, semanticHue, semanticChromaPercent, familyLimit),
+      h: semanticHue,
     };
     const mapped = mapOklchToSrgb(requested);
     return {
@@ -126,11 +152,46 @@
       hex: mapped.hex,
       semanticHue: definition.semanticHue,
       gamutReduced: mapped.reduced,
+      requestedChroma: mapped.requestedChroma,
+      actualChroma: mapped.actualChroma,
     };
   }
 
   function makeSemanticSuggestions(brandHex) {
     return Object.fromEntries(semanticRoleIds.map(roleId => [roleId, makeSemanticSuggestion(roleId, brandHex)]));
+  }
+
+  function optimizeSemanticSeed(roleId, seedHex, backgroundHex, target) {
+    if (!semanticRoleIds.includes(roleId)) throw new Error(`Role has no semantic optimizer: ${roleId}`);
+    if (!Number.isFinite(target) || target <= 0) throw new Error(`Invalid contrast target: ${target}`);
+    if (target > 21) return null;
+
+    const passes = hex => contrast(hex, backgroundHex) >= target
+      && contrast(textColor(hex), hex) >= target;
+    if (passes(seedHex)) return { hex: seedHex, adjusted: false, chromaReduced: false };
+
+    const source = hexToOklch(seedHex);
+    const baseChromaPercent = Math.max(relativeChroma(source), 0.35);
+    const lightnessCandidates = Array.from({ length: 461 }, (_, index) => 0.04 + index * 0.002)
+      .sort((first, second) => Math.abs(first - source.L) - Math.abs(second - source.L));
+    const chromaFactors = [1, 0.92, 0.84, 0.72, 0.58, 0.42, 0.24, 0];
+
+    for (const factor of chromaFactors) {
+      for (const L of lightnessCandidates) {
+        const mapped = mapOklchToSrgb({
+          L,
+          C: chromaAtPercent(L, source.h, baseChromaPercent * factor, familyChromaLimits[roleId]),
+          h: source.h,
+        });
+        if (!passes(mapped.hex)) continue;
+        return {
+          hex: mapped.hex,
+          adjusted: true,
+          chromaReduced: factor < 1 || mapped.reduced,
+        };
+      }
+    }
+    return null;
   }
 
   function createInitialRoles() {
@@ -223,6 +284,7 @@
     makeSecondarySuggestions,
     makeSemanticSuggestion,
     makeSemanticSuggestions,
+    optimizeSemanticSeed,
     createInitialRoles,
     resolveAssignment,
     resolveAssignments,

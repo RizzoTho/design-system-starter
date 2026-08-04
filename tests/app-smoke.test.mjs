@@ -27,6 +27,7 @@ class FakeElement {
     this.attributes = {};
     this.listeners = {};
     this.classList = new FakeClassList();
+    this.scrollCount = 0;
     this.style = { values: {}, setProperty: (name, value) => { this.style.values[name] = value; } };
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
@@ -36,7 +37,7 @@ class FakeElement {
   focus() {}
   select() {}
   remove() {}
-  scrollIntoView() {}
+  scrollIntoView() { this.scrollCount += 1; }
   closest() { return null; }
   dispatch(type, extra = {}) { this.listeners[type]?.({ target: this, preventDefault() {}, ...extra }); }
 }
@@ -133,7 +134,25 @@ elements.textHexInput.value = '#25231F';
 elements.textHexInput.dispatch('change');
 assert.match(elements.contextStatus.innerHTML, /PASS · AAA/);
 assert.match(elements.pairList.innerHTML, /Information/);
-assert.match(elements.assignmentList.innerHTML, /Uses Neutral assignments/);
+assert.match(elements.pairList.innerHTML, /fit-work-summary/);
+assert.match(elements.pairList.innerHTML, /Needs optimization/);
+assert.match(elements.pairList.innerHTML, /pair needs-work/);
+assert.match(elements.pairList.innerHTML, /Role on Background: 3\.21:1, needs 4\.5:1/);
+assert.match(elements.pairList.innerHTML, /Adjust in Colors/);
+assert.match(elements.pairList.innerHTML, /#D8664A on Background/);
+assert.match(elements.pairList.innerHTML, /Recommended foreground #111111 on this color/);
+assert.doesNotMatch(elements.pairList.innerHTML, /Fixed Text on role/);
+const needsWorkBeforeOptimize = (elements.pairList.innerHTML.match(/pair needs-work/g) || []).length;
+elements.optimizeSemantics.dispatch('click');
+const needsWorkAfterOptimize = (elements.pairList.innerHTML.match(/pair needs-work/g) || []).length;
+assert.ok(needsWorkAfterOptimize < needsWorkBeforeOptimize, 'One-click semantic optimization did not reduce failing roles');
+assert.match(elements.toast.textContent, /semantic roles optimized/);
+assert.match(elements.pairList.innerHTML, /data-edit-role="brand"/);
+assert.doesNotMatch(elements.pairList.innerHTML, /data-copy=/, 'Fit report still behaves like a copy surface');
+documentListeners.click({
+  target: { closest: selector => selector === '[data-edit-role]' ? { dataset: { editRole: 'brand' } } : null },
+});
+assert.equal(elements['step-candidates'].scrollCount, 1, 'Fit report did not navigate to Colors');
 for (const content of [elements.lightPreviewContent.innerHTML, elements.darkPreviewContent.innerHTML]) {
   assert.match(content, /Publish update/);
   assert.match(content, /Review focus order/);
@@ -161,27 +180,24 @@ assert.equal(languageButtons[1].attributes['aria-pressed'], 'true');
 assert.match(elements.activeRoleDescription.textContent, /核心识别色/);
 assert.match(elements.lightPreviewContent.innerHTML, /发布更新/);
 assert.match(elements.contextStatus.innerHTML, /要求 · 4\.5:1/);
+assert.match(elements.pairList.innerHTML, /需要优化/);
 languageButtons[0].dispatch('click');
 assert.equal(document.documentElement.lang, 'en');
 assert.match(elements.lightPreviewContent.innerHTML, /Publish update/);
 
-const savedPairTarget = {
-  dataset: { pairRole: 'brand', pairForeground: '#FFF6F4', pairBackground: '#BF4B2E' },
-};
-const pairClick = {
-  target: { closest: selector => selector === '[data-save-pair]' ? savedPairTarget : null },
-};
-documentListeners.click(pairClick);
-documentListeners.click(pairClick);
-assert.equal(elements.savedPairCount.textContent, '1', 'Duplicate matrix clicks created duplicate saved pairs');
-assert.match(elements.savedPairs.innerHTML, /#FFF6F4 → #BF4B2E/);
+assert.equal(elements.savedPairCount.textContent, '1');
+assert.match(elements.savedPairs.innerHTML, /50 · #F0EEED → 600 · #B7523A/);
+assert.match(elements.savedPairs.innerHTML, /saved-pair-fields/);
 assert.match(elements.savedPairs.innerHTML, /Static/);
-assert.match(elements.matrix.innerHTML, /matrix-cell[^>]*saved/);
+assert.match(elements.savedPairs.innerHTML, /saved-pair-remove/);
+assert.match(elements.savedPairs.innerHTML, /data-pair-field="foregroundStep"/);
+elements.addPair.dispatch('click');
+assert.equal(elements.savedPairCount.textContent, '2');
 
 const pairUsageTarget = {
   value: 'interactive',
-  dataset: { pairUsage: 'brand:#FFF6F4:#BF4B2E' },
-  closest: selector => selector === '[data-pair-usage]' ? pairUsageTarget : null,
+  dataset: { pairField: 'usage', pairKey: 'pair-1' },
+  closest: selector => selector === '[data-pair-field]' ? pairUsageTarget : null,
 };
 documentListeners.change({ target: pairUsageTarget });
 assert.match(elements.savedPairs.innerHTML, /Interactive/);
@@ -189,22 +205,38 @@ assert.match(elements.savedPairs.innerHTML, /Hover/);
 assert.match(elements.savedPairs.innerHTML, /Pressed/);
 assert.match(elements.savedPairs.innerHTML, /Focus/);
 
+const pairBackgroundTarget = {
+  value: '700',
+  dataset: { pairField: 'backgroundStep', pairKey: 'pair-1' },
+  closest: selector => selector === '[data-pair-field]' ? pairBackgroundTarget : null,
+};
+documentListeners.change({ target: pairBackgroundTarget });
+assert.match(elements.savedPairs.innerHTML, /50 · #F0EEED → 700 · #96412C/);
+
+documentListeners.click({
+  target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-2' } } : null },
+});
+assert.equal(elements.savedPairCount.textContent, '1');
+
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
 assert.equal(exportedJson.roles.regular.aliasOf, 'neutral');
 assert.equal('secondary' in exportedJson.reference, false);
 assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
 assert.equal(exportedJson.pairs.length, 1);
+assert.equal('key' in exportedJson.pairs[0], false);
 assert.equal(exportedJson.pairs[0].roleId, 'brand');
+assert.equal(exportedJson.pairs[0].foregroundStep, 50);
+assert.equal(exportedJson.pairs[0].backgroundStep, 700);
 assert.equal(exportedJson.pairs[0].usage, 'interactive');
-assert.equal(exportedJson.pairs[0].states.default.background, '#BF4B2E');
+assert.ok(exportedJson.pairs[0].states.default.background);
 assert.ok(exportedJson.pairs[0].states.hover.background);
 assert.ok(exportedJson.pairs[0].states.pressed.background);
 assert.ok(exportedJson.pairs[0].focusRing.hex);
 elements.copyCss.dispatch('click');
 assert.doesNotMatch(copiedText, /--color-secondary-/);
 assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
-assert.match(copiedText, /--pair-brand-1-foreground: #FFF6F4/);
+assert.match(copiedText, /--pair-brand-1-foreground: #F0EEED/);
 assert.match(copiedText, /--pair-brand-1-background-hover:/);
 assert.match(copiedText, /--pair-brand-1-background-pressed:/);
 assert.match(copiedText, /--pair-brand-1-focus-ring:/);
@@ -226,7 +258,6 @@ assert.equal((elements.secondarySuggestions.innerHTML.match(/class="suggestion"/
 
 elements.targetSelect.value = '7';
 elements.targetSelect.dispatch('change');
-assert.match(elements.matrixNote.textContent, /AAA/);
 assert.match(elements.savedPairs.innerHTML, /FAIL/, 'Saved pair status did not follow the global target');
 assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 7);
 assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 7);
@@ -252,9 +283,9 @@ documentListeners.click({
 assert.equal(elements.hexInput.value, lockedDanger, 'Generating from a new Brand changed a locked semantic role');
 
 documentListeners.click({
-  target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'brand:#FFF6F4:#BF4B2E' } } : null },
+  target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-1' } } : null },
 });
 assert.equal(elements.savedPairCount.textContent, '0');
-assert.match(elements.savedPairs.innerHTML, /No pairs saved yet/);
+assert.match(elements.savedPairs.innerHTML, /No pairs configured/);
 
 console.log('app-smoke: startup and core role interactions passed');

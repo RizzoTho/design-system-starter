@@ -32,8 +32,8 @@ python3 -m http.server 8000
 1. 确认固定的 `Background` 和 `Text`。
 2. 设置 `Brand` 与 `Neutral`；只有用途明确时才启用 `Secondary`。
 3. 按 `Brand` 更新未锁定语义色，再单独微调或 Lock 各角色。
-4. 选择全局 WCAG target，检查 Fit report、assignments 和 Contrast matrix。
-5. 保存可用的前景 / 背景 pair，检查 Component preview，然后 Export。
+4. 选择全局 WCAG target，检查 Colors 里的 Role checks。
+5. 从默认 Brand pair 开始，直接调整 Role、token 值和 Usage，检查 Component preview，然后 Export。
 
 ## GitHub Pages
 
