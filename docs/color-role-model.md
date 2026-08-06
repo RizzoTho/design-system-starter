@@ -133,14 +133,18 @@ Text-input states use consistent ownership: Neutral draws the default boundary, 
 
 ## Saved pair state families
 
-Each pair is a palette snapshot, not a live semantic assignment. Step 03 starts with `Brand 50 on Brand 600` and exposes Role, Foreground token, Background token, and Usage fields. Each pair has an explicit use:
+Each pair is a palette snapshot, not a live semantic assignment. Step 03 starts with `Brand 50 on Brand 600` and exposes Foreground role, Foreground token, Background role, Background token, and Usage fields. Foreground and background are chosen independently because the most common real combinations are cross-role: Brand link text on a Neutral surface, or a Danger action beside Neutral body text on the same surface. A single-role pair cannot express them.
+
+A Foreground token may also be `auto`, which measures readable ink for the resolved background rather than naming a step. On-bold foregrounds are measured black or white and have no token to point at, so the coordinate has to admit a value that is not a palette step. Each pair has an explicit use:
 
 - `Static` exports the selected foreground and background only.
-- `Interactive` preserves that Default pair, derives adjacent Hover and Pressed backgrounds from the saved role scale, and derives a separate Brand focus ring that targets 3:1 non-text contrast against the Default background.
+- `Interactive` preserves that Default pair, derives adjacent Hover and Pressed backgrounds from the background role's saved scale, and derives a separate Brand focus ring that targets 3:1 non-text contrast against the Default background.
 
-Default, Hover, and Pressed retain the selected foreground and expose their measured contrast against the global target. A later palette edit does not rewrite the saved snapshot. This prevents reviewed interaction states from changing silently while still allowing target changes to re-evaluate their pass state.
+Default, Hover, and Pressed retain the selected foreground and expose their measured contrast against the global target. An `auto` foreground is measured once against the Default background and held across all three states, so a control never flips its ink mid-interaction. A later palette edit does not rewrite the saved snapshot. This prevents reviewed interaction states from changing silently while still allowing target changes to re-evaluate their pass state.
 
-Pair identity uses the role plus foreground and background token steps. HEX is stored as the measured color value, but it is not a unique identifier because multiple OKLCH scale steps may reduce to the same sRGB HEX. Editing a pair field deliberately refreshes its current palette snapshot and re-evaluates its states. Duplicate coordinates show a visible message and are not exported twice.
+Pair identity uses the foreground role and token step plus the background role and token step. HEX is stored as the measured color value, but it is not a unique identifier because multiple OKLCH scale steps may reduce to the same sRGB HEX. An `auto` foreground drops its role from that identity, since a measured ink is determined entirely by the background. Editing a pair field deliberately refreshes its current palette snapshot and re-evaluates its states. Duplicate coordinates show a visible message and are not exported twice.
+
+Exported pairs are named after the background role, which owns the surface and its interactive states.
 
 Add pair creates another editable row, and Remove remains available from Step 03. Role checks are an editing route rather than a copy surface: every below-target row names the failing Background or recommended-foreground relationship, shows its measured gap, and opens the corresponding role in Colors.
 

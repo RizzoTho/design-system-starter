@@ -65,7 +65,8 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
   - 600–700: action and pressed state
   - 800–950: strong and dark surfaces
 - `W` and `K` show each token's contrast ratio against White and Black.
-- In Step 03, the pair editor exposes Role, Foreground token, Background token, and Usage. `Aa` is the actual foreground-on-background sample and the number is the contrast ratio.
+- In Step 03, the pair editor exposes Foreground role, Foreground token, Background role, Background token, and Usage. A pair's foreground and background are chosen independently, so a foreground from one role may sit on a background from another. `Aa` is the actual foreground-on-background sample and the number is the contrast ratio.
+- A Foreground token may be `auto`, which measures readable ink for the resolved background instead of naming a palette step. This is how an on-bold foreground is expressed. When a foreground is `auto`, its role has no effect and the Foreground role control is disabled.
 - Step 03 starts with Brand `50` on Brand `600`. Editing a field re-evaluates the pair immediately; duplicate coordinates must remain visible as a clear message instead of silently creating duplicate exports.
 - Button text must be selected by measured contrast. Do not assume a fixed light or dark text color from token number alone.
 
@@ -80,7 +81,8 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
 - Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
 - Disabling Secondary must remove its palettes and exports without leaving stale tokens.
-- Step 03 starts with one default `Brand 50 on Brand 600` pair. Role, Foreground token, Background token, and Static/Interactive Usage are directly editable; changes re-evaluate the pair immediately. Add pair creates another editable row, and saved pairs remain removable from Step 03.
+- Step 03 starts with one default `Brand 50 on Brand 600` pair. Foreground role, Foreground token, Background role, Background token, and Static/Interactive Usage are directly editable; changes re-evaluate the pair immediately. Add pair creates another editable row, and saved pairs remain removable from Step 03.
+- Interactive Hover and Pressed derive from the background role's scale, never the foreground role's. An `auto` foreground is measured once against the Default background and held across states so a control cannot flip its ink mid-interaction.
 - Saved pairs are re-evaluated when the global target changes and are included in CSS and JSON export.
 - A Saved pair is a palette snapshot with an explicit `Static` or `Interactive` use. `Interactive` derives stable Default, Hover, and Pressed backgrounds from the saved scale plus a Brand focus ring. Every exported state keeps its measured contrast result; later palette edits must not silently change an existing snapshot.
 - Step 03 must explain the usage boundary before selection: `Static` is for non-interactive text, surfaces, and icons; `Interactive` is for controls that need Default, Hover, Pressed, and Focus states.

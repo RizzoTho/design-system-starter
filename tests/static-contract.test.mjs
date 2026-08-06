@@ -40,5 +40,8 @@ assert.doesNotMatch(app, /renderMatrix|data-save-pair|matrix-cell|savedPairId/, 
 assert.match(html, /id="step-candidates"[\s\S]*class="workflow-block fit-report-block"[\s\S]*id="step-standard"/, 'Role checks do not live in Step 02 Colors');
 assert.doesNotMatch(html, /class="workflow-block assignment-block"|id="assignmentList"/, 'Redundant Semantic assignments section returned');
 assert.match(html, /id="optimizeSemantics"[^>]*data-i18n="action\.optimizeSemantics"/, 'Role checks lost the one-click semantic optimizer');
+assert.match(app, /data-pair-field="foregroundRoleId"[\s\S]*data-pair-field="backgroundRoleId"/, 'A pair lost its independent foreground and background roles');
+assert.doesNotMatch(app, /pair\.roleId|paletteSnapshot/, 'The single-role pair model returned');
+assert.match(css, /\.saved-pair-fields \{[^}]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/s, 'Pair editor fields do not fit the five-field coordinate');
 
 console.log(`static-contract: ${ids.length} IDs and ${new Set(idSelectors).size} JavaScript ID selectors passed`);

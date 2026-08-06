@@ -16,6 +16,10 @@
   const i18n = window.I18n;
   const t = (key, params) => i18n.t(key, params);
 
+  // A pair foreground is normally a palette step. `auto` instead measures the readable
+  // ink for the resolved background, which is how on-bold assignments are expressed.
+  const autoForeground = 'auto';
+
   const state = {
     context: { ...model.defaults.context },
     target: model.defaults.target,
@@ -81,7 +85,8 @@
     }
     state.palettes = palettes;
     state.diagnostics = diagnostics;
-    state.savedPairs = state.savedPairs.filter(pair => roleIsEnabled(pair.roleId));
+    state.savedPairs = state.savedPairs.filter(pair => roleIsEnabled(pair.backgroundRoleId)
+      && (pair.foregroundStep === autoForeground || roleIsEnabled(pair.foregroundRoleId)));
     state.assignments = model.resolveAssignments(palettes, state.roles, state.target);
     scale = paletteForRole(state.activeRole)?.scale || [];
   }
@@ -214,28 +219,39 @@
     return palette.scale.map(token => ({ step: token.step, hex: token.hex }));
   }
 
-  function createSavedPair({ roleId = 'brand', foregroundStep = 50, backgroundStep = 600, usage = 'static' } = {}) {
-    const foreground = paletteToken(roleId, foregroundStep);
-    const background = paletteToken(roleId, backgroundStep);
+  function resolvePairForeground({ foregroundRoleId, foregroundStep, background }) {
+    if (foregroundStep === autoForeground) return textColor(background);
+    return paletteToken(foregroundRoleId, foregroundStep).hex;
+  }
+
+  function createSavedPair({
+    foregroundRoleId = 'brand',
+    backgroundRoleId = 'brand',
+    foregroundStep = 50,
+    backgroundStep = 600,
+    usage = 'static',
+  } = {}) {
+    const background = paletteToken(backgroundRoleId, backgroundStep).hex;
     return {
       key: `pair-${state.nextPairKey++}`,
-      roleId,
+      foregroundRoleId,
+      backgroundRoleId,
       foregroundStep,
       backgroundStep,
-      foreground: foreground.hex,
-      background: background.hex,
+      foreground: resolvePairForeground({ foregroundRoleId, foregroundStep, background }),
+      background,
       usage,
-      paletteSnapshot: snapshotForRole(roleId),
+      foregroundSnapshot: foregroundStep === autoForeground ? null : snapshotForRole(foregroundRoleId),
+      backgroundSnapshot: snapshotForRole(backgroundRoleId),
       brandPaletteSnapshot: snapshotForRole('brand'),
     };
   }
 
   function refreshSavedPairSnapshot(pair) {
-    const foreground = paletteToken(pair.roleId, pair.foregroundStep);
-    const background = paletteToken(pair.roleId, pair.backgroundStep);
-    pair.foreground = foreground.hex;
-    pair.background = background.hex;
-    pair.paletteSnapshot = snapshotForRole(pair.roleId);
+    pair.background = paletteToken(pair.backgroundRoleId, pair.backgroundStep).hex;
+    pair.foreground = resolvePairForeground(pair);
+    pair.foregroundSnapshot = pair.foregroundStep === autoForeground ? null : snapshotForRole(pair.foregroundRoleId);
+    pair.backgroundSnapshot = snapshotForRole(pair.backgroundRoleId);
     pair.brandPaletteSnapshot = snapshotForRole('brand');
   }
 
@@ -246,8 +262,11 @@
       .join('');
   }
 
-  function pairStepOptions(roleId, selectedStep) {
-    return (paletteForRole(roleId)?.scale || [])
+  function pairStepOptions(roleId, selectedStep, { allowAuto = false } = {}) {
+    const autoOption = allowAuto
+      ? `<option value="${autoForeground}" ${selectedStep === autoForeground ? 'selected' : ''}>${t('saved.autoForeground')}</option>`
+      : '';
+    return autoOption + (paletteForRole(roleId)?.scale || [])
       .map(token => `<option value="${token.step}" ${token.step === selectedStep ? 'selected' : ''}>${token.step} · ${token.hex}</option>`)
       .join('');
   }
@@ -258,7 +277,7 @@
     if (!state.savedPairs.length && paletteForRole('brand')) state.savedPairs.push(createSavedPair());
   }
 
-  function pairState(roleId, foreground, background) {
+  function pairState(foreground, background) {
     const ratio = contrast(foreground, background);
     return {
       foreground,
@@ -269,9 +288,9 @@
   }
 
   function derivePairStateFamily(pair) {
-    const palette = paletteForRole(pair.roleId);
-    if (!palette) throw new Error(`Missing palette for saved pair role: ${pair.roleId}`);
-    const pairScale = pair.paletteSnapshot || palette.scale;
+    const palette = paletteForRole(pair.backgroundRoleId);
+    if (!palette) throw new Error(`Missing palette for saved pair background role: ${pair.backgroundRoleId}`);
+    const pairScale = pair.backgroundSnapshot || palette.scale;
     const defaultIndex = pairScale.findIndex(token => token.step === pair.backgroundStep);
     if (defaultIndex < 0) throw new Error(`Saved pair snapshot is missing background step ${pair.backgroundStep}.`);
     const direction = defaultIndex + 2 < pairScale.length ? 1 : -1;
@@ -286,9 +305,9 @@
     const focus = focusCandidates.find(candidate => candidate.ratio >= 3)
       || focusCandidates.sort((a, b) => b.ratio - a.ratio)[0];
     return {
-      default: pairState(pair.roleId, pair.foreground, pair.background),
-      hover: pairState(pair.roleId, pair.foreground, pairScale[hoverIndex].hex),
-      pressed: pairState(pair.roleId, pair.foreground, pairScale[pressedIndex].hex),
+      default: pairState(pair.foreground, pair.background),
+      hover: pairState(pair.foreground, pairScale[hoverIndex].hex),
+      pressed: pairState(pair.foreground, pairScale[pressedIndex].hex),
       focusRing: {
         hex: focus.hex,
         ratio: Number(focus.ratio.toFixed(2)),
@@ -306,7 +325,11 @@
     $('#savedPairs').innerHTML = state.savedPairs.map(pair => {
       const family = derivePairStateFamily(pair);
       const { ratio, passesTarget: pass } = family.default;
-      const roleLabel = model.roles[pair.roleId].label;
+      const auto = pair.foregroundStep === autoForeground;
+      const foregroundLabel = auto
+        ? t('saved.autoForeground')
+        : `${model.roles[pair.foregroundRoleId].label} ${pair.foregroundStep}`;
+      const pairLabel = `${foregroundLabel} → ${model.roles[pair.backgroundRoleId].label} ${pair.backgroundStep}`;
       const usage = pair.usage || 'static';
       const stateSamples = usage === 'interactive' ? `<div class="saved-pair-states">
         ${['default', 'hover', 'pressed'].map(stateName => {
@@ -317,12 +340,13 @@
       </div>` : '';
       return `<div class="saved-pair ${usage === 'interactive' ? 'interactive' : ''}">
         <span class="saved-pair-sample" style="background:${pair.background};color:${pair.foreground}">Aa</span>
-        <span class="saved-pair-copy"><strong>${roleLabel}</strong><small>${pair.foregroundStep} · ${pair.foreground} → ${pair.backgroundStep} · ${pair.background}</small></span>
+        <span class="saved-pair-copy"><strong>${pairLabel}</strong><small>${pair.foreground} → ${pair.background}</small></span>
         <button class="saved-pair-remove" type="button" data-remove-pair="${pair.key}" aria-label="${t('saved.remove')}">×</button>
         <div class="saved-pair-fields">
-          <label><span>${t('saved.role')}</span><select data-pair-field="roleId" data-pair-key="${pair.key}">${pairRoleOptions(pair.roleId)}</select></label>
-          <label><span>${t('saved.foreground')}</span><select data-pair-field="foregroundStep" data-pair-key="${pair.key}">${pairStepOptions(pair.roleId, pair.foregroundStep)}</select></label>
-          <label><span>${t('saved.background')}</span><select data-pair-field="backgroundStep" data-pair-key="${pair.key}">${pairStepOptions(pair.roleId, pair.backgroundStep)}</select></label>
+          <label><span>${t('saved.foregroundRole')}</span><select data-pair-field="foregroundRoleId" data-pair-key="${pair.key}" ${auto ? 'disabled' : ''}>${pairRoleOptions(pair.foregroundRoleId)}</select></label>
+          <label><span>${t('saved.foreground')}</span><select data-pair-field="foregroundStep" data-pair-key="${pair.key}">${pairStepOptions(pair.foregroundRoleId, pair.foregroundStep, { allowAuto: true })}</select></label>
+          <label><span>${t('saved.backgroundRole')}</span><select data-pair-field="backgroundRoleId" data-pair-key="${pair.key}">${pairRoleOptions(pair.backgroundRoleId)}</select></label>
+          <label><span>${t('saved.background')}</span><select data-pair-field="backgroundStep" data-pair-key="${pair.key}">${pairStepOptions(pair.backgroundRoleId, pair.backgroundStep)}</select></label>
           <label><span>${t('saved.usage')}</span><select data-pair-field="usage" data-pair-key="${pair.key}"><option value="static" ${usage === 'static' ? 'selected' : ''}>${t('saved.static')}</option><option value="interactive" ${usage === 'interactive' ? 'selected' : ''}>${t('saved.interactive')}</option></select></label>
         </div>
         <em class="${pass ? 'pass' : 'fail'}">${ratio.toFixed(1)}:1 · ${pass ? 'PASS' : 'FAIL'}</em>
@@ -574,40 +598,57 @@
     else showToast(t('toast.semanticAlreadyPass'));
   }
 
-  function pairCoordinateExists(roleId, foregroundStep, backgroundStep, exceptKey) {
-    return state.savedPairs.some(pair => pair.key !== exceptKey
-      && pair.roleId === roleId
-      && pair.foregroundStep === foregroundStep
-      && pair.backgroundStep === backgroundStep);
+  // An `auto` foreground is measured from the background, so its own role does not
+  // participate in identity. Without this, two `auto` pairs over the same background
+  // would look distinct only because of a role that has no effect on either color.
+  function pairCoordinate({ foregroundRoleId, foregroundStep, backgroundRoleId, backgroundStep }) {
+    const foreground = foregroundStep === autoForeground ? autoForeground : `${foregroundRoleId}:${foregroundStep}`;
+    return `${foreground}|${backgroundRoleId}:${backgroundStep}`;
+  }
+
+  function pairCoordinateExists(coordinate, exceptKey) {
+    return state.savedPairs.some(pair => pair.key !== exceptKey && pairCoordinate(pair) === coordinate);
   }
 
   function updatePairField(fieldTarget) {
     const pair = state.savedPairs.find(item => item.key === fieldTarget.dataset.pairKey);
     if (!pair) throw new Error(`Saved pair not found: ${fieldTarget.dataset.pairKey}`);
     const field = fieldTarget.dataset.pairField;
-    const value = field === 'roleId' ? fieldTarget.value : field === 'usage' ? fieldTarget.value : Number(fieldTarget.value);
-    const nextRoleId = field === 'roleId' ? value : pair.roleId;
-    const nextForegroundStep = field === 'foregroundStep' ? value : pair.foregroundStep;
-    const nextBackgroundStep = field === 'backgroundStep' ? value : pair.backgroundStep;
+    const raw = fieldTarget.value;
 
     if (field === 'usage') {
-      if (!['static', 'interactive'].includes(value)) throw new Error(`Unknown saved pair usage: ${value}`);
-      pair.usage = value;
+      if (!['static', 'interactive'].includes(raw)) throw new Error(`Unknown saved pair usage: ${raw}`);
+      pair.usage = raw;
       renderAll();
       return;
     }
-    if (!model.paletteOwnerIds.includes(nextRoleId) || !roleIsEnabled(nextRoleId)) throw new Error(`Pair role is not enabled: ${nextRoleId}`);
-    if (!Number.isInteger(nextForegroundStep) || !Number.isInteger(nextBackgroundStep)) throw new Error('Pair token steps must be integers.');
-    paletteToken(nextRoleId, nextForegroundStep);
-    paletteToken(nextRoleId, nextBackgroundStep);
-    if (pairCoordinateExists(nextRoleId, nextForegroundStep, nextBackgroundStep, pair.key)) {
+
+    const isRoleField = field === 'foregroundRoleId' || field === 'backgroundRoleId';
+    const value = isRoleField || raw === autoForeground ? raw : Number(raw);
+    const next = { ...pair, [field]: value };
+
+    // Switching the foreground role must not keep a step the new palette shares by
+    // coincidence only; every palette carries the same steps, so this stays valid.
+    if (!roleIsEnabled(next.backgroundRoleId)) throw new Error(`Pair background role is not enabled: ${next.backgroundRoleId}`);
+    if (next.foregroundStep !== autoForeground && !roleIsEnabled(next.foregroundRoleId)) {
+      throw new Error(`Pair foreground role is not enabled: ${next.foregroundRoleId}`);
+    }
+    if (!Number.isInteger(next.backgroundStep)) throw new Error('Pair background step must be an integer.');
+    if (next.foregroundStep !== autoForeground && !Number.isInteger(next.foregroundStep)) {
+      throw new Error('Pair foreground step must be an integer or auto.');
+    }
+    paletteToken(next.backgroundRoleId, next.backgroundStep);
+    if (next.foregroundStep !== autoForeground) paletteToken(next.foregroundRoleId, next.foregroundStep);
+    if (pairCoordinateExists(pairCoordinate(next), pair.key)) {
       showToast(t('toast.pairAlreadyExists'));
       renderAll();
       return;
     }
-    pair.roleId = nextRoleId;
-    pair.foregroundStep = nextForegroundStep;
-    pair.backgroundStep = nextBackgroundStep;
+
+    pair.foregroundRoleId = next.foregroundRoleId;
+    pair.backgroundRoleId = next.backgroundRoleId;
+    pair.foregroundStep = next.foregroundStep;
+    pair.backgroundStep = next.backgroundStep;
     refreshSavedPairSnapshot(pair);
     renderAll();
   }
@@ -615,13 +656,18 @@
   function addPair() {
     const activeOwner = activeOwnerId();
     const roleId = roleIsEnabled(activeOwner) ? activeOwner : 'brand';
-    const defaults = [[50, 600], [950, 100], [100, 600]];
-    const [foregroundStep, backgroundStep] = defaults.find(([foreground, background]) => !pairCoordinateExists(roleId, foreground, background)) || [50, 600];
-    if (pairCoordinateExists(roleId, foregroundStep, backgroundStep)) {
+    const candidates = [
+      { foregroundStep: autoForeground, backgroundStep: 600 },
+      { foregroundStep: 50, backgroundStep: 600 },
+      { foregroundStep: 950, backgroundStep: 100 },
+      { foregroundStep: 100, backgroundStep: 600 },
+    ].map(candidate => ({ ...candidate, foregroundRoleId: roleId, backgroundRoleId: roleId }));
+    const next = candidates.find(candidate => !pairCoordinateExists(pairCoordinate(candidate)));
+    if (!next) {
       showToast(t('toast.pairAlreadyExists'));
       return;
     }
-    state.savedPairs.push(createSavedPair({ roleId, foregroundStep, backgroundStep }));
+    state.savedPairs.push(createSavedPair(next));
     renderAll();
     showToast(t('toast.pairAdded'));
   }
@@ -692,8 +738,9 @@
     lines.push('  --color-regular-dark-on-bold: var(--color-neutral-dark-on-bold);');
     const pairCounts = {};
     for (const pair of state.savedPairs) {
-      pairCounts[pair.roleId] = (pairCounts[pair.roleId] || 0) + 1;
-      const name = `${pair.roleId}-${pairCounts[pair.roleId]}`;
+      // Named after the background role: it owns the surface and its interactive states.
+      pairCounts[pair.backgroundRoleId] = (pairCounts[pair.backgroundRoleId] || 0) + 1;
+      const name = `${pair.backgroundRoleId}-${pairCounts[pair.backgroundRoleId]}`;
       lines.push(`  --pair-${name}-foreground: ${pair.foreground};`);
       lines.push(`  --pair-${name}-background: ${pair.background};`);
       if ((pair.usage || 'static') === 'interactive') {
@@ -717,7 +764,7 @@
       semantic: state.assignments,
       pairs: state.savedPairs.map(pair => {
         const family = derivePairStateFamily(pair);
-        const { key, paletteSnapshot, brandPaletteSnapshot, ...publicPair } = pair;
+        const { key, foregroundSnapshot, backgroundSnapshot, brandPaletteSnapshot, ...publicPair } = pair;
         return {
           ...publicPair,
           usage: pair.usage || 'static',

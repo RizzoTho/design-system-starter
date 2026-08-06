@@ -186,10 +186,13 @@ assert.equal(document.documentElement.lang, 'en');
 assert.match(elements.lightPreviewContent.innerHTML, /Publish update/);
 
 assert.equal(elements.savedPairCount.textContent, '1');
-assert.match(elements.savedPairs.innerHTML, /50 · #F0EEED → 600 · #B7523A/);
+assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 600/);
+assert.match(elements.savedPairs.innerHTML, /#F0EEED → #B7523A/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-fields/);
 assert.match(elements.savedPairs.innerHTML, /Static/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-remove/);
+assert.match(elements.savedPairs.innerHTML, /data-pair-field="foregroundRoleId"/);
+assert.match(elements.savedPairs.innerHTML, /data-pair-field="backgroundRoleId"/);
 assert.match(elements.savedPairs.innerHTML, /data-pair-field="foregroundStep"/);
 elements.addPair.dispatch('click');
 assert.equal(elements.savedPairCount.textContent, '2');
@@ -211,12 +214,44 @@ const pairBackgroundTarget = {
   closest: selector => selector === '[data-pair-field]' ? pairBackgroundTarget : null,
 };
 documentListeners.change({ target: pairBackgroundTarget });
-assert.match(elements.savedPairs.innerHTML, /50 · #F0EEED → 700 · #96412C/);
+assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
+assert.match(elements.savedPairs.innerHTML, /#F0EEED → #96412C/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-2' } } : null },
 });
 assert.equal(elements.savedPairCount.textContent, '1');
+
+// A pair must be able to span two roles; a single-role model cannot express
+// Brand text on a Neutral surface, which is the most common real combination.
+const crossRolePair = {
+  value: 'neutral',
+  dataset: { pairField: 'backgroundRoleId', pairKey: 'pair-1' },
+  closest: selector => selector === '[data-pair-field]' ? crossRolePair : null,
+};
+documentListeners.change({ target: crossRolePair });
+assert.match(elements.savedPairs.innerHTML, /Brand 50 → Neutral 700/, 'A pair could not span two roles');
+// The foreground stays Brand 50 while the background leaves the Brand palette.
+assert.match(elements.savedPairs.innerHTML, /#F0EEED → #(?!96412C)/, 'Background did not follow the new role');
+
+elements.copyJson.dispatch('click');
+const crossRoleJson = JSON.parse(copiedText);
+assert.equal(crossRoleJson.pairs[0].foregroundRoleId, 'brand');
+assert.equal(crossRoleJson.pairs[0].backgroundRoleId, 'neutral');
+// Hover and Pressed must come from the background role's scale, not the foreground's.
+const neutralSteps = Object.values(crossRoleJson.reference.neutral);
+assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.hover.background),
+  'Hover did not follow the background role scale');
+assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.pressed.background),
+  'Pressed did not follow the background role scale');
+
+const restoreBackgroundRole = {
+  value: 'brand',
+  dataset: { pairField: 'backgroundRoleId', pairKey: 'pair-1' },
+  closest: selector => selector === '[data-pair-field]' ? restoreBackgroundRole : null,
+};
+documentListeners.change({ target: restoreBackgroundRole });
+assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
 
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
@@ -225,7 +260,10 @@ assert.equal('secondary' in exportedJson.reference, false);
 assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
 assert.equal(exportedJson.pairs.length, 1);
 assert.equal('key' in exportedJson.pairs[0], false);
-assert.equal(exportedJson.pairs[0].roleId, 'brand');
+assert.equal('backgroundSnapshot' in exportedJson.pairs[0], false);
+assert.equal('foregroundSnapshot' in exportedJson.pairs[0], false);
+assert.equal(exportedJson.pairs[0].foregroundRoleId, 'brand');
+assert.equal(exportedJson.pairs[0].backgroundRoleId, 'brand');
 assert.equal(exportedJson.pairs[0].foregroundStep, 50);
 assert.equal(exportedJson.pairs[0].backgroundStep, 700);
 assert.equal(exportedJson.pairs[0].usage, 'interactive');
@@ -240,6 +278,26 @@ assert.match(copiedText, /--pair-brand-1-foreground: #F0EEED/);
 assert.match(copiedText, /--pair-brand-1-background-hover:/);
 assert.match(copiedText, /--pair-brand-1-background-pressed:/);
 assert.match(copiedText, /--pair-brand-1-focus-ring:/);
+
+// An on-bold foreground is measured black or white, not a palette step, so the pair
+// model has to hold a foreground that no token can express.
+const autoForegroundTarget = {
+  value: 'auto',
+  dataset: { pairField: 'foregroundStep', pairKey: 'pair-1' },
+  closest: selector => selector === '[data-pair-field]' ? autoForegroundTarget : null,
+};
+documentListeners.change({ target: autoForegroundTarget });
+assert.match(elements.savedPairs.innerHTML, /Auto · measured ink → Brand 700/);
+assert.match(elements.savedPairs.innerHTML, /data-pair-field="foregroundRoleId"[^>]*disabled/,
+  'Foreground role stayed editable while the foreground was measured');
+elements.copyJson.dispatch('click');
+const autoJson = JSON.parse(copiedText);
+assert.equal(autoJson.pairs[0].foregroundStep, 'auto');
+assert.equal(autoJson.pairs[0].foreground, '#FFFFFF');
+assert.ok(autoJson.pairs[0].states.default.passesTarget,
+  'A measured foreground should reach the target against its own background');
+// The measured ink is fixed at Default so a button cannot flip ink between states.
+assert.equal(autoJson.pairs[0].states.hover.foreground, autoJson.pairs[0].states.default.foreground);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'regular' } } : null },
