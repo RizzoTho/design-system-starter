@@ -299,6 +299,44 @@ assert.ok(autoJson.pairs[0].states.default.passesTarget,
 // The measured ink is fixed at Default so a button cannot flip ink between states.
 assert.equal(autoJson.pairs[0].states.hover.foreground, autoJson.pairs[0].states.default.foreground);
 
+// The starter set is the point of the whole workflow: one action from a seed to the
+// combinations a screen actually needs.
+const beforeGenerate = Number(elements.savedPairCount.textContent);
+elements.generateStarterSet.dispatch('click');
+const afterGenerate = Number(elements.savedPairCount.textContent);
+assert.equal(afterGenerate - beforeGenerate, 10, 'Starter set did not produce ten rows with Secondary disabled');
+for (const name of ['Body text', 'Muted text', 'Link', 'Primary action', 'Neutral action',
+  'Destructive action', 'Success notice', 'Warning notice', 'Danger notice', 'Information notice']) {
+  assert.match(elements.savedPairs.innerHTML, new RegExp(name), `Starter set is missing ${name}`);
+}
+assert.doesNotMatch(elements.savedPairs.innerHTML, /Secondary action/, 'A disabled role was fabricated into the set');
+
+// Generating again must not duplicate rows the user already has.
+elements.generateStarterSet.dispatch('click');
+assert.equal(Number(elements.savedPairCount.textContent), afterGenerate, 'Regenerating duplicated starter pairs');
+
+elements.copyJson.dispatch('click');
+const starterJson = JSON.parse(copiedText);
+const bodyText = starterJson.pairs.find(pair => pair.slug === 'body-text');
+const primary = starterJson.pairs.find(pair => pair.slug === 'primary-action');
+const link = starterJson.pairs.find(pair => pair.slug === 'link');
+assert.ok(bodyText && primary && link, 'Starter pairs lost their product-intent slugs');
+assert.equal(primary.foregroundStep, 'auto', 'Primary action did not use a measured on-bold foreground');
+assert.equal(primary.usage, 'interactive');
+assert.equal(bodyText.usage, 'static');
+// Body text maximizes contrast; Link keeps Brand character by taking the least that passes.
+assert.ok(bodyText.ratio > link.ratio, 'Body text should outrank Link in contrast');
+assert.equal(link.backgroundRoleId, 'neutral', 'Link should sit on the Neutral surface, not its own');
+assert.equal(link.foregroundRoleId, 'brand');
+for (const pair of starterJson.pairs.filter(item => item.slug)) {
+  assert.ok(pair.ratio >= starterJson.target, `${pair.slug} did not reach the active target`);
+}
+
+elements.copyCss.dispatch('click');
+assert.match(copiedText, /--pair-body-text-foreground:/, 'Starter pairs did not export under their product intent');
+assert.match(copiedText, /--pair-primary-action-background-hover:/);
+assert.match(copiedText, /--pair-brand-1-foreground:/, 'Unnamed pairs lost their role-indexed names');
+
 documentListeners.click({
   target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'regular' } } : null },
 });
@@ -340,9 +378,12 @@ documentListeners.click({
 });
 assert.equal(elements.hexInput.value, lockedDanger, 'Generating from a new Brand changed a locked semantic role');
 
-documentListeners.click({
-  target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-1' } } : null },
-});
+// Every pair stays individually removable, generated ones included.
+for (const key of [...elements.savedPairs.innerHTML.matchAll(/data-remove-pair="([^"]+)"/g)].map(match => match[1])) {
+  documentListeners.click({
+    target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: key } } : null },
+  });
+}
 assert.equal(elements.savedPairCount.textContent, '0');
 assert.match(elements.savedPairs.innerHTML, /No pairs configured/);
 

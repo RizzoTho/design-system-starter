@@ -111,12 +111,18 @@ Ten pairs with `Secondary` disabled, eleven with it enabled.
 
 Rows 4, 5, and 7 are direct projections of resolved assignments. The rest need one derivation the assignment model does not currently expose: the strongest-contrast token that meets the active target against a given background. `borderIcon` is checked at 3:1 and is meant for borders and icons, so it is not a safe default for notice text. Reuse the existing `strongestContrastToken()` helper rather than adding a second selection rule.
 
-- [ ] Add target-aware foreground selection against a given background token.
-- [ ] Add one action in Step 03 that generates the set.
-- [ ] Name each generated pair by product intent, not by token position.
-- [ ] Skip roles that are disabled; do not fabricate a `Secondary` row when `Secondary` is off.
-- [ ] Append rather than replace when the user already has pairs, and do not duplicate rows that already exist.
-- [ ] Show failing generated pairs with their measured gap instead of silently dropping them.
+- [x] Add target-aware foreground selection against a given background token.
+- [x] Add one action in Step 03 that generates the set.
+- [x] Name each generated pair by product intent, not by token position.
+- [x] Skip roles that are disabled; do not fabricate a `Secondary` row when `Secondary` is off.
+- [x] Append rather than replace when the user already has pairs, and do not duplicate rows that already exist.
+- [x] Show failing generated pairs with their measured gap instead of silently dropping them.
+
+Two things changed during implementation.
+
+**Notice and link foregrounds take the least contrast that passes, not the most.** The table above said "strongest passing" for every text row. That is wrong for anything whose meaning is carried by its hue: maximizing contrast pushes `Success` text to near-black and throws away the green. Body text and neutral actions still maximize contrast; links and status text take the minimum that passes. Both modes live in `foregroundToken()`.
+
+**Regenerating after a target change can leave two rows sharing a name.** Dedup is by coordinate, and a different target resolves different tokens, so the new row is genuinely a new coordinate. The older row stays and is visibly failing. This follows the append-never-overwrite rule, and showing both beats silently rewriting a pair the user may have edited — but if it proves annoying, refreshing a generated row in place is the alternative.
 
 **Sub-decision: which theme does the set come from?** Assignments resolve per theme; a saved pair has no theme field. Generating both themes would double the set to twenty-two rows and contradict the size decision above. Generate from the Light assignment set, and leave Dark where it already lives in export. Revisit only if Dark-first turns out to be a real starting point for users.
 

@@ -144,7 +144,23 @@ Default, Hover, and Pressed retain the selected foreground and expose their meas
 
 Pair identity uses the foreground role and token step plus the background role and token step. HEX is stored as the measured color value, but it is not a unique identifier because multiple OKLCH scale steps may reduce to the same sRGB HEX. An `auto` foreground drops its role from that identity, since a measured ink is determined entirely by the background. Editing a pair field deliberately refreshes its current palette snapshot and re-evaluates its states. Duplicate coordinates show a visible message and are not exported twice.
 
-Exported pairs are named after the background role, which owns the surface and its interactive states.
+Exported pairs are named after the background role, which owns the surface and its interactive states. A generated pair instead exports under its product intent.
+
+## The starter set
+
+A starter should not have to assemble a usable palette one pair at a time. One action in Step 03 generates the combinations a screen actually needs, named by product intent rather than by position in the role model:
+
+- body text, muted text, and link on the Neutral surface;
+- primary, secondary, neutral, and destructive actions;
+- one notice per semantic role.
+
+The set is a projection of resolved assignments onto pair coordinates. Action rows use an `auto` foreground, because an on-bold color is measured rather than named. Text rows resolve a token against the active target instead of reusing `borderIcon`, which is chosen at 3:1 for borders and icons and is not a safe source for text.
+
+Two selection modes carry different intent. Body text and neutral actions take the most readable token available. Links and status text take the least contrast that still passes, because a role whose meaning is carried by its hue should not collapse to near-black just to maximize a ratio. This keeps `Success` visibly green and `Danger` visibly red while still meeting the target.
+
+Roles that are disabled are skipped, never fabricated. Generating appends and never overwrites, so a pair the user built or edited stays theirs; an existing coordinate is simply skipped. A changed target produces different coordinates, so regenerating after a target change can leave two rows sharing a name, with the older one visibly failing. That is accepted deliberately: showing both is safer than silently rewriting a reviewed pair.
+
+The full four-layer assignment table is not part of this set. It remains available through CSS and JSON export, where it belongs.
 
 Add pair creates another editable row, and Remove remains available from Step 03. Role checks are an editing route rather than a copy surface: every below-target row names the failing Background or recommended-foreground relationship, shows its measured gap, and opens the corresponding role in Colors.
 
