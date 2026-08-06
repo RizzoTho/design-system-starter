@@ -405,7 +405,9 @@
     const warning = state.assignments.warning[theme];
     const danger = state.assignments.danger[theme];
     const information = state.assignments.information[theme];
-    const optionalAction = secondary || neutral;
+    // Secondary is an accent, not a second filled action. It decorates a badge; it never
+    // fills a control that would compete with the primary action for attention.
+    const accent = secondary || brand;
     const paletteRoles = model.paletteOwnerIds.filter(roleId => roleIsEnabled(roleId));
     const variables = [
       `--pv-brand:${brand.bold.hex}`,
@@ -416,8 +418,8 @@
       `--pv-neutral-line:${neutral.borderIcon.hex}`,
       `--pv-neutral-bold:${neutral.bold.hex}`,
       `--pv-on-neutral:${neutral.onBold.hex}`,
-      `--pv-secondary:${optionalAction.bold.hex}`,
-      `--pv-on-secondary:${optionalAction.onBold.hex}`,
+      `--pv-accent-soft:${accent.subtle.hex}`,
+      `--pv-accent-line:${accent.borderIcon.hex}`,
       `--pv-success-soft:${success.subtle.hex}`,
       `--pv-success-line:${success.borderIcon.hex}`,
       `--pv-success:${success.bold.hex}`,
