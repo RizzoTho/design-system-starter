@@ -251,6 +251,82 @@
     };
   }
 
+  // A pair foreground is normally a palette step. `auto` instead measures readable ink
+  // for the resolved background, which is how an on-bold foreground is expressed.
+  const autoForegroundStep = 'auto';
+
+  // `borderIcon` is chosen at 3:1 because it is meant for borders and icons, so it is not
+  // a safe source for text. These pick a foreground against the active text target instead.
+  //   maxContrast — most readable, used where legibility outranks character (body text).
+  //   minPassing  — the least contrast that still passes, which keeps the role's hue
+  //                 recognizable. Used for links and status text, where near-black would
+  //                 throw away the very color that carries the meaning.
+  function foregroundToken(palette, backgroundHex, target, mode = 'maxContrast') {
+    const ranked = palette.scale
+      .map(token => ({ step: token.step, hex: token.hex, ratio: contrast(token.hex, backgroundHex) }))
+      .sort((first, second) => second.ratio - first.ratio);
+    const passing = ranked.filter(token => token.ratio >= target);
+    if (!passing.length) return { ...ranked[0], pass: false };
+    const chosen = mode === 'minPassing' ? passing[passing.length - 1] : passing[0];
+    return { ...chosen, pass: true };
+  }
+
+  // The starter set is a projection of resolved assignments onto pair coordinates.
+  // Rows whose foreground is an on-bold assignment use `auto`; the rest resolve a token
+  // against the active target. Disabled roles drop out rather than being fabricated.
+  function starterPairSpecs(palettes, roleState, assignments, target) {
+    const enabled = roleId => Boolean(palettes[roleId]) && roleState[roleId].enabled !== false;
+    const light = roleId => assignments[roleId].light;
+    const specs = [];
+
+    const text = (slug, nameKey, foregroundRoleId, backgroundRoleId, backgroundStep, mode) => {
+      const backgroundHex = tokenAt(palettes[backgroundRoleId], backgroundStep).hex;
+      const foreground = foregroundToken(palettes[foregroundRoleId], backgroundHex, target, mode);
+      specs.push({
+        slug,
+        nameKey,
+        foregroundRoleId,
+        foregroundStep: foreground.step,
+        backgroundRoleId,
+        backgroundStep,
+        usage: 'static',
+      });
+    };
+
+    const action = (slug, nameKey, roleId) => {
+      specs.push({
+        slug,
+        nameKey,
+        foregroundRoleId: roleId,
+        foregroundStep: autoForegroundStep,
+        backgroundRoleId: roleId,
+        backgroundStep: light(roleId).bold.step,
+        usage: 'interactive',
+      });
+    };
+
+    if (enabled('neutral')) {
+      const surface = light('neutral').subtle.step;
+      text('body-text', 'starter.bodyText', 'neutral', 'neutral', surface, 'maxContrast');
+      text('muted-text', 'starter.mutedText', 'neutral', 'neutral', surface, 'minPassing');
+      if (enabled('brand')) text('link', 'starter.link', 'brand', 'neutral', surface, 'minPassing');
+    }
+    if (enabled('brand')) action('primary-action', 'starter.primaryAction', 'brand');
+    if (enabled('secondary')) action('secondary-action', 'starter.secondaryAction', 'secondary');
+    if (enabled('neutral')) {
+      // One tier above the page surface, so a quiet control still reads as raised.
+      const raised = 200;
+      text('neutral-action', 'starter.neutralAction', 'neutral', 'neutral', raised, 'maxContrast');
+      specs[specs.length - 1].usage = 'interactive';
+    }
+    if (enabled('danger')) action('destructive-action', 'starter.destructiveAction', 'danger');
+    for (const roleId of semanticRoleIds) {
+      if (!enabled(roleId)) continue;
+      text(`${roleId}-notice`, `starter.${roleId}Notice`, roleId, roleId, light(roleId).subtle.step, 'minPassing');
+    }
+    return specs;
+  }
+
   function resolveAssignments(palettes, roleState, target) {
     const assignments = {};
     for (const roleId of paletteOwnerIds) {
@@ -285,6 +361,9 @@
     makeSemanticSuggestion,
     makeSemanticSuggestions,
     optimizeSemanticSeed,
+    autoForegroundStep,
+    foregroundToken,
+    starterPairSpecs,
     createInitialRoles,
     resolveAssignment,
     resolveAssignments,

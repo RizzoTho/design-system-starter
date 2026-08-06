@@ -105,8 +105,12 @@
         <div class="step-content">
           <section class="workflow-block">
             <div class="section-head"><div><h2 data-i18n="saved.editor.title">Pair editor</h2><p data-i18n="saved.editor.desc">Use a small set of token values to define pairs. Contrast and interactive states update as you edit.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="saved.editor.badge">EDIT VALUES</span></div>
+            <div class="saved-pairs-actions">
+              <button id="generateStarterSet" class="button" type="button" data-i18n="saved.generate">Generate starter set</button>
+              <button id="addPair" class="button" type="button" data-i18n="saved.add">Add pair</button>
+            </div>
+            <p class="saved-generate-hint" data-i18n="saved.generateHint">Builds the combinations a screen needs — text, actions, and status messages — from the roles you enabled. Existing pairs are kept.</p>
             <div id="savedPairs" class="saved-pairs"></div>
-            <button id="addPair" class="button" type="button" data-i18n="saved.add">Add pair</button>
           </section>
         </div>
       </section>

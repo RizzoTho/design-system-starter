@@ -4,6 +4,7 @@ import fs from 'node:fs';
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+const roleModel = fs.readFileSync(new URL('../js/role-model.js', import.meta.url), 'utf8');
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
@@ -43,5 +44,8 @@ assert.match(html, /id="optimizeSemantics"[^>]*data-i18n="action\.optimizeSemant
 assert.match(app, /data-pair-field="foregroundRoleId"[\s\S]*data-pair-field="backgroundRoleId"/, 'A pair lost its independent foreground and background roles');
 assert.doesNotMatch(app, /pair\.roleId|paletteSnapshot/, 'The single-role pair model returned');
 assert.match(css, /\.saved-pair-fields \{[^}]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/s, 'Pair editor fields do not fit the five-field coordinate');
+assert.match(html, /id="generateStarterSet"[^>]*data-i18n="saved\.generate"/, 'Step 03 lost the starter set action');
+assert.match(roleModel, /function starterPairSpecs/, 'The starter set moved out of the role model');
+assert.doesNotMatch(roleModel, /borderIcon\.step[^;]*starter/, 'Starter text foregrounds must not reuse the 3:1 border/icon token');
 
 console.log(`static-contract: ${ids.length} IDs and ${new Set(idSelectors).size} JavaScript ID selectors passed`);

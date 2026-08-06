@@ -16,9 +16,7 @@
   const i18n = window.I18n;
   const t = (key, params) => i18n.t(key, params);
 
-  // A pair foreground is normally a palette step. `auto` instead measures the readable
-  // ink for the resolved background, which is how on-bold assignments are expressed.
-  const autoForeground = 'auto';
+  const autoForeground = model.autoForegroundStep;
 
   const state = {
     context: { ...model.defaults.context },
@@ -230,10 +228,14 @@
     foregroundStep = 50,
     backgroundStep = 600,
     usage = 'static',
+    slug = null,
+    nameKey = null,
   } = {}) {
     const background = paletteToken(backgroundRoleId, backgroundStep).hex;
     return {
       key: `pair-${state.nextPairKey++}`,
+      slug,
+      nameKey,
       foregroundRoleId,
       backgroundRoleId,
       foregroundStep,
@@ -329,7 +331,9 @@
       const foregroundLabel = auto
         ? t('saved.autoForeground')
         : `${model.roles[pair.foregroundRoleId].label} ${pair.foregroundStep}`;
-      const pairLabel = `${foregroundLabel} → ${model.roles[pair.backgroundRoleId].label} ${pair.backgroundStep}`;
+      const coordinateLabel = `${foregroundLabel} → ${model.roles[pair.backgroundRoleId].label} ${pair.backgroundStep}`;
+      const pairLabel = pair.nameKey ? t(pair.nameKey) : coordinateLabel;
+      const coordinateNote = pair.nameKey ? `${coordinateLabel} · ` : '';
       const usage = pair.usage || 'static';
       const stateSamples = usage === 'interactive' ? `<div class="saved-pair-states">
         ${['default', 'hover', 'pressed'].map(stateName => {
@@ -340,7 +344,7 @@
       </div>` : '';
       return `<div class="saved-pair ${usage === 'interactive' ? 'interactive' : ''}">
         <span class="saved-pair-sample" style="background:${pair.background};color:${pair.foreground}">Aa</span>
-        <span class="saved-pair-copy"><strong>${pairLabel}</strong><small>${pair.foreground} → ${pair.background}</small></span>
+        <span class="saved-pair-copy"><strong>${pairLabel}</strong><small>${coordinateNote}${pair.foreground} → ${pair.background}</small></span>
         <button class="saved-pair-remove" type="button" data-remove-pair="${pair.key}" aria-label="${t('saved.remove')}">×</button>
         <div class="saved-pair-fields">
           <label><span>${t('saved.foregroundRole')}</span><select data-pair-field="foregroundRoleId" data-pair-key="${pair.key}" ${auto ? 'disabled' : ''}>${pairRoleOptions(pair.foregroundRoleId)}</select></label>
@@ -349,7 +353,7 @@
           <label><span>${t('saved.background')}</span><select data-pair-field="backgroundStep" data-pair-key="${pair.key}">${pairStepOptions(pair.backgroundRoleId, pair.backgroundStep)}</select></label>
           <label><span>${t('saved.usage')}</span><select data-pair-field="usage" data-pair-key="${pair.key}"><option value="static" ${usage === 'static' ? 'selected' : ''}>${t('saved.static')}</option><option value="interactive" ${usage === 'interactive' ? 'selected' : ''}>${t('saved.interactive')}</option></select></label>
         </div>
-        <em class="${pass ? 'pass' : 'fail'}">${ratio.toFixed(1)}:1 · ${pass ? 'PASS' : 'FAIL'}</em>
+        <em class="${pass ? 'pass' : 'fail'}">${ratio.toFixed(1)}:1 · ${pass ? 'PASS' : `FAIL · ${t('saved.needsRatio', { target: state.target.toFixed(1) })}`}</em>
         ${stateSamples}
       </div>`;
     }).join('');
@@ -672,6 +676,25 @@
     showToast(t('toast.pairAdded'));
   }
 
+  function generateStarterSet() {
+    const specs = model.starterPairSpecs(state.palettes, state.roles, state.assignments, state.target);
+    let added = 0;
+    let skipped = 0;
+    for (const spec of specs) {
+      // Append rather than replace: a row the user already built stays theirs.
+      if (pairCoordinateExists(pairCoordinate(spec))) {
+        skipped += 1;
+        continue;
+      }
+      state.savedPairs.push(createSavedPair(spec));
+      added += 1;
+    }
+    renderAll();
+    if (!added) showToast(t('toast.starterSetExists'));
+    else if (skipped) showToast(t('toast.starterSetPartial', { added, skipped }));
+    else showToast(t('toast.starterSetGenerated', { count: added }));
+  }
+
   function copy(value, message = t('toast.copied')) {
     const fallback = () => {
       const area = document.createElement('textarea');
@@ -738,9 +761,11 @@
     lines.push('  --color-regular-dark-on-bold: var(--color-neutral-dark-on-bold);');
     const pairCounts = {};
     for (const pair of state.savedPairs) {
-      // Named after the background role: it owns the surface and its interactive states.
-      pairCounts[pair.backgroundRoleId] = (pairCounts[pair.backgroundRoleId] || 0) + 1;
-      const name = `${pair.backgroundRoleId}-${pairCounts[pair.backgroundRoleId]}`;
+      // A generated pair exports under its product intent. An unnamed pair falls back to
+      // the background role, which owns the surface and its interactive states.
+      const base = pair.slug || pair.backgroundRoleId;
+      pairCounts[base] = (pairCounts[base] || 0) + 1;
+      const name = pair.slug && pairCounts[base] === 1 ? base : `${base}-${pairCounts[base]}`;
       lines.push(`  --pair-${name}-foreground: ${pair.foreground};`);
       lines.push(`  --pair-${name}-background: ${pair.background};`);
       if ((pair.usage || 'static') === 'interactive') {
@@ -820,6 +845,7 @@
   });
   $('#generateSemantics').addEventListener('click', generateSemanticColors);
   $('#optimizeSemantics').addEventListener('click', optimizeSemanticColors);
+  $('#generateStarterSet').addEventListener('click', generateStarterSet);
   $('#addPair').addEventListener('click', addPair);
   $('#copyCss').addEventListener('click', () => copy(cssOutput(), t('toast.cssCopied')));
   $('#copyJson').addEventListener('click', () => copy(jsonOutput(), t('toast.jsonCopied')));
