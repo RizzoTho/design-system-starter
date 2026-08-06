@@ -204,7 +204,8 @@ main { min-width: 0; }
 .saved-pair > em.fail { color: #a24536; }
 .saved-pair > button { grid-area: remove; align-self: start; justify-self: end; width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; color: var(--muted); background: transparent; font-size: 16px; transition: transform 140ms var(--ease-out), background-color 140ms ease; }
 .saved-pair > button:active { transform: scale(.92); }
-.saved-pair-fields { grid-area: fields; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.saved-pair-fields { grid-area: fields; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.saved-pair-fields select[disabled] { color: var(--muted); background: #f4efe6; cursor: not-allowed; }
 .saved-pair-fields label { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 9px; }
 .saved-pair-fields select { min-width: 0; width: 100%; padding: 7px 24px 7px 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fffaf2; font: 9px "SFMono-Regular", Consolas, monospace; }
 .saved-pair-states { grid-area: states; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; padding-top: 7px; border-top: 1px solid var(--line); }

@@ -75,12 +75,12 @@ Added for this round:
 
 ### Phase 1: Let a pair span two roles
 
-- [ ] Give a saved pair an independent foreground role and background role.
-- [ ] Allow a foreground that is a measured color rather than a palette step, so `onBold` assignments are expressible.
-- [ ] Extend pair identity and deduplication to the wider coordinate.
-- [ ] Keep existing single-role pairs valid; migrate the default pair without changing what it renders.
-- [ ] Update the Interactive state family so Hover and Pressed still derive from the background role's scale.
-- [ ] Extend CSS and JSON export to the wider coordinate.
+- [x] Give a saved pair an independent foreground role and background role.
+- [x] Allow a foreground that is a measured color rather than a palette step, so `onBold` assignments are expressible.
+- [x] Extend pair identity and deduplication to the wider coordinate.
+- [x] Keep existing single-role pairs valid; migrate the default pair without changing what it renders.
+- [x] Update the Interactive state family so Hover and Pressed still derive from the background role's scale.
+- [x] Extend CSS and JSON export to the wider coordinate.
 
 Exit criteria:
 
