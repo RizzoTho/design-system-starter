@@ -310,11 +310,15 @@
       text('body-text', 'starter.bodyText', 'neutral', 'neutral', surface, 'maxContrast');
       text('muted-text', 'starter.mutedText', 'neutral', 'neutral', surface, 'minPassing');
       if (enabled('brand')) text('link', 'starter.link', 'brand', 'neutral', surface, 'minPassing');
+      // Secondary is an accent, not a second filled action. Giving it a bold action row
+      // would put two saturated controls in one view and would also contradict the role
+      // model, where Secondary must not replace neutral secondary UI by default.
+      if (enabled('secondary')) text('secondary-accent', 'starter.secondaryAccent', 'secondary', 'neutral', surface, 'minPassing');
     }
     if (enabled('brand')) action('primary-action', 'starter.primaryAction', 'brand');
-    if (enabled('secondary')) action('secondary-action', 'starter.secondaryAction', 'secondary');
     if (enabled('neutral')) {
-      // One tier above the page surface, so a quiet control still reads as raised.
+      // The quiet second button. One tier above the page surface so it still reads as
+      // raised, but never a saturated fill competing with the primary action.
       const raised = 200;
       text('neutral-action', 'starter.neutralAction', 'neutral', 'neutral', raised, 'maxContrast');
       specs[specs.length - 1].usage = 'interactive';

@@ -134,6 +134,21 @@ Exit criteria:
 - Generated pairs and hand-made pairs are indistinguishable in the export contract.
 - Changing the global target re-evaluates every generated pair.
 
+### Phase 2.5: Stop teaching a second filled action
+
+Found by an external color review and confirmed against this project's own role model, which states that `Secondary` must not replace neutral secondary UI by default. Both the Preview and the generated set did exactly that.
+
+- [x] Make the Preview's second action neutral with an outline instead of a saturated fill.
+- [x] Give `Secondary` an accent use in the Preview — it colors the status badge, not a control.
+- [x] Replace the generated `Secondary action` row with a `Secondary accent` pair on the Neutral surface.
+- [x] Keep the quiet `Neutral action` row as the second button.
+
+Exit criteria:
+
+- Only one control in an action group carries a saturated fill.
+- Enabling `Secondary` adds an accent pair, never an interactive filled row.
+- A panel-scoped semantic action, such as the warning banner's, may still be filled.
+
 ### Phase 3: Reroll Brand, Secondary, and Neutral
 
 - [ ] Add a reroll action for the palette-seed group that changes unlocked roles only.

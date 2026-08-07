@@ -45,6 +45,9 @@ assert.match(app, /data-pair-field="foregroundRoleId"[\s\S]*data-pair-field="bac
 assert.doesNotMatch(app, /pair\.roleId|paletteSnapshot/, 'The single-role pair model returned');
 assert.match(css, /\.saved-pair-fields \{[^}]*grid-template-columns: repeat\(5, minmax\(0, 1fr\)\)/s, 'Pair editor fields do not fit the five-field coordinate');
 assert.match(html, /id="generateStarterSet"[^>]*data-i18n="saved\.generate"/, 'Step 03 lost the starter set action');
+assert.match(css, /\.product-secondary-button \{[^}]*background: transparent/s, 'The preview secondary action is filled again and competes with the primary');
+assert.doesNotMatch(app, /--pv-secondary:|--pv-on-secondary:/, 'Secondary is being used as a filled control colour again');
+assert.match(app, /--pv-accent-soft:|--pv-accent-line:/, 'Secondary lost its accent role in the preview');
 assert.match(roleModel, /function starterPairSpecs/, 'The starter set moved out of the role model');
 assert.doesNotMatch(roleModel, /borderIcon\.step[^;]*starter/, 'Starter text foregrounds must not reuse the 3:1 border/icon token');
 

@@ -151,12 +151,15 @@ Exported pairs are named after the background role, which owns the surface and i
 A starter should not have to assemble a usable palette one pair at a time. One action in Step 03 generates the combinations a screen actually needs, named by product intent rather than by position in the role model:
 
 - body text, muted text, and link on the Neutral surface;
-- primary, secondary, neutral, and destructive actions;
+- a primary action, a quiet neutral action, and a destructive action;
+- a `Secondary` accent, when that role is enabled;
 - one notice per semantic role.
 
 The set is a projection of resolved assignments onto pair coordinates. Action rows use an `auto` foreground, because an on-bold color is measured rather than named. Text rows resolve a token against the active target instead of reusing `borderIcon`, which is chosen at 3:1 for borders and icons and is not a safe source for text.
 
 Two selection modes carry different intent. Body text and neutral actions take the most readable token available. Links and status text take the least contrast that still passes, because a role whose meaning is carried by its hue should not collapse to near-black just to maximize a ratio. This keeps `Success` visibly green and `Danger` visibly red while still meeting the target.
+
+Only one control in a view carries a saturated fill. The primary action is filled; the second action stays neutral. `Secondary` never becomes a filled action row, because two saturated controls side by side compete for the same attention, and because this role model already states that `Secondary` must not replace neutral secondary UI by default. When `Secondary` is enabled it earns an accent pair instead — a badge or label treatment on the Neutral surface. A semantic control inside its own panel, such as a warning banner's action, may still be filled; it is that panel's single action, not a second competing one.
 
 Roles that are disabled are skipped, never fabricated. Generating appends and never overwrites, so a pair the user built or edited stays theirs; an existing coordinate is simply skipped. A changed target produces different coordinates, so regenerating after a target change can leave two rows sharing a name, with the older one visibly failing. That is accepted deliberately: showing both is safer than silently rewriting a reviewed pair.
 

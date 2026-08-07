@@ -309,7 +309,25 @@ for (const name of ['Body text', 'Muted text', 'Link', 'Primary action', 'Neutra
   'Destructive action', 'Success notice', 'Warning notice', 'Danger notice', 'Information notice']) {
   assert.match(elements.savedPairs.innerHTML, new RegExp(name), `Starter set is missing ${name}`);
 }
-assert.doesNotMatch(elements.savedPairs.innerHTML, /Secondary action/, 'A disabled role was fabricated into the set');
+assert.doesNotMatch(elements.savedPairs.innerHTML, /Secondary/, 'A disabled role was fabricated into the set');
+
+// Secondary is an accent, not a second filled action. Enabling it must not add a
+// saturated control that competes with the primary action.
+elements.secondaryStrategy.value = 'analogous';
+elements.secondaryStrategy.dispatch('change');
+elements.generateStarterSet.dispatch('click');
+assert.match(elements.savedPairs.innerHTML, /Secondary accent/, 'Enabling Secondary produced no accent pair');
+elements.copyJson.dispatch('click');
+const withSecondary = JSON.parse(copiedText);
+const accent = withSecondary.pairs.find(pair => pair.slug === 'secondary-accent');
+assert.ok(accent, 'Secondary lost its accent pair');
+assert.equal(accent.backgroundRoleId, 'neutral', 'Secondary accent should sit on the Neutral surface');
+assert.equal(accent.usage, 'static', 'Secondary accent must not be an interactive filled control');
+assert.notEqual(accent.foregroundStep, 'auto', 'Secondary accent must not use an on-bold fill');
+assert.equal(withSecondary.pairs.filter(pair => pair.slug === 'secondary-action').length, 0,
+  'The filled Secondary action row returned');
+elements.secondaryStrategy.value = 'none';
+elements.secondaryStrategy.dispatch('change');
 
 // Generating again must not duplicate rows the user already has.
 elements.generateStarterSet.dispatch('click');
