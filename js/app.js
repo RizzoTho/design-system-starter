@@ -30,6 +30,16 @@
     defaultPairInitialized: false,
     nextPairKey: 1,
     language: 'en',
+    mode: 'quick-start',
+    touched: false,
+    proposal: null,
+    previousState: null,
+    generation: null,
+    websiteTokens: null,
+    targetProfileId: 'aa-interface',
+    validation: null,
+    generationCounter: 0,
+    userLocks: {},
   };
 
   const seedColor = $('#seedColor');
@@ -531,6 +541,9 @@
     renderPairings();
     renderSavedPairs();
     renderPreviews();
+    renderGenerationResult();
+    renderContextSourceNote();
+    renderWebsiteTokens();
   }
 
   function setRoleSeed(value) {
@@ -543,6 +556,7 @@
     const ownerId = activeOwnerId();
     state.roles[ownerId].seed = rgbToHex(rgb);
     state.roles[ownerId].enabled = true;
+    markTouched();
     renderAll();
   }
 
@@ -556,6 +570,7 @@
     state.roles[ownerId].seed = mapped.hex;
     state.roles[ownerId].enabled = true;
     if (mapped.reduced) showToast(t('toast.gamutReduced'));
+    markTouched();
     renderAll();
   }
 
@@ -568,6 +583,8 @@
     }
     input.removeAttribute('aria-invalid');
     state.context[kind] = rgbToHex(rgb);
+    state.context.source = state.context.locked ? 'locked' : 'provided';
+    markTouched();
     renderAll();
   }
 
@@ -579,6 +596,7 @@
       state.roles[roleId].seed = suggestions[roleId].hex;
       changed += 1;
     }
+    markTouched();
     renderAll();
     showToast(t('toast.semanticGenerated', { count: changed }));
   }
@@ -598,6 +616,7 @@
       role.seed = result.hex;
       changed += 1;
     }
+    markTouched();
     renderAll();
     if (unresolved) showToast(t('toast.semanticOptimizePartial', { changed, unresolved }));
     else if (changed) showToast(t('toast.semanticOptimized', { count: changed }));
@@ -625,6 +644,7 @@
     if (field === 'usage') {
       if (!['static', 'interactive'].includes(raw)) throw new Error(`Unknown saved pair usage: ${raw}`);
       pair.usage = raw;
+      markTouched();
       renderAll();
       return;
     }
@@ -656,6 +676,7 @@
     pair.foregroundStep = next.foregroundStep;
     pair.backgroundStep = next.backgroundStep;
     refreshSavedPairSnapshot(pair);
+    markTouched();
     renderAll();
   }
 
@@ -674,6 +695,7 @@
       return;
     }
     state.savedPairs.push(createSavedPair(next));
+    markTouched();
     renderAll();
     showToast(t('toast.pairAdded'));
   }
@@ -691,6 +713,7 @@
       state.savedPairs.push(createSavedPair(spec));
       added += 1;
     }
+    markTouched();
     renderAll();
     if (!added) showToast(t('toast.starterSetExists'));
     else if (skipped) showToast(t('toast.starterSetPartial', { added, skipped }));
@@ -809,6 +832,250 @@
     }, null, 2);
   }
 
+  // --- Quick start: one-click website system ----------------------------------
+
+  function markTouched() {
+    state.touched = true;
+  }
+
+  function quickOptions() {
+    const characterId = $('#characterSelect').value;
+    const brandSource = $('#brandSourceSelect').value;
+    const brandHex = brandSource === 'hex' ? $('#quickBrandHex').value.trim() : null;
+    const secondaryStrategy = $('#quickSecondaryStrategy').value;
+    return { characterId, brandSource, brandHex, secondaryStrategy };
+  }
+
+  function currentStateForGeneration() {
+    const roles = { ...state.roles };
+    const source = quickOptions().brandSource;
+    // The starter default lock on Brand is a convenience, not a commitment:
+    // explicit Quick start sources (Generate / HEX) produce a fresh brand unless
+    // the user deliberately locked Brand in Advanced editing. "Keep current"
+    // never unlocks anything.
+    const brandLockedByUser = state.userLocks.brand === true;
+    if (source !== 'keep' && !brandLockedByUser) {
+      roles.brand = { ...roles.brand, locked: false };
+    }
+    return { context: state.context, roles, target: state.target };
+  }
+
+  function nextGenerationSeed() {
+    state.generationCounter += 1;
+    return (state.generationCounter * 7919) % 2147483647;
+  }
+
+  function buildGenerationResult(options) {
+    return window.SystemGenerator.generateSystem({
+      currentState: currentStateForGeneration(),
+      options: {
+        ...options,
+        randomSeed: nextGenerationSeed(),
+        revision: state.generationCounter,
+        targetProfileId: state.targetProfileId,
+      },
+    });
+  }
+
+  function generateWebsiteSystem() {
+    const options = quickOptions();
+    if (options.brandSource === 'hex') {
+      if (!/^#[0-9a-f]{6}$/i.test(options.brandHex)) {
+        $('#quickBrandHex').setAttribute('aria-invalid', 'true');
+        showToast(t('toast.invalidHex'));
+        return;
+      }
+      $('#quickBrandHex').removeAttribute('aria-invalid');
+    }
+    const result = buildGenerationResult(options);
+    if (result.error) {
+      showToast(result.error.message);
+      return;
+    }
+    // A valid first proposal on an untouched session auto-applies so the first
+    // useful system is one click away. Anything else stays a proposal until the
+    // user chooses Apply, Reroll, or Cancel.
+    const canAutoApply = !state.touched && !state.generation && !state.proposal
+      && ['ready', 'ready-with-warnings'].includes(result.validation.status);
+    if (canAutoApply) {
+      if (applyProposal(result, true)) renderGenerationResult();
+      return;
+    }
+    state.proposal = result;
+    renderGenerationResult();
+    showToast(t('toast.proposalReady'));
+  }
+
+  function rerollProposal() {
+    const result = buildGenerationResult(quickOptions());
+    if (result.error) {
+      showToast(result.error.message);
+      return;
+    }
+    state.proposal = result;
+    renderGenerationResult();
+    showToast(t('toast.proposalReady'));
+  }
+
+  function cancelProposal() {
+    state.proposal = null;
+    renderGenerationResult();
+    showToast(t('toast.proposalCancelled'));
+  }
+
+  function applyProposal(result, auto = false) {
+    const proposal = result.proposal;
+    if (proposal.validation.status === 'needs-attention') {
+      showToast(t('gen.applyBlocked'));
+      return false;
+    }
+    state.previousState = JSON.stringify({
+      context: state.context,
+      target: state.target,
+      roles: state.roles,
+      savedPairs: state.savedPairs,
+      defaultPairInitialized: state.defaultPairInitialized,
+      nextPairKey: state.nextPairKey,
+      websiteTokens: state.websiteTokens,
+      targetProfileId: state.targetProfileId,
+      validation: state.validation,
+      generation: state.generation,
+      userLocks: state.userLocks,
+    });
+    state.context = { ...proposal.context };
+    state.roles = proposal.roles;
+    state.targetProfileId = proposal.targetProfileId;
+    state.target = proposal.advancedPairTarget;
+    state.websiteTokens = proposal.websiteTokens;
+    state.validation = proposal.validation;
+    state.generation = proposal.generation;
+    state.touched = true;
+    state.proposal = null;
+    targetSelect.value = String(proposal.advancedPairTarget);
+    renderAll();
+    showToast(auto ? t('toast.systemAutoApplied') : t('toast.systemApplied'));
+    return true;
+  }
+
+  function undoApply() {
+    if (!state.previousState) return;
+    const previous = JSON.parse(state.previousState);
+    state.context = previous.context;
+    state.target = previous.target;
+    state.roles = previous.roles;
+    state.savedPairs = previous.savedPairs;
+    state.defaultPairInitialized = previous.defaultPairInitialized;
+    state.nextPairKey = previous.nextPairKey;
+    state.websiteTokens = previous.websiteTokens;
+    state.targetProfileId = previous.targetProfileId;
+    state.validation = previous.validation;
+    state.generation = previous.generation;
+    state.userLocks = previous.userLocks || {};
+    state.previousState = null;
+    targetSelect.value = String(state.target);
+    renderAll();
+    showToast(t('toast.systemUndone'));
+  }
+
+  function generationStatusCopy(status) {
+    if (status === 'ready') return { key: 'gen.ready', descKey: 'gen.ready.desc', icon: '✓', className: 'ready' };
+    if (status === 'ready-with-warnings') return { key: 'gen.readyWarnings', descKey: 'gen.readyWarnings.desc', icon: '✓', className: 'ready-with-warnings' };
+    return { key: 'gen.needsAttention', descKey: 'gen.needsAttention.desc', icon: '!', className: 'needs-attention' };
+  }
+
+  function renderGenerationResult() {
+    const container = $('#generationResult');
+    if (!container) return;
+    if (!state.proposal) {
+      if (state.generation) {
+        const copy = generationStatusCopy(state.generation.status);
+        container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.appliedNote')}</small></div><button id="undoApply" class="button" type="button">${t('gen.undo')}</button></div>`;
+      } else {
+        container.innerHTML = `<p class="generation-empty">${t('tokens.empty')}</p>`;
+      }
+      return;
+    }
+    const proposal = state.proposal.proposal;
+    const copy = generationStatusCopy(proposal.validation.status);
+    const failures = proposal.validation.requiredFailures || [];
+    const taskRows = failures.length ? `<ul class="generation-tasks">${failures.map(failure => `<li><strong>${failure.theme} · ${failure.tokenId}</strong><span>${t('gen.failureDetail', { token: failure.relationshipId, actual: Number(failure.actual).toFixed(2), required: Number(failure.required).toFixed(1) })}</span>${failure.recovery ? `<em>${t('gen.recovery', { recovery: failure.recovery })}</em>` : ''}</li>`).join('')}</ul>` : '';
+    const summary = failures.length ? `<p class="generation-summary">${t('gen.taskSummary', { count: failures.length })}</p>` : '';
+    const blocked = proposal.validation.status === 'needs-attention';
+    container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t(copy.descKey)}</small></div></div>
+      ${summary}
+      ${taskRows}
+      <p class="generation-note">${t('gen.proposalNote')}</p>
+      <div class="generation-actions">
+        <button id="applyProposal" class="button primary" type="button" ${blocked ? 'disabled' : ''}>${t('gen.apply')}</button>
+        <button id="rerollProposal" class="button" type="button">${t('gen.reroll')}</button>
+        <button id="cancelProposal" class="button" type="button">${t('gen.cancel')}</button>
+      </div>
+      ${blocked ? `<p class="generation-blocked-note">${t('gen.applyBlocked')}</p>` : ''}`;
+  }
+
+  function renderContextSourceNote() {
+    const note = $('#contextSourceNote');
+    if (!note) return;
+    const source = state.context.source;
+    note.textContent = source === 'generated' ? t('context.source.generated')
+      : source === 'provided' ? t('context.source.provided')
+      : source === 'locked' ? t('context.source.locked')
+      : '';
+  }
+
+  function renderWebsiteTokenStatus() {
+    const element = $('#websiteTokenStatus');
+    if (!element) return;
+    if (!state.validation) {
+      element.innerHTML = '';
+      return;
+    }
+    const copy = generationStatusCopy(state.validation.status);
+    const failures = state.validation.requiredFailures || [];
+    element.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t(copy.descKey)}</small></div></div>${failures.length ? `<p class="generation-summary">${t('gen.taskSummary', { count: failures.length })}</p>` : ''}`;
+  }
+
+  function tokenSourceLabel(value) {
+    if (value.sourceKind === 'measured-ink') return t('tokens.measured');
+    const definition = model.roles[value.sourceRole];
+    return definition ? `${definition.label} ${value.sourceStep}` : value.sourceRole;
+  }
+
+  function renderWebsiteTokens() {
+    const container = $('#websiteTokens');
+    if (!container) return;
+    renderWebsiteTokenStatus();
+    if (!state.websiteTokens) {
+      container.innerHTML = `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
+      return;
+    }
+    const contract = window.WebsiteTokenContract;
+    const light = state.websiteTokens.light.values;
+    const dark = state.websiteTokens.dark.values;
+    const order = [
+      ['surfaces', 'tokens.group.surfaces'],
+      ['content', 'tokens.group.content'],
+      ['borders-and-focus', 'tokens.group.bordersAndFocus'],
+      ['action-primary', 'tokens.group.actions'],
+      ['action-secondary', 'tokens.group.actions'],
+      ['action-destructive', 'tokens.group.actions'],
+      ['fields', 'tokens.group.fields'],
+      ['feedback', 'tokens.group.feedback'],
+      ['accent', 'tokens.group.accent'],
+    ];
+    const html = order.map(([group, labelKey]) => {
+      const tokens = (contract.tokenGroups[group] || []).filter(token => light[token.id] || dark[token.id]);
+      if (!tokens.length) return '';
+      const rows = tokens.map(token => {
+        const lightValue = light[token.id];
+        const darkValue = dark[token.id];
+        return `<tr><td class="token-name"><code>${token.css}</code></td><td><span class="token-swatch" style="background:${lightValue.hex}"></span><code>${lightValue.hex}</code><small>${tokenSourceLabel(lightValue)}</small></td><td><span class="token-swatch" style="background:${darkValue.hex}"></span><code>${darkValue.hex}</code><small>${tokenSourceLabel(darkValue)}</small></td></tr>`;
+      }).join('');
+      return `<div class="token-group"><h3>${t(labelKey)}</h3><table class="token-table"><thead><tr><th></th><th>${t('tokens.light')}</th><th>${t('tokens.dark')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join('');
+    container.innerHTML = html || `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
+  }
+
   let toastTimer;
   function showToast(message) {
     const toast = $('#toast');
@@ -827,8 +1094,19 @@
   textHexInput.addEventListener('change', event => setContextFromHex('text', event.target.value));
   targetSelect.addEventListener('change', () => {
     state.target = Number(targetSelect.value);
+    markTouched();
     renderAll();
   });
+  $('#characterSelect').addEventListener('change', () => {
+    markTouched();
+  });
+  $('#brandSourceSelect').addEventListener('change', () => {
+    markTouched();
+    $('#quickBrandHexField').hidden = $('#brandSourceSelect').value !== 'hex';
+  });
+  $('#quickBrandHex').addEventListener('change', () => { markTouched(); });
+  $('#quickSecondaryStrategy').addEventListener('change', () => { markTouched(); });
+  $('#generateSystem').addEventListener('click', generateWebsiteSystem);
   $('#secondaryStrategy').addEventListener('change', event => {
     const strategy = event.target.value;
     state.roles.secondary.strategy = strategy;
@@ -838,11 +1116,15 @@
       const suggestions = model.makeSecondarySuggestions(state.roles.brand.seed, strategy);
       state.roles.secondary.seed = suggestions[0].hex;
     }
+    markTouched();
     renderAll();
   });
   $('#lockRole').addEventListener('click', () => {
+    const ownerId = activeOwnerId();
     const role = activeRoleState();
     role.locked = !role.locked;
+    state.userLocks[ownerId] = role.locked;
+    markTouched();
     renderAll();
   });
   $('#generateSemantics').addEventListener('click', generateSemanticColors);
@@ -858,6 +1140,26 @@
   });
 
   document.addEventListener('click', event => {
+    const applyTarget = event.target.closest('#applyProposal');
+    if (applyTarget) {
+      if (state.proposal && applyProposal(state.proposal)) renderGenerationResult();
+      return;
+    }
+    const rerollTarget = event.target.closest('#rerollProposal');
+    if (rerollTarget) {
+      rerollProposal();
+      return;
+    }
+    const cancelTarget = event.target.closest('#cancelProposal');
+    if (cancelTarget) {
+      cancelProposal();
+      return;
+    }
+    const undoTarget = event.target.closest('#undoApply');
+    if (undoTarget) {
+      undoApply();
+      return;
+    }
     const editRoleTarget = event.target.closest('[data-edit-role]');
     if (editRoleTarget) {
       state.activeRole = editRoleTarget.dataset.editRole;
@@ -870,6 +1172,7 @@
     const removePairTarget = event.target.closest('[data-remove-pair]');
     if (removePairTarget) {
       state.savedPairs = state.savedPairs.filter(pair => pair.key !== removePairTarget.dataset.removePair);
+      markTouched();
       renderAll();
       showToast(t('toast.pairRemoved'));
       return;

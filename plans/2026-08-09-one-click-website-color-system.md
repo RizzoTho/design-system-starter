@@ -599,18 +599,20 @@ Exit criteria:
 
 Effort: Large
 
-- [ ] Add a bounded Quick start panel before the existing workflow.
-- [ ] Make English the initial language and update both catalogs together.
-- [ ] Add the three direct choices and one `Generate website system` action.
-- [ ] Keep direct HEX and OKLCH controls behind Advanced editing without removing them.
-- [ ] Render generation status and task summary without relying on color alone.
-- [ ] Auto-apply a valid first proposal only when state is untouched.
-- [ ] Add Apply, Reroll, Cancel, and Undo for later proposals.
-- [ ] Keep a failed proposal inspectable without replacing the active system.
-- [ ] Rename Step 03 to `Website tokens` and place Custom pairs beneath the generated contract.
-- [ ] Move the existing `Generate starter set` behavior behind compatibility/custom-pair UI after parity exists.
-- [ ] Update Steps navigation, anchors, minimize behavior, and active-section tracking.
-- [ ] Preserve reduced-motion behavior.
+- [x] Add a bounded Quick start panel before the existing workflow.
+- [x] Make English the initial language and update both catalogs together.
+- [x] Add the three direct choices and one `Generate website system` action.
+- [x] Keep direct HEX and OKLCH controls behind Advanced editing without removing them.
+- [x] Render generation status and task summary without relying on color alone.
+- [x] Auto-apply a valid first proposal only when state is untouched.
+- [x] Add Apply, Reroll, Cancel, and Undo for later proposals.
+- [x] Keep a failed proposal inspectable without replacing the active system.
+- [x] Rename Step 03 to `Website tokens` and place Custom pairs beneath the generated contract.
+- [x] Move the existing `Generate starter set` behavior behind compatibility/custom-pair UI after parity exists.
+- [x] Update Steps navigation, anchors, minimize behavior, and active-section tracking.
+- [x] Preserve reduced-motion behavior.
+
+Phase 4 result: a `Quick start` section precedes the workflow with the three choices (character, Brand source with a revealed HEX field, Secondary strategy) and one `Generate website system` action. The first valid generation on an untouched session auto-applies; later generations stay proposals with `Apply` / `Reroll` / `Cancel` and `Undo` restores the previous system. A `NEEDS ATTENTION` proposal is inspectable, names each failing relationship with measured vs required ratio and recovery, and is blocked from Apply. Step 03 is now `Website tokens` (grouped Light / Dark contract with a validation badge) with `Custom pairs` beneath it; the starter-set action is relabeled `Generate compatibility pairs`. The Steps dock gained a Quick start entry and the Website tokens label; Context shows a generated/provided/locked source note. The default brand lock is treated as a starter convenience — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand (`state.userLocks`). AGENTS.md, both READMEs, and the GitHub Pages workflow now describe the running product: seven script owners in load order, eight test suites, and the Quick start flow. New suite `tests/quick-start.test.mjs` covers untouched auto-apply, proposal flow, locks, provided HEX, and blocked Apply.
 
 Exit criteria:
 

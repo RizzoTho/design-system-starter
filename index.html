@@ -26,6 +26,37 @@
     </header>
 
     <main class="workflow">
+      <section id="quick-start" class="workflow-section quick-start-section" data-workflow-step="quick-start">
+        <aside class="step-controls quick-start">
+          <div class="step-heading"><b>★</b><div><strong data-i18n="quick.title">Quick start</strong><small data-i18n="quick.desc">Answer three questions, press one button, and get a complete accessible website color system.</small></div></div>
+          <div class="field">
+            <label for="characterSelect" data-i18n="quick.characterLabel">Color character</label>
+            <select id="characterSelect"><option value="balanced" data-i18n="character.balanced">Balanced</option><option value="warm" data-i18n="character.warm">Warm</option><option value="cool" data-i18n="character.cool">Cool</option><option value="vivid" data-i18n="character.vivid">Vivid</option><option value="muted" data-i18n="character.muted">Muted</option></select>
+            <p class="field-help" data-i18n="quick.characterHelp">Sets the mood of the whole system.</p>
+          </div>
+          <div class="field">
+            <label for="brandSourceSelect" data-i18n="quick.brandLabel">Brand source</label>
+            <select id="brandSourceSelect"><option value="generated" data-i18n="quick.brandGenerate">Generate</option><option value="hex" data-i18n="quick.brandHex">Use HEX</option><option value="keep" data-i18n="quick.brandKeep">Keep current</option></select>
+          </div>
+          <div class="field" id="quickBrandHexField" hidden>
+            <label for="quickBrandHex" data-i18n="quick.brandHexLabel">Brand HEX</label>
+            <input id="quickBrandHex" class="text-input value" value="#B7523A" spellcheck="false" maxlength="7" aria-label="Enter Brand HEX value" data-i18n-aria-label="aria.enterBrandHex" />
+          </div>
+          <div class="field">
+            <label for="quickSecondaryStrategy" data-i18n="quick.secondaryLabel">Secondary strategy</label>
+            <select id="quickSecondaryStrategy"><option value="none" data-i18n="strategy.none">None</option><option value="analogous" data-i18n="strategy.analogous">Analogous</option><option value="contrasting" data-i18n="strategy.contrasting">Contrasting</option></select>
+          </div>
+          <button id="generateSystem" class="button primary full-button" type="button" data-i18n="quick.generateAction">Generate website system</button>
+          <p class="field-help" data-i18n="quick.generateHelp">Runs the complete pipeline: Context, roles, palettes, website tokens, and Light / Dark validation.</p>
+        </aside>
+        <div class="step-content">
+          <div class="quick-start-note">
+            <p data-i18n="quick.advancedNote">Advanced editing below keeps direct Background, Text, HEX, OKLCH, lock, scale, Role check, and Custom pair controls.</p>
+          </div>
+          <div id="generationResult" class="generation-result" aria-live="polite"></div>
+        </div>
+      </section>
+
       <section id="step-context" class="workflow-section" data-workflow-step="context">
         <aside class="step-controls context">
           <div class="step-heading"><b>01</b><div><strong data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
@@ -37,6 +68,7 @@
             <label for="textColor">Text <span id="textValue" class="value">#25231F</span></label>
             <div class="mini-color-row"><div class="mini-picker"><input id="textColor" type="color" value="#25231f" aria-label="Choose Text color" data-i18n-aria-label="aria.chooseText" /></div><input id="textHexInput" class="text-input value" value="#25231F" spellcheck="false" maxlength="7" aria-label="Enter Text HEX value" data-i18n-aria-label="aria.enterText" /></div>
           </div>
+          <p id="contextSourceNote" class="field-help"></p>
         </aside>
         <div class="step-content">
           <div id="contextCanvas" class="context-result" style="--context-bg:#F7F3EB;--context-text:#25231F">
@@ -94,22 +126,27 @@
 
       <section id="step-standard" class="workflow-section" data-workflow-step="standard">
         <aside class="step-controls standard">
-          <div class="step-heading"><b>03</b><div><strong data-i18n="step.pairs.title">Saved pairs</strong><small data-i18n="step.pairs.desc">Start with a default Brand pair, then adjust a few token values for export.</small></div></div>
+          <div class="step-heading"><b>03</b><div><strong data-i18n="step.tokens.title">Website tokens</strong><small data-i18n="step.tokens.desc">The generated system as named tokens. Custom pairs stay editable snapshots below.</small></div></div>
           <div class="saved-usage-guide">
             <div><strong data-i18n="saved.static">Static</strong><span data-i18n="saved.staticMeaning">For text, surfaces, icons, or other content without interaction states.</span></div>
             <div><strong data-i18n="saved.interactive">Interactive</strong><span data-i18n="saved.interactiveMeaning">For controls that need Default, Hover, Pressed, and Focus colors.</span></div>
           </div>
-          <div class="saved-pairs-head"><span data-i18n="saved.title">Selected combinations</span><b id="savedPairCount">0</b></div>
-          <p class="saved-default-hint" data-i18n="saved.defaultHint">Starts with Brand 50 on Brand 600. Foreground and background can come from different roles, and the result updates as you edit.</p>
         </aside>
         <div class="step-content">
           <section class="workflow-block">
-            <div class="section-head"><div><h2 data-i18n="saved.editor.title">Pair editor</h2><p data-i18n="saved.editor.desc">Use a small set of token values to define pairs. Contrast and interactive states update as you edit.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="saved.editor.badge">EDIT VALUES</span></div>
+            <div class="section-head"><div><h2 data-i18n="tokens.editor.title">Website tokens</h2><p data-i18n="tokens.editor.desc">Purpose-named colors for surfaces, content, actions, fields, feedback, and accents. Light and Dark resolve the same names.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="tokens.editor.badge">GENERATED CONTRACT</span></div>
+            <p class="tokens-theme-note" data-i18n="tokens.themeNote">Light and Dark use the same token names; values differ per theme.</p>
+            <div id="websiteTokenStatus" class="website-token-status"></div>
+            <div id="websiteTokens" class="website-tokens"></div>
+          </section>
+          <section class="workflow-block custom-pairs-block">
+            <div class="section-head"><div><h2 data-i18n="step.customPairs.title">Custom pairs</h2><p data-i18n="step.customPairs.desc">Optional foreground / background snapshots. They never overwrite the generated website tokens.</p></div><span class="mono" style="color:var(--muted);font-size:10px"><b id="savedPairCount">0</b></span></div>
+            <p class="saved-compat-note" data-i18n="saved.compatNote">The generated website system already covers these combinations; the pairs below stay editable snapshots for export.</p>
             <div class="saved-pairs-actions">
-              <button id="generateStarterSet" class="button" type="button" data-i18n="saved.generate">Generate starter set</button>
+              <button id="generateStarterSet" class="button" type="button" data-i18n="saved.generateLegacy">Generate compatibility pairs</button>
               <button id="addPair" class="button" type="button" data-i18n="saved.add">Add pair</button>
             </div>
-            <p class="saved-generate-hint" data-i18n="saved.generateHint">Builds the combinations a screen needs — text, actions, and status messages — from the roles you enabled. Existing pairs are kept.</p>
+            <p class="saved-generate-hint" data-i18n="saved.generateLegacyHint">Legacy starter-pair projection kept for the compatibility window.</p>
             <div id="savedPairs" class="saved-pairs"></div>
           </section>
         </div>
@@ -129,9 +166,10 @@
   <aside id="stepDock" class="step-dock" aria-label="Workflow navigation" data-i18n-aria-label="aria.workflowNavigation">
     <div class="step-dock-head"><strong data-i18n="nav.steps">Steps</strong><button id="stepDockToggle" class="step-dock-toggle" type="button" aria-expanded="true" aria-controls="stepDockBody" aria-label="Minimize workflow navigation" data-i18n-aria-label="aria.minimizeSteps">−</button></div>
     <nav id="stepDockBody" class="step-dock-body">
-      <a class="step-link active" href="#step-context" data-step-link="context"><b>01</b><strong data-i18n="step.context.title">Context</strong></a>
+      <a class="step-link active" href="#quick-start" data-step-link="quick-start"><span class="step-icon" aria-hidden="true">★</span><strong data-i18n="nav.quickStart">Quick start</strong></a>
+      <a class="step-link" href="#step-context" data-step-link="context"><b>01</b><strong data-i18n="step.context.title">Context</strong></a>
       <a class="step-link" href="#step-candidates" data-step-link="candidates"><b>02</b><strong data-i18n="step.colors.title">Colors</strong></a>
-      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong data-i18n="step.pairs.title">Saved pairs</strong></a>
+      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong data-i18n="step.tokens.title">Website tokens</strong></a>
       <a class="step-link destination-link destination-start" href="#preview" data-step-link="preview"><span class="step-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.75"></circle></svg></span><strong data-i18n="nav.preview">Preview</strong></a>
       <a class="step-link destination-link" href="#export" data-step-link="export"><b aria-hidden="true">↗</b><strong data-i18n="nav.export">Export</strong></a>
     </nav>

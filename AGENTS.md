@@ -4,30 +4,37 @@
 
 This project is a small, standalone color design system tool inspired by MGifford UI Palette Generator.
 
-The user already knows the page `Background` and `Text` colors. The tool helps them define `Brand` and `Neutral`, decide whether an optional `Secondary` is needed, generate four recognizable semantic families, inspect WCAG contrast relationships, preview components, and export usable colors.
+Two paths share one system. `Quick start` asks for a color character, a Brand source, and a Secondary strategy, then generates a complete accessible website color system in one action — no HEX value required. `Advanced editing` keeps the direct workflow: Background, Text, Brand, Neutral, optional Secondary, semantic roles, locks, scales, Role checks, and Custom pairs. Every result is inspected through WCAG contrast relationships, previewed as components, and exported.
 
 Do not turn it into a generic color picker. Its core question is:
 
-> Given a fixed background and text color, can this starter palette become a coherent, accessible interface color system?
+> With a small amount of direction, can the tool generate the website surfaces, content, actions, form states, feedback colors, interaction states, and Light / Dark mappings needed to start building?
 
 ## Current source of truth
 
-- `index.html` owns the runnable page structure and loads the standalone source files.
+- `index.html` owns the runnable page structure and loads the standalone source files in dependency order.
 - `styles.css` owns all visual and responsive styles.
 - `js/color-engine.js` owns pure color parsing, conversion, scale, luminance, and contrast calculations.
 - `js/i18n.js` owns the complete English and Chinese catalogs plus language switching. English is the default.
 - `js/role-model.js` owns role definitions, suggestions, palette aliases, semantic assignment resolution, and default color state.
-- `js/app.js` owns the single mutable state, rendering, interaction, navigation, copy, and export behavior.
+- `js/token-contract.js` owns website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, and validation summaries.
+- `js/system-generator.js` owns character presets, deterministic Context / Brand / Neutral / Secondary / semantic batch generation, bounded constraint search, and the end-to-end `generateSystem()` proposal builder.
+- `js/project-state.js` owns schema version 2, strict project encode/decode/validation, and storage payload preparation.
+- `js/app.js` owns the single mutable state, rendering, interaction, navigation, Quick start proposals (Apply / Reroll / Cancel / Undo), copy, and export behavior.
 - `scripts/prepare-pages.sh` owns the clean `_site/` artifact used for GitHub Pages deployment.
 - `.github/workflows/pages.yml` owns verification and deployment to the `github-pages` environment from `main`.
 - `AGENTS.md` owns the project intent and maintenance rules.
+- Browser script load order: `color-engine.js` → `i18n.js` → `role-model.js` → `token-contract.js` → `system-generator.js` → `project-state.js` → `app.js`. `index.html` and `tests/static-contract.test.mjs` enforce it.
 - There is no package manager, framework, or generated source. GitHub Pages uses a dependency-free packaging script that copies runtime files into ignored `_site/` output.
 - The page must continue to work when `index.html` is opened directly through `file://`.
 
 ## Eight-role model
 
 - `docs/color-role-model.md` owns the accepted product and color decisions for the eight-role expansion.
-- `plans/2026-07-20-color-role-expansion.md` owns the implementation sequence and acceptance gates.
+- `docs/website-token-contract.md` owns the accepted website token, target profile, and relationship decisions.
+- `plans/2026-07-20-color-role-expansion.md` owns the eight-role implementation history.
+- `plans/2026-08-06-starter-pair-set.md` owns the starter-pair history; its unfinished Reroll and preset phases are subsumed by the current plan.
+- `plans/2026-08-09-one-click-website-color-system.md` owns the current one-click implementation phases.
 - Eight visible roles are `Brand`, `Neutral`, optional `Secondary`, `Regular`, `Success`, `Warning`, `Danger`, and `Information`.
 - `Regular` is a read-through alias of `Neutral`; it never owns a duplicate palette.
 - Semantic families keep recognizable hue ranges. Brand may influence their tonal and chroma character, but not rename or replace their semantic identity.
@@ -37,24 +44,30 @@ If the project later adopts a framework or build system, update this file in the
 
 ## Product flow
 
-The workflow has three ordered steps plus two separate result destinations:
+The default route is `Quick start`: up to three direct choices (color character, Brand source, Secondary strategy) and one `Generate website system` action. A valid first proposal on an untouched session auto-applies; later generations stay proposals until `Apply`, `Reroll`, or `Cancel`. `Undo` restores the previous applied system.
 
-1. `Context`: set the fixed Background and Text colors and show an explicit PASS or FAIL result for normal text at 4.5:1.
+After generation, `Advanced editing` provides three ordered steps plus two separate result destinations:
+
+1. `Context`: the fixed Background and Text colors (generated by Quick start or provided by the user) with an explicit PASS or FAIL result for normal text at 4.5:1.
 2. `Colors`: define Brand and Neutral, optionally add Secondary, generate semantic suggestions, inspect each active 50–950 scale, and review role checks against the current target.
-3. `Saved pairs`: start with a default pair, adjust a few token values directly, and keep useful foreground/background combinations for export.
+3. `Website tokens`: the generated system as purpose-named tokens for both themes, with `Custom pairs` (editable foreground/background snapshots) nested beneath it.
 
 After those steps:
 
 - `Preview`: review the current system in light and dark component examples. It is an unnumbered result destination, not a workflow step. Light and Dark are switched locally inside Preview and are not shown simultaneously.
 - `Export`: copy CSS variables or JSON. It is an unnumbered result destination alongside Preview.
 
-The floating Steps window is the navigation owner for this sequence. Only Context, Colors, and Saved pairs carry step numbers. `Preview` and `Export` remain separate, unnumbered entries at the same navigation level after the steps. Every destination must have a stable anchor and participate in active-section tracking. The WCAG target is a global control in the bottom-right Steps window, not a page-local step.
+The floating Steps window is the navigation owner for this sequence: Quick start, then Context, Colors, and Website tokens carry the ordered entries, and `Preview` and `Export` remain separate, unnumbered entries at the same navigation level. Every destination must have a stable anchor and participate in active-section tracking. The WCAG target is a global control in the bottom-right Steps window, not a page-local step.
 
 ## Color and accessibility rules
 
 - WCAG contrast uses relative luminance. Keep the calculation deterministic and centralized in `luminance()` and `contrast()`.
 - `Context` always evaluates `Text on Background` against 4.5:1 and reports `PASS · AA`, `PASS · AAA`, or `FAIL` visibly. Do not communicate status through color alone.
 - The selectable target controls active role checks, generated semantic assignment data, and saved-pair evaluation. Current targets are AA normal text 4.5:1, AA large text 3:1, and AAA normal text 7:1.
+- The generated website system uses a target profile (`aa-interface` by default, `aaa-interface` available) rather than one blanket ratio: normal text 4.5:1 (7:1 under AAA), explicitly large text 3:1 (4.5:1 under AAA), and meaningful border / icon / indicator / focus 3:1 in both profiles. The advanced `AA large text · 3:1` option remains only for explicitly tagged Advanced pairs.
+- The website token contract has three layers: `reference` (`--palette-{roleId}-{step}`), `role` (`--role-{roleId}-{theme}-{kind}`), and `website` (theme-stable names such as `--surface-page`, `--content-primary`, `--action-primary-background`). Light and Dark resolve the same website names independently. Details and the full token list live in `docs/website-token-contract.md`.
+- Every resolved website token carries traceability (source role, source step or measured ink, generator). A measured black or white foreground uses `measured-ink` and has no fake palette step.
+- Validation statuses: `READY` (every required relationship passes in both themes), `READY WITH WARNINGS` (advisory diagnostics remain), and `NEEDS ATTENTION` (a required relationship is unresolved and must name the relationship, actual ratio, required ratio, and recovery). A system is never `READY` when either theme has a required failure.
 - Reference palettes are generated in OKLCH. Keep the exact input seed at `500`, use one shared tonal rhythm, and apply per-family chroma limits.
 - For every non-seed step, derive chroma as a family-relative percentage of the sRGB maximum for that step's `L` and `H`; do not reuse Brand's absolute `C` across semantic hues.
 - If an OKLCH request is outside sRGB, reduce chroma while preserving lightness and hue as far as possible, and expose a diagnostic with the requested and actual chroma instead of silently clipping.
@@ -65,9 +78,9 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
   - 600–700: action and pressed state
   - 800–950: strong and dark surfaces
 - `W` and `K` show each token's contrast ratio against White and Black.
-- In Step 03, the pair editor exposes Foreground role, Foreground token, Background role, Background token, and Usage. A pair's foreground and background are chosen independently, so a foreground from one role may sit on a background from another. `Aa` is the actual foreground-on-background sample and the number is the contrast ratio.
+- In the Custom pairs editor, the pair editor exposes Foreground role, Foreground token, Background role, Background token, and Usage. A pair's foreground and background are chosen independently, so a foreground from one role may sit on a background from another. `Aa` is the actual foreground-on-background sample and the number is the contrast ratio.
 - A Foreground token may be `auto`, which measures readable ink for the resolved background instead of naming a palette step. This is how an on-bold foreground is expressed. When a foreground is `auto`, its role has no effect and the Foreground role control is disabled.
-- Step 03 starts with Brand `50` on Brand `600`. Editing a field re-evaluates the pair immediately; duplicate coordinates must remain visible as a clear message instead of silently creating duplicate exports.
+- Custom pairs start with Brand `50` on Brand `600`. Editing a field re-evaluates the pair immediately; duplicate coordinates must remain visible as a clear message instead of silently creating duplicate exports.
 - Button text must be selected by measured contrast. Do not assume a fixed light or dark text color from token number alone.
 
 ## Interaction contract
@@ -76,19 +89,22 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 - Every user-facing title, description, button label, status, and feedback change must update both `en` and `zh` catalogs in the same change.
 - Product and technical terms such as Brand, Neutral, Secondary, Regular, Success, Warning, Danger, Information, WCAG, AA, AAA, OKLCH, HEX, CSS, JSON, token, palette, surface, and contrast remain untranslated where they are the clearest label.
 - Missing translation keys or mismatched catalogs must fail visibly. Do not add a silent language fallback.
-- Background, Text, and every enabled palette owner accept direct HEX input and native color input.
+- Quick start: the first valid proposal on an untouched session auto-applies so the first useful system is one click away. Once the user has edited or applied anything, later generations remain proposals until `Apply`, `Reroll`, or `Cancel`. `Undo` restores the previous applied system. A `NEEDS ATTENTION` proposal is inspectable but cannot be applied; it must name the failing relationships and recovery.
+- Quick start generation is deterministic: the same character, Brand source, Secondary strategy, and random seed reproduce the same inputs. Locks survive Generate and Reroll. The starter default lock on Brand is a convenience, not a commitment — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand in Advanced editing. An explicitly provided Brand HEX stays exact at `500`.
+- Background, Text, and every enabled palette owner accept direct HEX input and native color input. Generated and provided Context values are marked by source in the Context panel; a user edit turns the source into `provided`.
 - Invalid HEX must be marked invalid without silently changing the last valid color.
 - Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
 - Switching roles must preserve independent seeds and locks. Automatic generation changes unlocked roles only.
 - Disabling Secondary must remove its palettes and exports without leaving stale tokens.
 - Step 03 starts with one default `Brand 50 on Brand 600` pair. Foreground role, Foreground token, Background role, Background token, and Static/Interactive Usage are directly editable; changes re-evaluate the pair immediately. Add pair creates another editable row, and saved pairs remain removable from Step 03.
 - Interactive Hover and Pressed derive from the background role's scale, never the foreground role's. An `auto` foreground is measured once against the Default background and held across states so a control cannot flip its ink mid-interaction.
-- Step 03 offers one action that generates a starter set of pairs named by product intent: body text, muted text, link, primary/secondary/neutral/destructive actions, and one notice per semantic role. Disabled roles are skipped rather than fabricated. The set is generated from Light assignments; Dark stays in export.
+- The Custom pairs compatibility action generates a set of pairs named by product intent: body text, muted text, link, primary/secondary/neutral/destructive actions, and one notice per semantic role. Disabled roles are skipped rather than fabricated. The set is generated from Light assignments; Dark stays in export. It is a compatibility projection — the generated website system is the starter-result owner.
 - Starter foregrounds are selected against the active text target, not from `borderIcon`, which is chosen at 3:1 for borders and icons. Body text and neutral actions take the most readable token; links and status text take the least contrast that still passes, so the role's hue stays recognizable instead of collapsing to near-black.
 - Generating appends and never overwrites. A coordinate that already exists is skipped. Because a changed target produces different coordinates, regenerating after a target change can leave two rows sharing a product-intent name — the older one visibly failing. That is preferred over silently rewriting a pair the user may have edited.
 - A generated pair exports under its product intent (`--pair-body-text-*`). Unnamed pairs keep role-indexed names (`--pair-brand-1-*`).
 - Saved pairs are re-evaluated when the global target changes and are included in CSS and JSON export.
-- A Saved pair is a palette snapshot with an explicit `Static` or `Interactive` use. `Interactive` derives stable Default, Hover, and Pressed backgrounds from the saved scale plus a Brand focus ring. Every exported state keeps its measured contrast result; later palette edits must not silently change an existing snapshot.
+- Step 03 (`Website tokens`) shows the generated contract grouped by intent — surfaces, content, borders and focus, actions, fields, feedback, and the optional Secondary accent — with Light and Dark values per token and a validation status. The `Generate compatibility pairs` action in Custom pairs is a legacy projection kept for the compatibility window; the generated website system is the starter-result owner.
+- Custom pairs are editable snapshots with an explicit `Static` or `Interactive` use. `Interactive` derives stable Default, Hover, and Pressed backgrounds from the saved scale plus a Brand focus ring. Every exported state keeps its measured contrast result; later palette edits must not silently change an existing snapshot. Custom pairs never overwrite generated website tokens.
 - Step 03 must explain the usage boundary before selection: `Static` is for non-interactive text, surfaces, and icons; `Interactive` is for controls that need Default, Hover, Pressed, and Focus states.
 - Role checks belong to Step 02 Colors. Results below the active target are optimization tasks, not passive diagnostics. Show a visible task summary, name the failing relationship and measured gap, and label each affected role with text or icon in addition to color. Clicking a check row opens that role in Colors; check rows must not copy diagnostic text.
 - Copy feedback must be short, use white text, and must not obscure the main task.
@@ -126,15 +142,16 @@ The floating Steps window is the navigation owner for this sequence. Only Contex
 For every behavior or layout change:
 
 1. Run `node --check` on every JavaScript owner.
-2. Run `node tests/static-contract.test.mjs`, `node tests/i18n.test.mjs`, `node tests/color-engine.test.mjs`, and `node tests/app-smoke.test.mjs`.
+2. Run `node tests/static-contract.test.mjs`, `node tests/i18n.test.mjs`, `node tests/color-engine.test.mjs`, `node tests/app-smoke.test.mjs`, `node tests/token-contract.test.mjs`, `node tests/system-generator.test.mjs`, `node tests/project-state.test.mjs`, and `node tests/quick-start.test.mjs`.
 3. Manually verify Context PASS and FAIL states with at least one high-contrast and one low-contrast pair.
 4. Verify palette owners retain separate values and locks when switching roles; verify Regular edits Neutral without creating another palette.
 5. Click a Generated scale token and confirm it both copies and becomes the active HEX input.
 6. Change the global WCAG target and confirm Role checks, saved-pair status, and Interactive state results update together.
 7. Confirm the default Brand `50` on `600` pair, edit Role/Foreground/Background/Usage fields, add a second pair, verify the Interactive state family and focus ring in CSS and JSON, then remove it.
-8. Check the Steps links, minimize control, global target, Preview entry, and Export entry.
-9. Check desktop and narrow layouts. The scale may scroll horizontally, but pair fields and copy must remain usable.
-10. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
+8. Check the Steps links (Quick start, Context, Colors, Website tokens, Preview, Export), minimize control, global target, Preview entry, and Export entry.
+9. Verify Quick start: one-click generation on a fresh session, provided Brand HEX, Reroll, Cancel, Undo, a `NEEDS ATTENTION` proposal that cannot apply, and lock survival.
+10. Check desktop and narrow layouts. The scale may scroll horizontally, but pair fields and copy must remain usable, and Quick start must not overflow.
+11. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.
 
 ## Repository continuity
 
