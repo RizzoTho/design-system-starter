@@ -519,20 +519,15 @@ Exit criteria:
 
 Effort: Medium
 
-- [ ] Add `token-contract.js` with generic website token definitions.
-- [ ] Add `aa-interface` and `aaa-interface` target profiles.
-- [ ] Add relationship definitions with required/advisory severity.
-- [ ] Add `project-state.js` with schema version 2 and strict validation.
-- [ ] Add script links and update source-owner tests.
-- [ ] Keep current rendered UI and current exports unchanged in this phase.
-- [ ] Add unit tests for missing token definitions, duplicate names, invalid thresholds, and invalid project payloads.
+- [x] Add `token-contract.js` with generic website token definitions.
+- [x] Add `aa-interface` and `aaa-interface` target profiles.
+- [x] Add relationship definitions with required/advisory severity.
+- [x] Add `project-state.js` with schema version 2 and strict validation.
+- [x] Add script links and update source-owner tests.
+- [x] Keep current rendered UI and current exports unchanged in this phase.
+- [x] Add unit tests for missing token definitions, duplicate names, invalid thresholds, and invalid project payloads.
 
-Exit criteria:
-
-- Every website token belongs to one documented group.
-- Every required token has at least one relationship check.
-- Invalid contracts fail during tests, not at render time.
-- Existing behavior remains unchanged.
+Phase 1 result: `js/token-contract.js` and `js/project-state.js` load in dependency order (`color-engine → i18n → role-model → token-contract → project-state → app`), enforced by `tests/static-contract.test.mjs`. The built-in contract validates clean: 52 website tokens across 9 groups, all required tokens covered by at least one relationship, `aa-interface` (4.5 / 3 / 3) and `aaa-interface` (7 / 4.5 / 3) profiles, and coded `ProjectStateError` failures for invalid JSON, unknown schema, non-object payloads, and missing sections. New suites `tests/token-contract.test.mjs` and `tests/project-state.test.mjs` prove the validators reject missing definitions, duplicate names, invalid thresholds, and invalid payloads. Existing UI and exports are byte-identical (fixtures regenerate without a diff; all six suites pass).
 
 ### Phase 2: Implement deterministic starting-system generation
 
