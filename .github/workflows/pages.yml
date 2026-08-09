@@ -29,11 +29,18 @@ jobs:
           node --check js/color-engine.js
           node --check js/i18n.js
           node --check js/role-model.js
+          node --check js/token-contract.js
+          node --check js/system-generator.js
+          node --check js/project-state.js
           node --check js/app.js
           node tests/static-contract.test.mjs
           node tests/i18n.test.mjs
           node tests/color-engine.test.mjs
           node tests/app-smoke.test.mjs
+          node tests/token-contract.test.mjs
+          node tests/system-generator.test.mjs
+          node tests/project-state.test.mjs
+          node tests/quick-start.test.mjs
 
       - name: Prepare static site
         run: bash scripts/prepare-pages.sh
