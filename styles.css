@@ -269,11 +269,11 @@ main { min-width: 0; }
 /* The caption is app chrome; the canvas below it is the generated page and
    fills the frame edge to edge, so surface.page reads as the page background
    rather than as one panel floating on the app's own paper color. */
-.preview { width: min(850px, 100%); }
 .preview[hidden] { display: none; }
 .preview-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--ink); }
 .preview-top strong { font: 500 18px var(--font-title); }
 .preview-top > span { color: var(--muted); font: 9px "SFMono-Regular", Consolas, monospace; text-transform: uppercase; }
+.preview { width: min(850px, 100%); }
 .preview-canvas { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 16px 42px rgba(28,24,20,.12); }
 
 /* Website preview. Every color below comes from the exported website token
@@ -481,7 +481,19 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 }
 
 /* --- Phase 4: Quick start, generation result, and website tokens --- */
+/* Quick start is one centered column: three choices, one action, and the result
+   at the foot of the same card. A second column would only hold empty space. */
+.quick-start-section { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 20px; }
+.quick-start-section .step-controls { position: static; width: min(460px, 100%); }
+.quick-start-section .step-content { width: min(460px, 100%); }
 .quick-start-section .step-heading > b { background: var(--ui-highlight-strong); }
+/* A select that stretches to the card width parks its chevron far from the
+   value it belongs to; these size to their own options instead. */
+.quick-start-section .field select { width: auto; min-width: 148px; max-width: 100%; }
+/* The result is the foot of the card, not a separate panel. */
+.quick-start-section .generation-result { margin-top: 17px; padding-top: 15px; border-top: 1px solid var(--line); }
+.quick-start-section .generation-status { grid-template-columns: 30px minmax(0, 1fr); }
+.quick-start-section .generation-status-actions { grid-column: 1 / -1; }
 .quick-start-note {
   padding: 15px 17px;
   border: 1px dashed var(--line);
@@ -619,6 +631,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 }
 .semantic-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
 .semantic-card:active { transform: scale(.98); }
+/* The measured result is a compact meaning-bearing chip, so it uses the feedback
+   role's bold fill with its measured ink. The app's own green and red would be
+   unmeasured colors sitting on a generated surface. */
 .semantic-card em {
   display: inline-block;
   margin-top: 4px;
@@ -633,9 +648,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @media (prefers-reduced-motion: reduce) {
   .semantic-card { transition-duration: 0ms; }
   .semantic-card:hover { transform: none; }
-/* The measured result is a compact meaning-bearing chip, so it uses the feedback
-   role's bold fill with its measured ink. The app's own green and red would be
-   unmeasured colors sitting on a generated surface. */
   .semantic-card:active { transform: none; }
 }
 

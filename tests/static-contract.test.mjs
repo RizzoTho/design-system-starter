@@ -31,6 +31,13 @@ assert.match(html, /<span id="scaleDiagnostics" class="scale-diagnostic-inline" 
 assert.ok(html.indexOf('id="targetSelect"') > html.indexOf('id="stepDock"'), 'WCAG target is not owned by the bottom-right global dock');
 assert.equal([...html.matchAll(/<script\b/g)].length, 7, 'Unexpected script count');
 assert.ok(idSelectors.length > 30, 'Static selector scan did not inspect the app');
+// Quick start is one centered column and the generation result is the foot of
+// that card, not a second panel in an empty column.
+assert.match(html, /<aside class="step-controls quick-start">[\s\S]*id="generationResult"[\s\S]*<\/aside>/, 'The generation result left the Quick start card');
+assert.match(css, /\.quick-start-section \{[^}]*grid-template-columns: minmax\(0, 1fr\)/s, 'Quick start returned to a two-column layout');
+assert.match(css, /\.quick-start-section \.generation-result \{[^}]*border-top/s, 'The result is no longer attached to the foot of the card');
+assert.match(css, /\.quick-start-section \.field select \{[^}]*width: auto/s, 'Quick start selects stretch again, parking the chevron away from the value');
+
 // Braces must balance: an unclosed media query silently nests every rule after
 // it and disables them outside that breakpoint.
 {
