@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const sandbox = { window: {} };
 sandbox.window.window = sandbox.window;
 vm.createContext(sandbox);
-for (const file of ['../js/color-engine.js', '../js/system-generator.js']) {
+for (const file of ['../js/color-engine.js', '../js/role-model.js', '../js/token-contract.js', '../js/system-generator.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), sandbox, { filename: file });
 }
 const { ColorEngine, SystemGenerator } = sandbox.window;
@@ -199,6 +199,130 @@ function defaultOptions(overrides = {}) {
     for (const roleId of ['success', 'warning', 'danger', 'information']) {
       assert.ok(result.proposal.roles[roleId].seed, `${characterId} generated no ${roleId}`);
     }
+  }
+}
+
+// --- Phase 3: website token resolution and validation ------------------------------
+
+// The default generated system resolves the complete website token contract and
+// every required relationship passes in Light and Dark.
+{
+  for (const seed of [42, 7, 123, 2026]) {
+    const result = run(defaultOptions({ randomSeed: seed }));
+    // READY and READY WITH WARNINGS both mean every required relationship
+    // passes; only advisory diagnostics (for example a generated-seed repair)
+    // differ. NEEDS ATTENTION must never appear for a default generation.
+    assert.ok(['ready', 'ready-with-warnings'].includes(result.validation.status),
+      `Default system (seed ${seed}) is not READY*`);
+    assert.equal(result.validation.requiredFailures.length, 0,
+      `Default system (seed ${seed}) has required failures`);
+    const lightValues = result.proposal.websiteTokens.light.values;
+    const darkValues = result.proposal.websiteTokens.dark.values;
+    for (const group of ['surfaces', 'content', 'borders-and-focus', 'action-primary', 'action-secondary', 'action-destructive', 'fields', 'feedback']) {
+      for (const token of sandbox.window.WebsiteTokenContract.tokenGroups[group]) {
+        assert.ok(lightValues[token.id], `Light is missing ${token.id}`);
+        assert.ok(darkValues[token.id], `Dark is missing ${token.id}`);
+      }
+    }
+    for (const theme of ['light', 'dark']) {
+      const values = result.proposal.websiteTokens[theme].values;
+      for (const [tokenId, value] of Object.entries(values)) {
+        assert.equal(ColorEngine.normalizeHex(value.hex), value.hex, `${theme} ${tokenId} is not a valid HEX`);
+        assert.ok(['palette-token', 'measured-ink'].includes(value.sourceKind), `${theme} ${tokenId} lost its source kind`);
+        assert.ok(value.sourceRole, `${theme} ${tokenId} lost its source role`);
+        assert.ok(value.generatedBy, `${theme} ${tokenId} lost its generator`);
+      }
+    }
+    for (const relationship of result.proposal.validation.relationships) {
+      assert.notEqual(relationship.pass, false, `Required relationship failed: ${relationship.theme} ${relationship.tokenId} ${relationship.actual.toFixed(2)} vs ${relationship.required}`);
+    }
+  }
+}
+
+// Action foreground stays passing across Default, Hover, and Pressed.
+{
+  const result = run(defaultOptions({ randomSeed: 42 }));
+  const actionChecks = result.proposal.validation.relationships.filter(relationship =>
+    ['ACTION_FOREGROUND_ACROSS_STATES', 'ACTION_BACKGROUND_STATES'].includes(relationship.relationshipId));
+  assert.ok(actionChecks.length >= 18, 'Interactive state family produced too few checks');
+  for (const check of actionChecks) {
+    assert.notEqual(check.pass, false, `Action state failed: ${check.theme} ${check.tokenId} ${check.actual.toFixed(2)}`);
+  }
+}
+
+// Focus rings reach 3:1 against each recorded adjacent surface.
+{
+  const result = run(defaultOptions({ randomSeed: 42 }));
+  const ringChecks = result.proposal.validation.relationships.filter(relationship => relationship.relationshipId === 'FOCUS_RING_ON_SURFACE');
+  assert.ok(ringChecks.length >= 24, 'Focus ring checks are missing');
+  for (const check of ringChecks) {
+    assert.notEqual(check.pass, false, `Focus ring failed: ${check.theme} ${check.tokenId} vs ${check.background}`);
+    assert.equal(check.target, 'nonText', 'Focus rings must use the non-text target');
+    assert.equal(check.required, 3, 'Focus rings must require 3:1');
+  }
+}
+
+// Muted and feedback text use the text target, never the border/icon target.
+{
+  const result = run(defaultOptions({ randomSeed: 42 }));
+  const textTokens = result.proposal.validation.relationships.filter(relationship =>
+    relationship.tokenId === 'content.muted'
+    || relationship.tokenId.startsWith('feedback.') && relationship.tokenId.endsWith('.text'));
+  assert.ok(textTokens.length >= 8, 'Muted/feedback text checks are missing');
+  for (const check of textTokens) {
+    assert.equal(check.target, 'normalText', `${check.tokenId} used the wrong target`);
+    assert.equal(check.required, 4.5, `${check.tokenId} used the border/icon ratio`);
+    assert.notEqual(check.pass, false, `${check.tokenId} failed the text target`);
+  }
+}
+
+// AAA raises text constraints without changing the 3:1 non-text threshold.
+{
+  const result = run(defaultOptions({ randomSeed: 42 }));
+  const p = result.proposal;
+  const palettes = Object.fromEntries(Object.entries(p.palettes).map(([roleId, palette]) => [roleId, { scale: palette.scale }]));
+  const aaa = sandbox.window.WebsiteTokenContract.resolveWebsiteTokens({
+    palettes, roles: p.roles, assignments: p.assignments, targetProfileId: 'aaa-interface',
+  });
+  for (const theme of ['light', 'dark']) {
+    const checks = sandbox.window.WebsiteTokenContract.validateTheme(aaa[theme]);
+    for (const check of checks.filter(item => item.target === 'normalText')) {
+      assert.equal(check.required, 7, 'AAA did not raise normal text to 7:1');
+    }
+    for (const check of checks.filter(item => item.target === 'nonText')) {
+      assert.equal(check.required, 3, 'AAA changed the non-text threshold');
+    }
+  }
+}
+
+// Locked conflicts produce NEEDS ATTENTION instead of silent mutation.
+{
+  const lockedWhite = run(defaultOptions(), {
+    roles: { brand: { enabled: true, seed: '#FFFFFF', locked: true } },
+  });
+  assert.equal(lockedWhite.validation.status, 'needs-attention');
+  assert.equal(lockedWhite.proposal.roles.brand.seed, '#FFFFFF', 'A locked seed was replaced');
+  assert.equal(lockedWhite.proposal.roles.brand.locked, true, 'A locked seed was unlocked');
+  const ringFailure = lockedWhite.validation.requiredFailures.find(failure => failure.relationshipId === 'FOCUS_RING_ON_SURFACE');
+  assert.ok(ringFailure, 'Locked conflict produced no focus-ring failure');
+}
+
+// Disabled Secondary leaves no accent tokens or stale references.
+{
+  const result = run(defaultOptions({ randomSeed: 42 }));
+  for (const theme of ['light', 'dark']) {
+    const values = result.proposal.websiteTokens[theme].values;
+    for (const tokenId of Object.keys(values)) {
+      assert.ok(!tokenId.startsWith('accent.'), `Disabled Secondary left ${tokenId} in ${theme}`);
+    }
+  }
+  // Enabling Secondary adds exactly the three accent tokens per theme.
+  const withSecondary = run(defaultOptions({ randomSeed: 42, secondaryStrategy: 'analogous' }));
+  for (const theme of ['light', 'dark']) {
+    const values = withSecondary.proposal.websiteTokens[theme].values;
+    assert.ok(values['accent.secondary.surface'], `${theme} missing accent surface`);
+    assert.ok(values['accent.secondary.border'], `${theme} missing accent border`);
+    assert.ok(values['accent.secondary.text'], `${theme} missing accent text`);
   }
 }
 

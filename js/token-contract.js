@@ -301,6 +301,528 @@
     relationships: RELATIONSHIPS,
   };
 
+  // --- Website-token resolution -----------------------------------------------
+  //
+  // Resolves the generic website token contract from existing palettes and role
+  // assignments, independently for Light and Dark. Each resolved value carries
+  // traceability; each resolved relationship check records the surface it was
+  // measured against, so validation is evidence-based rather than inferred from
+  // token numbers.
+
+  const HOVER_CANDIDATES = Object.freeze({
+    // White/mid ink (brand, danger): darken toward the dark end of the scale.
+    'light-chromatic': [700, 800, 900, 600, 500, 400],
+    'dark-chromatic': [300, 200, 500, 400, 100],
+    // Near-black ink on the neutral quiet fill: stay in the mid-grey range so
+    // the pressed state does not melt into the ink.
+    'light-neutral': [300, 400, 500, 200, 600],
+    'dark-neutral': [500, 600, 700, 400, 800],
+  });
+  const PRESSED_CANDIDATES = Object.freeze({
+    'light-chromatic': [800, 900, 950, 700, 600],
+    'dark-chromatic': [400, 300, 200, 500, 100],
+    'light-neutral': [400, 500, 600, 300, 700],
+    'dark-neutral': [900, 950, 800, 700, 600],
+  });
+  const FOCUS_CANDIDATES = Object.freeze({
+    light: [600, 700, 800, 500, 400, 300],
+    dark: [400, 300, 200, 500, 600, 700],
+  });
+
+  function stepHex(palettes, roleId, step) {
+    const palette = palettes[roleId];
+    if (!palette) throw new Error(`Palette for role "${roleId}" is missing`);
+    const token = palette.scale.find(item => item.step === step);
+    if (!token) throw new Error(`Palette "${roleId}" is missing step ${step}`);
+    return token.hex;
+  }
+
+  function measuredInk(fillHex) {
+    return { hex: window.ColorEngine.textColor(fillHex), sourceKind: 'measured-ink' };
+  }
+
+  // The role assignment table supplies the accepted subtle / borderIcon / bold /
+  // onBold coordinates per role and theme. Website tokens project those onto
+  // component intent and re-verify the measured result.
+  function assignmentFor(assignments, roleId, theme) {
+    if (roleId === 'regular') roleId = 'neutral';
+    const table = assignments[roleId];
+    if (!table || !table[theme]) throw new Error(`Assignment for "${roleId}" ${theme} is missing`);
+    return table[theme];
+  }
+
+  // Bounded state-family search: hover and pressed backgrounds must keep the
+  // held ink passing. Candidates are searched in preference order; adjacency to
+  // the default is a preference, never an acceptance criterion. The candidate
+  // family depends on the ink: chromatic actions hold a light ink and darken;
+  // the neutral quiet action holds near-black ink and must stay mid-grey.
+  function stateFamilySearch(palettes, roleId, theme, inkHex, defaultStep, target, generatedBy, values, checks, diagnostics, candidateKey) {
+    const candidates = HOVER_CANDIDATES[candidateKey] || [];
+    const pressedCandidates = PRESSED_CANDIDATES[candidateKey] || [];
+    const states = {};
+    for (const [state, list] of [['hover', candidates], ['pressed', pressedCandidates]]) {
+      const attempts = [];
+      let chosen = null;
+      let best = null;
+      for (const step of list) {
+        const hex = stepHex(palettes, roleId, step);
+        const ratio = window.ColorEngine.contrast(inkHex, hex);
+        attempts.push(step);
+        if (!best || ratio > best.ratio) best = { step, hex, ratio };
+        if (ratio >= target) {
+          chosen = { step, hex, ratio };
+          break;
+        }
+      }
+      const tokenId = `${generatedBy}.${state}`;
+      if (!chosen) {
+        // Bounded search fell back to the best-measured candidate. The value is
+        // recorded so the token set stays inspectable; the diagnostic keeps the
+        // failure visible instead of silently accepting a below-target state.
+        chosen = best;
+        diagnostics.push({
+          code: `${generatedBy.toUpperCase().replace(/\./g, '_')}_INK_CONTRAST`,
+          severity: 'error',
+          theme,
+          path: tokenId,
+          foreground: inkHex,
+          background: chosen ? chosen.hex : null,
+          actual: chosen ? chosen.ratio : null,
+          required: target,
+          sourceRole: roleId,
+          attemptedSteps: attempts,
+          recovery: 'Unlock the role or adjust the held ink',
+        });
+      }
+      if (!chosen) continue;
+      values[tokenId] = {
+        hex: chosen.hex,
+        sourceRole: roleId,
+        sourceStep: chosen.step,
+        sourceKind: 'palette-token',
+        generatedBy,
+        locked: false,
+      };
+      checks.push({
+        tokenId,
+        relationshipId: 'ACTION_BACKGROUND_STATES',
+        foreground: inkHex,
+        background: chosen.hex,
+        backgroundTokenId: tokenId,
+        target: 'normalText',
+      });
+    }
+    return states;
+  }
+
+  // Focus ring search: a brand step must reach 3:1 against every adjacent
+  // surface it touches. If no candidate passes, the search reports the
+  // attempted coordinates instead of silently weakening the requirement.
+  function focusRingSearch(palettes, roleId, theme, adjacentSurfaces, generatedBy, values, checks, diagnostics, tokenId, target) {
+    const candidates = theme === 'dark' ? FOCUS_CANDIDATES.dark : FOCUS_CANDIDATES.light;
+    const attempts = [];
+    let best = null;
+    for (const step of candidates) {
+      const hex = stepHex(palettes, roleId, step);
+      const weakest = Math.min(...adjacentSurfaces.map(surface => window.ColorEngine.contrast(hex, surface)));
+      attempts.push(step);
+      if (!best || weakest > best.weakest) best = { step, hex, weakest };
+      if (weakest >= target) {
+        values[tokenId] = {
+          hex,
+          sourceRole: roleId,
+          sourceStep: step,
+          sourceKind: 'palette-token',
+          generatedBy,
+          locked: false,
+        };
+        for (const surface of adjacentSurfaces) {
+          checks.push({
+            tokenId,
+            relationshipId: 'FOCUS_RING_ON_SURFACE',
+            foreground: hex,
+            background: surface,
+            backgroundTokenId: tokenId,
+            target: 'nonText',
+          });
+        }
+        return hex;
+      }
+    }
+    if (best) {
+      values[tokenId] = {
+        hex: best.hex,
+        sourceRole: roleId,
+        sourceStep: best.step,
+        sourceKind: 'palette-token',
+        generatedBy,
+        locked: false,
+      };
+      for (const surface of adjacentSurfaces) {
+        checks.push({
+          tokenId,
+          relationshipId: 'FOCUS_RING_ON_SURFACE',
+          foreground: best.hex,
+          background: surface,
+          backgroundTokenId: tokenId,
+          target: 'nonText',
+        });
+      }
+    }
+    diagnostics.push({
+      code: 'FOCUS_RING_ON_SURFACE',
+      severity: 'error',
+      theme,
+      path: tokenId,
+      foreground: best ? best.hex : null,
+      background: null,
+      actual: best ? best.weakest : null,
+      required: target,
+      sourceRole: roleId,
+      attemptedSteps: attempts,
+      recovery: 'Unlock the role or change the Brand seed',
+    });
+    return best ? best.hex : null;
+  }
+
+  // Field borders must reach 3:1 against the field background, which sits one
+  // step lighter (light theme) or darker (dark theme) than the page. The role's
+  // preferred coordinate is tried first; the bounded list is the fallback.
+  const BORDER_CANDIDATES = Object.freeze({
+    brand: Object.freeze({ light: [600, 700, 500, 800, 400], dark: [300, 200, 400, 500, 100] }),
+    danger: Object.freeze({ light: [500, 600, 400, 700, 300], dark: [300, 400, 200, 500, 100] }),
+  });
+
+  function borderSearch(palettes, roleId, theme, surface, generatedBy, values, checks, diagnostics, tokenId, target, preferredStep) {
+    const list = BORDER_CANDIDATES[roleId] ? BORDER_CANDIDATES[roleId][theme] : [];
+    const ordered = preferredStep ? [preferredStep, ...list.filter(step => step !== preferredStep)] : list;
+    const attempts = [];
+    let best = null;
+    for (const step of ordered) {
+      const hex = stepHex(palettes, roleId, step);
+      const ratio = window.ColorEngine.contrast(hex, surface);
+      attempts.push(step);
+      if (!best || ratio > best.ratio) best = { step, hex, ratio };
+      if (ratio >= target) {
+        values[tokenId] = {
+          hex,
+          sourceRole: roleId,
+          sourceStep: step,
+          sourceKind: 'palette-token',
+          generatedBy,
+          locked: false,
+        };
+        checks.push({ tokenId, relationshipId: 'NON_TEXT_INDICATOR_ON_SURFACE', foreground: hex, background: surface, backgroundTokenId: tokenId, target: 'nonText' });
+        return hex;
+      }
+    }
+    if (best) {
+      values[tokenId] = {
+        hex: best.hex,
+        sourceRole: roleId,
+        sourceStep: best.step,
+        sourceKind: 'palette-token',
+        generatedBy,
+        locked: false,
+      };
+      checks.push({ tokenId, relationshipId: 'NON_TEXT_INDICATOR_ON_SURFACE', foreground: best.hex, background: surface, backgroundTokenId: tokenId, target: 'nonText' });
+    }
+    diagnostics.push({
+      code: 'FIELD_BORDER_ON_FIELD',
+      severity: 'error',
+      theme,
+      path: tokenId,
+      foreground: best ? best.hex : null,
+      background: surface,
+      actual: best ? best.ratio : null,
+      required: target,
+      sourceRole: roleId,
+      attemptedSteps: attempts,
+      recovery: 'Unlock the role or change the seed',
+    });
+    return best ? best.hex : null;
+  }
+
+  function resolveTheme(theme, { palettes, roles, assignments, targetProfileId }) {
+    const profile = TARGET_PROFILES[targetProfileId] || TARGET_PROFILES['aa-interface'];
+    const textTarget = profile.normalText;
+    const nonTextTarget = profile.nonText;
+    const dark = theme === 'dark';
+    const values = {};
+    const checks = [];
+    const diagnostics = [];
+
+    const neutralAssignment = assignmentFor(assignments, 'neutral', theme);
+    const page = neutralAssignment.subtle.hex;
+    const raised = stepHex(palettes, 'neutral', dark ? 950 : 50);
+    const sunken = stepHex(palettes, 'neutral', dark ? 800 : 200);
+    const overlay = stepHex(palettes, 'neutral', 950);
+
+    const record = (tokenId, hex, sourceRole, sourceStep, sourceKind, generatedBy, locked = false) => {
+      values[tokenId] = { hex, sourceRole, sourceStep, sourceKind, generatedBy, locked };
+      return hex;
+    };
+    const textCheck = (tokenId, foregroundHex, backgroundHex, relationshipId = 'TEXT_ON_SURFACE') => {
+      checks.push({ tokenId, relationshipId, foreground: foregroundHex, background: backgroundHex, backgroundTokenId: null, target: 'normalText' });
+    };
+    const nonTextCheck = (tokenId, foregroundHex, backgroundHex, relationshipId = 'NON_TEXT_INDICATOR_ON_SURFACE') => {
+      checks.push({ tokenId, relationshipId, foreground: foregroundHex, background: backgroundHex, backgroundTokenId: null, target: 'nonText' });
+    };
+
+    // Bounded repair for text tokens: search the palette for a passing step;
+    // when none exists, fall back to measured ink rather than accepting a
+    // below-target token. The fallback records a warning, never a silent PASS.
+    const resolveText = (tokenId, roleId, palette, backgroundHex, mode) => {
+      const token = window.ColorRoleModel.foregroundToken(palette, backgroundHex, textTarget, mode);
+      if (token.pass) {
+        record(tokenId, token.hex, roleId, token.step, 'palette-token', tokenId);
+        textCheck(tokenId, token.hex, backgroundHex);
+        return token.hex;
+      }
+      const ink = window.ColorEngine.textColor(backgroundHex);
+      record(tokenId, ink, roleId, null, 'measured-ink', tokenId);
+      textCheck(tokenId, ink, backgroundHex);
+      diagnostics.push({
+        code: 'ASSIGNMENT_INK_FALLBACK',
+        severity: 'warning',
+        theme,
+        path: tokenId,
+        foreground: ink,
+        background: backgroundHex,
+        actual: window.ColorEngine.contrast(ink, backgroundHex),
+        required: textTarget,
+        sourceRole: roleId,
+        attemptedSteps: [],
+        recovery: 'Choose another step or adjust the assignment Lightness',
+      });
+      return ink;
+    };
+
+    // Surfaces
+    record('surface.page', page, 'neutral', neutralAssignment.subtle.step, 'palette-token', 'surface.page');
+    record('surface.raised', raised, 'neutral', dark ? 950 : 50, 'palette-token', 'surface.raised');
+    record('surface.sunken', sunken, 'neutral', dark ? 800 : 200, 'palette-token', 'surface.sunken');
+    record('surface.overlay', overlay, 'neutral', 950, 'palette-token', 'surface.overlay');
+    const surfaceHexes = [page, raised, sunken, overlay];
+
+    // Content
+    const neutralPalette = palettes.neutral;
+    const primary = dark ? stepHex(palettes, 'neutral', 50) : stepHex(palettes, 'neutral', 950);
+    record('content.primary', primary, 'neutral', dark ? 50 : 950, 'palette-token', 'content.primary');
+    textCheck('content.primary', primary, page);
+
+    const secondary = dark ? stepHex(palettes, 'neutral', 100) : stepHex(palettes, 'neutral', 900);
+    record('content.secondary', secondary, 'neutral', dark ? 100 : 900, 'palette-token', 'content.secondary');
+    textCheck('content.secondary', secondary, page);
+
+    const muted = window.ColorRoleModel.foregroundToken(neutralPalette, page, textTarget, 'minPassing');
+    if (muted.pass) {
+      record('content.muted', muted.hex, 'neutral', muted.step, 'palette-token', 'content.muted');
+      textCheck('content.muted', muted.hex, page);
+    } else {
+      resolveText('content.muted', 'neutral', neutralPalette, page, 'minPassing');
+    }
+
+    const link = window.ColorRoleModel.foregroundToken(palettes.brand, page, textTarget, 'minPassing');
+    if (link.pass) {
+      record('content.link', link.hex, 'brand', link.step, 'palette-token', 'content.link');
+      textCheck('content.link', link.hex, page);
+    } else {
+      resolveText('content.link', 'brand', palettes.brand, page, 'minPassing');
+    }
+
+    const linkHover = window.ColorRoleModel.foregroundToken(palettes.brand, page, textTarget, 'maxContrast');
+    if (linkHover.pass) {
+      record('content.linkHover', linkHover.hex, 'brand', linkHover.step, 'palette-token', 'content.linkHover');
+      textCheck('content.linkHover', linkHover.hex, page);
+    } else {
+      resolveText('content.linkHover', 'brand', palettes.brand, page, 'maxContrast');
+    }
+
+    const inverse = measuredInk(primary);
+    record('content.inverse', inverse.hex, 'neutral', null, 'measured-ink', 'content.inverse');
+    textCheck('content.inverse', inverse.hex, primary);
+
+    // Borders and focus
+    const borderDefault = neutralAssignment.borderIcon.hex;
+    record('border.default', borderDefault, 'neutral', neutralAssignment.borderIcon.step, 'palette-token', 'border.default');
+    nonTextCheck('border.default', borderDefault, page);
+
+    const strongStep = dark ? 400 : 600;
+    const borderStrong = stepHex(palettes, 'neutral', strongStep);
+    record('border.strong', borderStrong, 'neutral', strongStep, 'palette-token', 'border.strong');
+    nonTextCheck('border.strong', borderStrong, page);
+
+    const brandAssignment = assignmentFor(assignments, 'brand', theme);
+    // Focus rings and field borders sit on the surfaces controls actually touch:
+    // the page, raised cards, sunken wells, and field fills. The overlay scrim is
+    // behind all content and is never an adjacency for a ring.
+    const fieldBackground = dark ? stepHex(palettes, 'neutral', 950) : stepHex(palettes, 'neutral', 50);
+    record('field.background', fieldBackground, 'neutral', dark ? 950 : 50, 'palette-token', 'field.background');
+    const ringSurfaces = [page, raised, sunken, fieldBackground];
+
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'focus.ring', values, checks, diagnostics, 'focus.ring', nonTextTarget);
+    // The Danger-context ring sits on the same control surfaces; the Danger
+    // border lives inside the ring, so the ring's requirement is the same 3:1
+    // against the surfaces it touches, never against the fill it surrounds.
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'focus.ringDangerContext', values, checks, diagnostics, 'focus.ringDangerContext', nonTextTarget);
+
+    // Primary action
+    const brandBold = brandAssignment.bold;
+    const primaryInk = brandAssignment.onBold;
+    record('action.primary.background', brandBold.hex, 'brand', brandBold.step, 'palette-token', 'action.primary.background');
+    record('action.primary.foreground', primaryInk.hex, 'brand', null, 'measured-ink', 'action.primary.foreground');
+    textCheck('action.primary.foreground', primaryInk.hex, brandBold.hex, 'ACTION_FOREGROUND_ACROSS_STATES');
+    stateFamilySearch(palettes, 'brand', theme, primaryInk.hex, brandBold.step, textTarget, 'action.primary', values, checks, diagnostics, dark ? 'dark-chromatic' : 'light-chromatic');
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'action.primary.focusRing', values, checks, diagnostics, 'action.primary.focusRing', nonTextTarget);
+
+    // Neutral secondary action
+    const secondaryBackground = dark ? stepHex(palettes, 'neutral', 800) : stepHex(palettes, 'neutral', 200);
+    const secondaryInk = dark ? stepHex(palettes, 'neutral', 50) : stepHex(palettes, 'neutral', 950);
+    const secondaryBorder = neutralAssignment.borderIcon.hex;
+    record('action.secondary.background', secondaryBackground, 'neutral', dark ? 800 : 200, 'palette-token', 'action.secondary.background');
+    record('action.secondary.foreground', secondaryInk, 'neutral', dark ? 50 : 950, 'palette-token', 'action.secondary.foreground');
+    record('action.secondary.border', secondaryBorder, 'neutral', neutralAssignment.borderIcon.step, 'palette-token', 'action.secondary.border');
+    textCheck('action.secondary.foreground', secondaryInk, secondaryBackground, 'ACTION_FOREGROUND_ACROSS_STATES');
+    nonTextCheck('action.secondary.border', secondaryBorder, page);
+    stateFamilySearch(palettes, 'neutral', theme, secondaryInk, dark ? 800 : 200, textTarget, 'action.secondary', values, checks, diagnostics, dark ? 'dark-neutral' : 'light-neutral');
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'action.secondary.focusRing', values, checks, diagnostics, 'action.secondary.focusRing', nonTextTarget);
+
+    // Destructive action
+    const dangerAssignment = assignmentFor(assignments, 'danger', theme);
+    const dangerBold = dangerAssignment.bold;
+    const dangerInk = dangerAssignment.onBold;
+    record('action.destructive.background', dangerBold.hex, 'danger', dangerBold.step, 'palette-token', 'action.destructive.background');
+    record('action.destructive.foreground', dangerInk.hex, 'danger', null, 'measured-ink', 'action.destructive.foreground');
+    textCheck('action.destructive.foreground', dangerInk.hex, dangerBold.hex, 'ACTION_FOREGROUND_ACROSS_STATES');
+    stateFamilySearch(palettes, 'danger', theme, dangerInk.hex, dangerBold.step, textTarget, 'action.destructive', values, checks, diagnostics, dark ? 'dark-chromatic' : 'light-chromatic');
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'action.destructive.focusRing', values, checks, diagnostics, 'action.destructive.focusRing', nonTextTarget);
+
+    // Fields
+    const fieldText = dark ? stepHex(palettes, 'neutral', 50) : stepHex(palettes, 'neutral', 950);
+    const placeholder = window.ColorRoleModel.foregroundToken(neutralPalette, fieldBackground, textTarget, 'minPassing');
+    // The field border must reach 3:1 against the field background, which is one
+    // step lighter (light theme) or darker (dark theme) than the page surface.
+    const fieldBorder = dark ? stepHex(palettes, 'neutral', 500) : stepHex(palettes, 'neutral', 600);
+    const helperInvalid = window.ColorRoleModel.foregroundToken(palettes.danger, fieldBackground, textTarget, 'minPassing');
+    record('field.text', fieldText, 'neutral', dark ? 50 : 950, 'palette-token', 'field.text');
+    textCheck('field.text', fieldText, fieldBackground);
+    if (placeholder.pass) {
+      record('field.placeholder', placeholder.hex, 'neutral', placeholder.step, 'palette-token', 'field.placeholder');
+      textCheck('field.placeholder', placeholder.hex, fieldBackground);
+    } else {
+      resolveText('field.placeholder', 'neutral', neutralPalette, fieldBackground, 'minPassing');
+    }
+    record('field.border', fieldBorder, 'neutral', dark ? 500 : 600, 'palette-token', 'field.border');
+    nonTextCheck('field.border', fieldBorder, fieldBackground);
+    borderSearch(palettes, 'brand', theme, fieldBackground, 'field.borderFocus', values, checks, diagnostics, 'field.borderFocus', nonTextTarget, brandBold.step);
+    borderSearch(palettes, 'danger', theme, fieldBackground, 'field.borderInvalid', values, checks, diagnostics, 'field.borderInvalid', nonTextTarget, dangerAssignment.borderIcon.step);
+    if (helperInvalid.pass) {
+      record('field.helperInvalid', helperInvalid.hex, 'danger', helperInvalid.step, 'palette-token', 'field.helperInvalid');
+      textCheck('field.helperInvalid', helperInvalid.hex, fieldBackground);
+    } else {
+      resolveText('field.helperInvalid', 'danger', palettes.danger, fieldBackground, 'minPassing');
+    }
+    focusRingSearch(palettes, 'brand', theme, ringSurfaces, 'field.focusRing', values, checks, diagnostics, 'field.focusRing', nonTextTarget);
+
+    // Feedback families
+    for (const roleId of FEEDBACK_ROLES) {
+      const roleAssignment = assignmentFor(assignments, roleId, theme);
+      const subtleHex = roleAssignment.subtle.hex;
+      const borderHex = roleAssignment.borderIcon.hex;
+      const boldHex = roleAssignment.bold.hex;
+      const onBoldHex = roleAssignment.onBold.hex;
+      const textToken = window.ColorRoleModel.foregroundToken(palettes[roleId], subtleHex, textTarget, 'minPassing');
+      record(`feedback.${roleId}.surface`, subtleHex, roleId, roleAssignment.subtle.step, 'palette-token', `feedback.${roleId}.surface`);
+      record(`feedback.${roleId}.border`, borderHex, roleId, roleAssignment.borderIcon.step, 'palette-token', `feedback.${roleId}.border`);
+      record(`feedback.${roleId}.icon`, borderHex, roleId, roleAssignment.borderIcon.step, 'palette-token', `feedback.${roleId}.icon`);
+      record(`feedback.${roleId}.bold`, boldHex, roleId, roleAssignment.bold.step, 'palette-token', `feedback.${roleId}.bold`);
+      record(`feedback.${roleId}.onBold`, onBoldHex, roleId, null, 'measured-ink', `feedback.${roleId}.onBold`);
+      if (textToken.pass) {
+        record(`feedback.${roleId}.text`, textToken.hex, roleId, textToken.step, 'palette-token', `feedback.${roleId}.text`);
+        textCheck(`feedback.${roleId}.text`, textToken.hex, subtleHex);
+      } else {
+        resolveText(`feedback.${roleId}.text`, roleId, palettes[roleId], subtleHex, 'minPassing');
+      }
+      textCheck(`feedback.${roleId}.onBold`, onBoldHex, boldHex);
+      nonTextCheck(`feedback.${roleId}.border`, borderHex, subtleHex);
+      nonTextCheck(`feedback.${roleId}.icon`, borderHex, subtleHex);
+    }
+
+    // Secondary accent (only when Secondary is enabled)
+    const secondaryRole = roles.secondary;
+    if (secondaryRole && secondaryRole.enabled !== false && assignments.secondary) {
+      const secondaryAssignment = assignmentFor(assignments, 'secondary', theme);
+      const accentSurface = secondaryAssignment.subtle.hex;
+      const accentBorder = secondaryAssignment.borderIcon.hex;
+      const accentText = window.ColorRoleModel.foregroundToken(palettes.secondary, accentSurface, textTarget, 'minPassing');
+      record('accent.secondary.surface', accentSurface, 'secondary', secondaryAssignment.subtle.step, 'palette-token', 'accent.secondary.surface');
+      record('accent.secondary.border', accentBorder, 'secondary', secondaryAssignment.borderIcon.step, 'palette-token', 'accent.secondary.border');
+      if (accentText.pass) {
+        record('accent.secondary.text', accentText.hex, 'secondary', accentText.step, 'palette-token', 'accent.secondary.text');
+        textCheck('accent.secondary.text', accentText.hex, accentSurface);
+      } else {
+        resolveText('accent.secondary.text', 'secondary', palettes.secondary, accentSurface, 'minPassing');
+      }
+      nonTextCheck('accent.secondary.border', accentBorder, accentSurface);
+    }
+
+    return { values, checks, diagnostics, profileId: targetProfileId };
+  }
+
+  function resolveWebsiteTokens({ palettes, roles, assignments, targetProfileId = 'aa-interface' }) {
+    const profileId = TARGET_PROFILES[targetProfileId] ? targetProfileId : 'aa-interface';
+    const deps = { palettes, roles, assignments, targetProfileId: profileId };
+    return {
+      targetProfileId: profileId,
+      light: resolveTheme('light', deps),
+      dark: resolveTheme('dark', deps),
+    };
+  }
+
+  // --- Relationship validation -------------------------------------------------
+
+  function validateTheme(themeResult) {
+    const profile = TARGET_PROFILES[themeResult.profileId] || TARGET_PROFILES['aa-interface'];
+    return themeResult.checks.map(check => {
+      const relationship = RELATIONSHIPS.find(item => item.id === check.relationshipId) || null;
+      const required = relationship && relationship.severity === 'required' ? profile[check.target] : null;
+      const actual = window.ColorEngine.contrast(check.foreground, check.background);
+      return {
+        tokenId: check.tokenId,
+        relationshipId: check.relationshipId,
+        severity: relationship ? relationship.severity : 'required',
+        target: check.target,
+        foreground: check.foreground,
+        background: check.background,
+        actual,
+        required,
+        pass: required === null ? 'advisory' : actual >= required,
+      };
+    });
+  }
+
+  function summarize(resolution) {
+    const relationships = [
+      ...validateTheme(resolution.light).map(result => ({ ...result, theme: 'light' })),
+      ...validateTheme(resolution.dark).map(result => ({ ...result, theme: 'dark' })),
+    ];
+    const requiredFailures = relationships.filter(result => result.pass === false);
+    const warnings = [
+      ...resolution.light.diagnostics.filter(diagnostic => diagnostic.severity === 'warning'),
+      ...resolution.dark.diagnostics.filter(diagnostic => diagnostic.severity === 'warning'),
+    ];
+    let status = 'ready';
+    if (requiredFailures.length > 0) status = 'needs-attention';
+    else if (warnings.length > 0) status = 'ready-with-warnings';
+    return {
+      status,
+      requiredFailures,
+      warnings,
+      relationships,
+    };
+  }
+
   window.WebsiteTokenContract = {
     contract,
     feedbackRoles: FEEDBACK_ROLES,
@@ -312,5 +834,8 @@
     allTokens,
     tokenById,
     validateContract,
+    resolveWebsiteTokens,
+    validateTheme,
+    summarize,
   };
 })();

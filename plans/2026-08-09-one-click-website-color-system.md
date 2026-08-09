@@ -566,26 +566,29 @@ Exit criteria:
 
 Effort: Large
 
-- [ ] Resolve all generic website tokens from existing palettes and assignments.
-- [ ] Resolve Light and Dark independently.
-- [ ] Implement state-family search for Default, Hover, and Pressed.
-- [ ] Keep one measured foreground stable across an interactive family.
-- [ ] Resolve focus rings against the actual adjacent surfaces.
-- [ ] Resolve field Default, Focus, Invalid, and Invalid + Focus through the accepted ownership model.
-- [ ] Resolve feedback text separately from 3:1 border/icon assignments.
-- [ ] Add `READY`, `READY WITH WARNINGS`, and `NEEDS ATTENTION` validation summaries.
-- [ ] Emit relationship diagnostics with path, actual ratio, required ratio, source coordinates, and suggested recovery.
+- [x] Resolve all generic website tokens from existing palettes and assignments.
+- [x] Resolve Light and Dark independently.
+- [x] Implement state-family search for Default, Hover, and Pressed.
+- [x] Keep one measured foreground stable across an interactive family.
+- [x] Resolve focus rings against the actual adjacent surfaces.
+- [x] Resolve field Default, Focus, Invalid, and Invalid + Focus through the accepted ownership model.
+- [x] Resolve feedback text separately from 3:1 border/icon assignments.
+- [x] Add `READY`, `READY WITH WARNINGS`, and `NEEDS ATTENTION` validation summaries.
+- [x] Emit relationship diagnostics with path, actual ratio, required ratio, source coordinates, and suggested recovery.
+- [x] (Phase 2 carryover) Return diagnostics when bounded search uses its best candidate rather than a complete candidate.
+
+Phase 3 result: `WebsiteTokenContract.resolveWebsiteTokens()` resolves every generic website token per theme with traceability (source role, step or measured ink, generator) and records every measured relationship check against its actual surface. `summarize()` produces `READY` / `READY WITH WARNINGS` / `NEEDS ATTENTION` across both themes. Bounded searches: state families (chromatic darkening vs neutral mid-grey candidates so the quiet action's near-black ink never melts into a dark pressed state), focus rings (brand steps vs the surfaces controls actually touch — the overlay scrim is not an adjacency), and field borders (preferred coordinate first, then bounded list). Stage 7 repair redraws a generated Brand with a darkening bias only when required and only while unlocked; locked conflicts return `NEEDS ATTENTION` with the relationship, actual/required ratio, and recovery. Verification matrix: 4500 default generations (5 characters × 3 Secondary strategies × 300 seeds) all `READY`; locked white Brand returns `NEEDS ATTENTION` with the seed preserved; provided HEX stays exact at `500`; `aaa-interface` raises text to 7:1 and leaves non-text at 3:1; disabled Secondary leaves no accent tokens.
 
 Required tests:
 
-- every required Light relationship passes for the default generated system;
-- every required Dark relationship passes for the default generated system;
-- action foreground passes against Default, Hover, and Pressed;
-- focus ring reaches 3:1 against each recorded adjacent surface;
-- muted and feedback text use text targets, not border/icon targets;
-- AAA raises text constraints without changing the 3:1 non-text threshold;
-- locked conflicts produce `NEEDS ATTENTION` instead of silent mutation;
-- disabled Secondary leaves no accent tokens or stale references.
+- [x] every required Light relationship passes for the default generated system;
+- [x] every required Dark relationship passes for the default generated system;
+- [x] action foreground passes against Default, Hover, and Pressed;
+- [x] focus ring reaches 3:1 against each recorded adjacent surface;
+- [x] muted and feedback text use text targets, not border/icon targets;
+- [x] AAA raises text constraints without changing the 3:1 non-text threshold;
+- [x] locked conflicts produce `NEEDS ATTENTION` instead of silent mutation;
+- [x] disabled Secondary leaves no accent tokens or stale references.
 
 Exit criteria:
 

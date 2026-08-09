@@ -161,7 +161,7 @@
 
   // --- Identity seeds --------------------------------------------------------
 
-  function generateBrand(currentState, options, character, random) {
+  function generateBrand(currentState, options, character, random, repairDepth = 0) {
     const role = currentState?.roles?.brand || {};
     if (role.locked && role.seed) {
       return { seed: normalizeHex(role.seed), source: 'locked', locked: true };
@@ -172,8 +172,16 @@
     if (options.brandSource === 'keep' && role.seed) {
       return { seed: normalizeHex(role.seed), source: 'provided', locked: false };
     }
+    // Stage 7 repair: each deeper attempt narrows the lightness band toward the
+    // dark end so the darkest palette steps can carry the focus rings.
+    const LMax = repairDepth > 0
+      ? Math.max(0.42, character.brand.L[1] - 0.05 * repairDepth)
+      : character.brand.L[1];
+    const bounds = repairDepth > 0
+      ? { ...character.brand, L: [Math.min(character.brand.L[0], LMax - 0.02), LMax] }
+      : character.brand;
     const hue = drawHue(character.brand, random);
-    const drawn = toHex(drawOklch(character.brand, hue, random, familyChromaLimits.brand));
+    const drawn = toHex(drawOklch(bounds, hue, random, familyChromaLimits.brand));
     return {
       seed: drawn.hex,
       source: 'generated',
@@ -352,6 +360,96 @@
     };
 
     const hasErrors = diagnostics.some(diagnostic => diagnostic.severity === 'error');
+
+    // Phase 3 pipeline: reference palettes, role assignments, and the website
+    // token resolution are built from the seed proposal. Resolution and
+    // validation are pure; the current state is never mutated.
+    const assemble = seedRoles => {
+      const palettes = {};
+      const paletteRoles = Object.keys(seedRoles).filter(roleId => seedRoles[roleId].seed && seedRoles[roleId].enabled !== false);
+      for (const roleId of paletteRoles) {
+        palettes[roleId] = window.ColorEngine.makePalette(seedRoles[roleId].seed, { family: roleId });
+      }
+      const target = Number(currentState.target) || 4.5;
+      const assignments = window.ColorRoleModel.resolveAssignments(palettes, seedRoles, target);
+      const websiteTokens = window.WebsiteTokenContract.resolveWebsiteTokens({
+        palettes,
+        roles: seedRoles,
+        assignments,
+        targetProfileId: options.targetProfileId || 'aa-interface',
+      });
+      const validation = window.WebsiteTokenContract.summarize(websiteTokens);
+      const combinedDiagnostics = [
+        ...diagnostics,
+        ...websiteTokens.light.diagnostics,
+        ...websiteTokens.dark.diagnostics,
+      ];
+      return { palettes, assignments, websiteTokens, validation, combinedDiagnostics, target };
+    };
+
+    // Stage 7 bounded repair: when required relationships fail and the Brand is
+    // generated (never locked or provided), redraw Brand within its character
+    // bounds with a darkening bias so the darkest palette steps can carry the
+    // focus rings. Stops after an explicit maximum attempt count and returns
+    // the best proposal plus unresolved diagnostics.
+    const MAX_REPAIR_ATTEMPTS = 6;
+    const brandIsRepairable = () =>
+      brand.source === 'generated'
+      && !['hex', 'keep'].includes(options.brandSource || 'generated');
+
+    let repairAttempts = 0;
+    let assembled = assemble(roles);
+    while (assembled.validation.status === 'needs-attention' && brandIsRepairable() && repairAttempts < MAX_REPAIR_ATTEMPTS) {
+      repairAttempts += 1;
+      const repairedBrand = generateBrand(currentState, options, character, random, repairAttempts);
+      roles.brand = { enabled: true, seed: repairedBrand.seed, locked: false };
+      assembled = assemble(roles);
+    }
+    if (repairAttempts > 0) {
+      diagnostics.push({
+        code: 'GENERATED_SEED_REPAIRED',
+        severity: 'warning',
+        theme: null,
+        path: 'roles.brand.seed',
+        foreground: null,
+        background: null,
+        actual: null,
+        required: null,
+        attemptedSteps: Array.from({ length: repairAttempts }, (_, index) => index + 1),
+        recovery: 'The generated Brand lightness was adjusted so focus rings reach 3:1',
+      });
+    }
+    if (repairAttempts >= MAX_REPAIR_ATTEMPTS && assembled.validation.status === 'needs-attention') {
+      diagnostics.push({
+        code: 'BOUNDED_REPAIR_EXHAUSTED',
+        severity: 'error',
+        theme: null,
+        path: 'roles.brand.seed',
+        foreground: null,
+        background: null,
+        actual: null,
+        required: null,
+        attemptedSteps: Array.from({ length: MAX_REPAIR_ATTEMPTS }, (_, index) => index + 1),
+        recovery: 'Unlock a role or change the Brand seed',
+      });
+    }
+
+    const { palettes, assignments, websiteTokens, validation, target } = assembled;
+    // Rebuild the combined diagnostics after repair, so repair warnings and
+    // per-theme resolution diagnostics are all observable in the proposal.
+    const combinedDiagnostics = [
+      ...diagnostics,
+      ...websiteTokens.light.diagnostics,
+      ...websiteTokens.dark.diagnostics,
+    ];
+    const hasWarnings = combinedDiagnostics.some(diagnostic => diagnostic.severity === 'warning')
+      || validation.warnings.length > 0;
+    const finalStatus = validation.status === 'needs-attention' ? 'needs-attention'
+      : validation.status === 'ready-with-warnings' ? 'ready-with-warnings'
+      : hasErrors ? 'needs-attention'
+      : hasWarnings ? 'ready-with-warnings'
+      : 'ready';
+
     return {
       proposal: {
         mode: 'quick-start',
@@ -361,22 +459,34 @@
           secondaryStrategy: secondary.strategy,
           randomSeed: options.randomSeed || 1,
           revision: options.revision || 1,
-          status: hasErrors ? 'needs-attention' : 'ready',
-          diagnostics: diagnostics.filter(diagnostic => diagnostic.severity === 'error'),
+          repairAttempts,
+          status: finalStatus,
+          diagnostics: combinedDiagnostics.filter(diagnostic => diagnostic.severity === 'error'),
         },
         context,
-        targetProfileId: options.targetProfileId || 'aa-interface',
-        advancedPairTarget: Number(currentState.target) || 4.5,
+        targetProfileId: websiteTokens.targetProfileId,
+        advancedPairTarget: target,
         activeRole: 'brand',
         roles,
-        diagnostics,
+        palettes: Object.fromEntries(
+          Object.entries(palettes).map(([roleId, palette]) => [roleId, { scale: palette.scale.map(token => ({ step: token.step, hex: token.hex })) }])
+        ),
+        assignments,
+        websiteTokens: {
+          targetProfileId: websiteTokens.targetProfileId,
+          light: { values: websiteTokens.light.values },
+          dark: { values: websiteTokens.dark.values },
+        },
+        validation,
+        savedPairs: [],
+        diagnostics: combinedDiagnostics,
       },
       validation: {
-        status: hasErrors ? 'needs-attention' : 'ready',
-        requiredFailures: diagnostics.filter(diagnostic => diagnostic.severity === 'error'),
-        warnings: diagnostics.filter(diagnostic => diagnostic.severity === 'warning'),
+        status: finalStatus,
+        requiredFailures: validation.requiredFailures,
+        warnings: [...validation.warnings, ...combinedDiagnostics.filter(diagnostic => diagnostic.severity === 'warning')],
       },
-      diagnostics,
+      diagnostics: combinedDiagnostics,
     };
   }
 
