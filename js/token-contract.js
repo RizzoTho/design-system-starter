@@ -341,6 +341,14 @@
     return { hex: window.ColorEngine.textColor(fillHex), sourceKind: 'measured-ink' };
   }
 
+  function normalizedContextHex(value) {
+    return /^#[0-9A-Fa-f]{6}$/.test(value || '') ? value.toUpperCase() : null;
+  }
+
+  function isLighter(a, b) {
+    return window.ColorEngine.contrast(a, '#000000') > window.ColorEngine.contrast(b, '#000000');
+  }
+
   // The role assignment table supplies the accepted subtle / borderIcon / bold /
   // onBold coordinates per role and theme. Website tokens project those onto
   // component intent and re-verify the measured result.
@@ -553,9 +561,41 @@
     const diagnostics = [];
 
     const neutralAssignment = assignmentFor(assignments, 'neutral', theme);
-    const page = neutralAssignment.subtle.hex;
-    const raised = stepHex(palettes, 'neutral', dark ? 950 : 50);
-    const sunken = stepHex(palettes, 'neutral', dark ? 800 : 200);
+    // The page surface is the largest area on any website, so it is the color the
+    // user actually fixed in Context rather than a palette step that resembles
+    // it. Dark has no user-provided Context pair, so it keeps the Neutral-derived
+    // page. A malformed Context value falls back with a visible diagnostic.
+    const contextPage = dark ? null : normalizedContextHex(context?.background);
+    if (!dark && context?.background && !contextPage) {
+      diagnostics.push({
+        code: 'CONTEXT_BACKGROUND_INVALID',
+        severity: 'warning',
+        theme,
+        path: 'surface.page',
+        foreground: null,
+        background: context.background,
+        actual: null,
+        required: null,
+        sourceRole: 'neutral',
+        attemptedSteps: [],
+        recovery: 'Enter a valid six-digit Context Background HEX',
+      });
+    }
+    const page = contextPage || neutralAssignment.subtle.hex;
+    const pageSource = contextPage
+      ? { role: 'context', step: null, kind: 'context-color' }
+      : { role: 'neutral', step: neutralAssignment.subtle.step, kind: 'palette-token' };
+    // Elevation stays honest against whichever page won: a raised surface that is
+    // not lighter than the page collapses onto the page and is separated by
+    // border.default instead of pretending to be raised.
+    const raisedStep = dark ? 950 : 50;
+    const raisedCandidate = stepHex(palettes, 'neutral', raisedStep);
+    const raisedIsLighter = dark || isLighter(raisedCandidate, page);
+    const raised = raisedIsLighter ? raisedCandidate : page;
+    const sunkenStep = dark ? 800 : 200;
+    const sunkenCandidate = stepHex(palettes, 'neutral', sunkenStep);
+    const sunkenIsDeeper = dark || !isLighter(sunkenCandidate, page);
+    const sunken = sunkenIsDeeper ? sunkenCandidate : page;
     const overlay = stepHex(palettes, 'neutral', 950);
 
     const record = (tokenId, hex, sourceRole, sourceStep, sourceKind, generatedBy, locked = false) => {
@@ -599,9 +639,11 @@
     };
 
     // Surfaces
-    record('surface.page', page, 'neutral', neutralAssignment.subtle.step, 'palette-token', 'surface.page');
-    record('surface.raised', raised, 'neutral', dark ? 950 : 50, 'palette-token', 'surface.raised');
-    record('surface.sunken', sunken, 'neutral', dark ? 800 : 200, 'palette-token', 'surface.sunken');
+    record('surface.page', page, pageSource.role, pageSource.step, pageSource.kind, 'surface.page');
+    if (raisedIsLighter) record('surface.raised', raised, 'neutral', raisedStep, 'palette-token', 'surface.raised');
+    else record('surface.raised', raised, pageSource.role, pageSource.step, pageSource.kind, 'surface.raised');
+    if (sunkenIsDeeper) record('surface.sunken', sunken, 'neutral', sunkenStep, 'palette-token', 'surface.sunken');
+    else record('surface.sunken', sunken, pageSource.role, pageSource.step, pageSource.kind, 'surface.sunken');
     record('surface.overlay', overlay, 'neutral', 950, 'palette-token', 'surface.overlay');
     const surfaceHexes = [page, raised, sunken, overlay];
 
@@ -844,7 +886,7 @@
   }
 
   function websiteValueRef(value, assignments, theme) {
-    if (value.sourceKind === 'measured-ink') return value.hex;
+    if (value.sourceKind === 'measured-ink' || value.sourceKind === 'context-color') return value.hex;
     const kind = roleKindFor(assignments, value.sourceRole, theme, value.sourceStep);
     if (kind) return `var(--role-${value.sourceRole}-${theme}-${kind})`;
     return `var(--palette-${value.sourceRole}-${value.sourceStep})`;
@@ -921,6 +963,11 @@
       const foreground = light[foregroundTokenId];
       const background = light[backgroundTokenId];
       if (!foreground || !background) return;
+      // A pair is a palette coordinate. Once surface.page is the Context color it
+      // has no palette step, so the pairs that sat on it cannot be projected
+      // without describing a different color than the page. They are skipped
+      // rather than approximated — this legacy surface is not the contract.
+      if (background.sourceKind === 'context-color') return;
       specs.push({
         slug,
         nameKey,

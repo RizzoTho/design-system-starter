@@ -440,10 +440,10 @@
     "light": {
       "values": {
         "surface.page": {
-          "hex": "#D7D8D8",
-          "sourceRole": "neutral",
-          "sourceStep": 100,
-          "sourceKind": "palette-token",
+          "hex": "#ECEBE8",
+          "sourceRole": "context",
+          "sourceStep": null,
+          "sourceKind": "context-color",
           "generatedBy": "surface.page",
           "locked": false
         },
@@ -488,17 +488,17 @@
           "locked": false
         },
         "content.muted": {
-          "hex": "#484A4D",
+          "hex": "#5D6063",
           "sourceRole": "neutral",
-          "sourceStep": 700,
+          "sourceStep": 600,
           "sourceKind": "palette-token",
           "generatedBy": "content.muted",
           "locked": false
         },
         "content.link": {
-          "hex": "#40566B",
+          "hex": "#536D86",
           "sourceRole": "brand",
-          "sourceStep": 700,
+          "sourceStep": 600,
           "sourceKind": "palette-token",
           "generatedBy": "content.link",
           "locked": false
@@ -1449,8 +1449,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#0E0F10",
-        "background": "#D7D8D8",
-        "actual": 13.434032857480668,
+        "background": "#ECEBE8",
+        "actual": 16.09447350653407,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -1461,8 +1461,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#202122",
-        "background": "#D7D8D8",
-        "actual": 11.292394241488083,
+        "background": "#ECEBE8",
+        "actual": 13.528710393451513,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -1472,9 +1472,9 @@
         "relationshipId": "TEXT_ON_SURFACE",
         "severity": "required",
         "target": "normalText",
-        "foreground": "#484A4D",
-        "background": "#D7D8D8",
-        "actual": 6.224372505691911,
+        "foreground": "#5D6063",
+        "background": "#ECEBE8",
+        "actual": 5.3077646955092135,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -1484,9 +1484,9 @@
         "relationshipId": "TEXT_ON_SURFACE",
         "severity": "required",
         "target": "normalText",
-        "foreground": "#40566B",
-        "background": "#D7D8D8",
-        "actual": 5.324554809563289,
+        "foreground": "#536D86",
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -1497,8 +1497,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#12181E",
-        "background": "#D7D8D8",
-        "actual": 12.512191067744796,
+        "background": "#ECEBE8",
+        "actual": 14.990072585416902,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -1521,8 +1521,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#74777B",
-        "background": "#D7D8D8",
-        "actual": 3.150257934081426,
+        "background": "#ECEBE8",
+        "actual": 3.7741267567757415,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1533,8 +1533,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#5D6063",
-        "background": "#D7D8D8",
-        "actual": 4.43038321758697,
+        "background": "#ECEBE8",
+        "actual": 5.3077646955092135,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1545,8 +1545,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1593,8 +1593,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1677,8 +1677,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1737,8 +1737,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#74777B",
-        "background": "#D7D8D8",
-        "actual": 3.150257934081426,
+        "background": "#ECEBE8",
+        "actual": 3.7741267567757415,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1773,8 +1773,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1857,8 +1857,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -1977,8 +1977,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#536D86",
-        "background": "#D7D8D8",
-        "actual": 3.7705675914599155,
+        "background": "#ECEBE8",
+        "actual": 4.517280912526227,
         "required": 3,
         "pass": true,
         "theme": "light"

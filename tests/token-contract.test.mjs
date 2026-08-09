@@ -148,13 +148,45 @@ const assignments = proposal.assignments;
   assert.equal(resolution.targetProfileId, 'aa-interface');
 }
 
+// The page surface is the Context Background, not a palette step that resembles
+// it. Dark has no user-provided Context, so it stays Neutral-derived.
+{
+  const context = { background: '#FBF9F4', text: '#111111' };
+  const resolution = contract.resolveWebsiteTokens({ palettes, roles, assignments, context });
+  const page = resolution.light.values['surface.page'];
+  assert.equal(page.hex, '#FBF9F4', 'The page surface is not the Context Background');
+  assert.equal(page.sourceKind, 'context-color');
+  assert.equal(page.sourceRole, 'context');
+  assert.equal(resolution.dark.values['surface.page'].sourceKind, 'palette-token', 'Dark invented a Context page');
+
+  // Text on the page is re-measured against that surface, never against the
+  // palette step the page used to be.
+  for (const tokenId of ['content.primary', 'content.secondary', 'content.muted']) {
+    const ratio = sandbox.window.ColorEngine.contrast(resolution.light.values[tokenId].hex, page.hex);
+    assert.ok(ratio >= 4.5, `${tokenId} measures ${ratio.toFixed(2)}:1 on the Context page`);
+  }
+
+  // A raised surface that is not lighter than the page collapses onto the page
+  // rather than claiming an elevation it does not have.
+  const white = contract.resolveWebsiteTokens({ palettes, roles, assignments, context: { background: '#FFFFFF', text: '#111111' } });
+  assert.equal(white.light.values['surface.raised'].hex, '#FFFFFF', 'Raised stayed darker than a white page');
+  assert.ok(sandbox.window.ColorEngine.contrast(white.light.values['surface.sunken'].hex, '#000000')
+    < sandbox.window.ColorEngine.contrast('#FFFFFF', '#000000'), 'Sunken is not deeper than the page');
+
+  // A malformed Context Background falls back visibly instead of silently.
+  const broken = contract.resolveWebsiteTokens({ palettes, roles, assignments, context: { background: 'not-a-color', text: '#111111' } });
+  assert.equal(broken.light.values['surface.page'].sourceKind, 'palette-token');
+  assert.ok(broken.light.diagnostics.some(item => item.code === 'CONTEXT_BACKGROUND_INVALID'),
+    'Invalid Context Background produced no diagnostic');
+}
+
 // Every token in the contract exports under its explicit CSS name in both
 // adapters; no camelCase fallback is derived from the token id.
 {
   const resolution = contract.resolveWebsiteTokens({ palettes, roles, assignments });
   const css = contract.serializeCss({ palettes, assignments, websiteTokens: resolution });
   const tailwind = contract.serializeTailwind(resolution);
-  assert.match(css, /--surface-page: var\(--role-neutral-light-subtle\)/, 'The generic page surface lost its role alias');
+  assert.match(css, /--surface-raised: var\(--palette-neutral-50\)/, 'The raised surface lost its palette alias');
   for (const token of contract.allTokens()) {
     if (!resolution.light.values[token.id]) continue;
     assert.ok(css.includes(`${token.css}: `), `CSS export lost ${token.css}`);

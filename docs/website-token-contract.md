@@ -35,12 +35,16 @@ Website names are stable across Light and Dark. Light resolves inside `:root`; D
 
 ### Surfaces
 
-| Token | Intent |
-| --- | --- |
-| `--surface-page` | Page background |
-| `--surface-raised` | Cards, panels, popovers |
-| `--surface-sunken` | Inset wells, code blocks, table headers |
-| `--surface-overlay` | Modal and menu background |
+| Token | Intent | Source |
+| --- | --- | --- |
+| `--surface-page` | Page background | Light: the Context `Background` the user fixed in Step 01. Dark: Neutral subtle |
+| `--surface-raised` | Cards, panels, popovers | Neutral 50 / 950, collapsed onto the page when it is not lighter than the page |
+| `--surface-sunken` | Inset wells, code blocks, table headers | Neutral 200 / 800, collapsed onto the page when it is not deeper than the page |
+| `--surface-overlay` | Modal and menu background | Neutral 950 |
+
+`surface.page` is the largest area on any website, so it is the color the user actually fixed rather than a palette step that resembles it. Before this rule the page resolved to Neutral 100, roughly `1.18:1` away from the generated Context `Background` — the Step 01 decision never reached the screen, and every text token was measured against a surface the user never chose. Dark has no user-provided Context pair, so it stays Neutral-derived. A malformed Context `Background` falls back to Neutral subtle and records a `CONTEXT_BACKGROUND_INVALID` diagnostic; it is never silently accepted.
+
+Because a Context page has no palette coordinate, the legacy compatibility-pair projection skips the pairs that sat on it (`body-text`, `muted-text`, `link`, `secondary-accent`). Approximating them with the nearest Neutral step would describe a different color than the page.
 
 ### Content
 
@@ -236,7 +240,7 @@ Exact serialization lands in Phase 6, but the shape is fixed:
   --role-brand-light-on-bold: #FFFFFF;
 
   /* Website */
-  --surface-page: var(--role-neutral-light-subtle);
+  --surface-page: #ECEBE8; /* Context Background, no palette alias */
   --content-primary: var(--palette-neutral-950);
   --action-primary-background: var(--role-brand-light-bold);
   --action-primary-foreground: var(--role-brand-light-on-bold);

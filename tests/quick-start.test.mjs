@@ -197,15 +197,23 @@ assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 1
 // coordinates; the website tokens own the starter result.
 const pairsBeforeCompat = Number(elements.savedPairCount.textContent);
 elements.generateStarterSet.dispatch('click');
-assert.equal(Number(elements.savedPairCount.textContent), pairsBeforeCompat + 10,
-  'Compatibility projection did not produce ten rows with Secondary disabled');
+// Body text, muted text, and link sat on surface.page. That surface is now the
+// Context color, which has no palette coordinate, so the legacy pair model can
+// no longer express them and the projection skips them instead of describing a
+// different color than the page.
+assert.equal(Number(elements.savedPairCount.textContent), pairsBeforeCompat + 7,
+  'Compatibility projection did not produce seven palette-expressible rows with Secondary disabled');
 elements.copyJson.dispatch('click');
 const compatJson = JSON.parse(copiedText);
+const compatSlugs = compatJson.pairs.map(pair => pair.slug);
+for (const slug of ['body-text', 'muted-text', 'link']) {
+  assert.ok(!compatSlugs.includes(slug), `${slug} was projected onto a palette step that is not the page`);
+}
 const compatPrimary = compatJson.pairs.find(pair => pair.slug === 'primary-action');
-const compatLink = compatJson.pairs.find(pair => pair.slug === 'link');
 assert.equal(compatPrimary.foregroundStep, 'auto', 'Primary action did not use measured ink');
 assert.equal(compatPrimary.backgroundRoleId, 'brand', 'Primary action background left the Brand role');
-assert.equal(compatLink.backgroundRoleId, 'neutral', 'Link did not sit on the Neutral surface');
+assert.equal(compatJson.pairs.find(pair => pair.slug === 'success-notice').backgroundRoleId, 'success',
+  'Semantic notice left its own role surface');
 for (const pair of compatJson.pairs.filter(item => item.slug)) {
   assert.ok(pair.ratio >= compatJson.advancedPairTarget, `${pair.slug} dropped below the active target`);
 }

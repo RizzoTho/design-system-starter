@@ -122,14 +122,14 @@
   --color-text: #111111;
 
   /* Website · Light */
-  --surface-page: var(--role-neutral-light-subtle);
+  --surface-page: #ECEBE8;
   --surface-raised: var(--palette-neutral-50);
   --surface-sunken: var(--palette-neutral-200);
   --surface-overlay: var(--palette-neutral-950);
   --content-primary: var(--palette-neutral-950);
   --content-secondary: var(--palette-neutral-900);
-  --content-muted: var(--palette-neutral-700);
-  --content-link: var(--palette-brand-700);
+  --content-muted: var(--role-neutral-light-bold);
+  --content-link: var(--role-brand-light-border-icon);
   --content-link-hover: var(--palette-brand-950);
   --content-inverse: #FFFFFF;
   --border-default: var(--role-neutral-light-border-icon);

@@ -1246,6 +1246,7 @@
 
   function tokenSourceLabel(value) {
     if (value.sourceKind === 'measured-ink') return t('tokens.measured');
+    if (value.sourceKind === 'context-color') return t('tokens.contextBackground');
     const definition = model.roles[value.sourceRole];
     return definition ? `${definition.label} ${value.sourceStep}` : value.sourceRole;
   }

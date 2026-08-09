@@ -245,7 +245,7 @@ function relativeChroma(hex) {
       const values = result.proposal.websiteTokens[theme].values;
       for (const [tokenId, value] of Object.entries(values)) {
         assert.equal(ColorEngine.normalizeHex(value.hex), value.hex, `${theme} ${tokenId} is not a valid HEX`);
-        assert.ok(['palette-token', 'measured-ink'].includes(value.sourceKind), `${theme} ${tokenId} lost its source kind`);
+        assert.ok(['palette-token', 'measured-ink', 'context-color'].includes(value.sourceKind), `${theme} ${tokenId} lost its source kind`);
         assert.ok(value.sourceRole, `${theme} ${tokenId} lost its source role`);
         assert.ok(value.generatedBy, `${theme} ${tokenId} lost its generator`);
       }
