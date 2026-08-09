@@ -30,7 +30,7 @@ Then open `http://localhost:8000`.
 
 ## Basic workflow
 
-1. **Quick start**: pick a color character, a Brand source (Generate, HEX, or Keep current), and a Secondary strategy, then press `Generate website system`. The first valid system auto-applies; later generations stay proposals until Apply / Reroll / Cancel, and Undo restores the previous system.
+1. **Quick start**: pick a color character, a Brand source (Generate, HEX, or Keep current), and a Secondary strategy, then press `Generate website system`. Every valid result applies immediately; press Generate again for a fresh revision, open Preview from the result, or use one-level Undo. A failed result keeps the active system unchanged and reports the relationships to fix.
 2. **Context**: confirm or tune the generated `Background` and `Text`; the panel shows a measured PASS or FAIL at 4.5:1.
 3. **Colors**: inspect `Brand`, `Neutral`, optional `Secondary`, and the semantic roles; tune or lock individual roles and review Role checks against the global WCAG target.
 4. **Website tokens**: review the generated contract grouped by intent (surfaces, content, actions, fields, feedback, accent) with Light and Dark values. Optionally select a Dashboard, Marketing, Portfolio, or Documentation coverage profile to add component tokens and a matching Preview module; Custom pairs stay editable snapshots beneath it.

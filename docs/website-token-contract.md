@@ -16,7 +16,8 @@ Product-specific profiles (Dashboard, Marketing, Portfolio, Documentation) exten
 
 1. Quick start generates the generic website system; Step 03 may add one product-specific coverage profile after generation or before the next generation.
 2. Step 03 becomes `Website tokens`; existing Saved pairs are retained as `Custom pairs` beneath it.
-3. The first untouched generation auto-applies when valid; later generation stays a proposal until explicitly applied.
+3. Every valid Generate applies atomically and immediately. Repeating Generate creates a fresh deterministic revision; the result offers a direct Preview route and one-level Undo instead of a second Apply / Reroll / Cancel confirmation.
+4. A `NEEDS ATTENTION` attempt remains inspectable but never replaces the active system. Its report names every required failure and recovery and may be dismissed.
 
 ## Three token layers
 
@@ -274,8 +275,9 @@ Export rules:
 | File | Owns |
 | --- | --- |
 | `js/token-contract.js` | Website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, compatibility projection to generated pairs (`compatibilityPairSpecs`), CSS / JSON / Tailwind serialization. No DOM access. |
-| `js/system-generator.js` | Character presets, deterministic Reroll primitives, Context / Brand / Neutral / Secondary / semantic batch generation, bounded constraint search, end-to-end `generateSystem()`. No DOM access. |
+| `js/system-generator.js` | Character presets, deterministic revision primitives, Context / Brand / near-achromatic Neutral / subordinate semantic batch generation, bounded constraint search, end-to-end `generateSystem()`. No DOM access. |
 | `js/project-state.js` | Schema version, project encode/decode and validation, import migration, storage payload preparation. No silent fallback, no DOM rendering. |
+| `js/app.js` | Atomic direct-apply interaction, failed-generation report, Preview route, one-level Undo, and all rendering. A valid result has no pending UI proposal state. |
 
 Browser script order: `color-engine.js` → `i18n.js` → `role-model.js` → `token-contract.js` → `system-generator.js` → `project-state.js` → `app.js`. The order is enforced by `index.html` and `tests/static-contract.test.mjs`.
 

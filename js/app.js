@@ -31,8 +31,7 @@
     nextPairKey: 1,
     language: 'en',
     mode: 'quick-start',
-    touched: false,
-    proposal: null,
+    generationIssue: null,
     previousState: null,
     generation: null,
     websiteTokens: null,
@@ -516,21 +515,19 @@
       `--pv-neutral-line:${neutral.borderIcon.hex}`,
       `--pv-neutral-bold:${neutral.bold.hex}`,
       `--pv-on-neutral:${neutral.onBold.hex}`,
+      `--pv-accent:${accent.bold.hex}`,
+      `--pv-on-accent:${accent.onBold.hex}`,
       `--pv-accent-soft:${accent.subtle.hex}`,
       `--pv-accent-line:${accent.borderIcon.hex}`,
-      `--pv-success-soft:${success.subtle.hex}`,
       `--pv-success-line:${success.borderIcon.hex}`,
       `--pv-success:${success.bold.hex}`,
       `--pv-on-success:${success.onBold.hex}`,
-      `--pv-warning-soft:${warning.subtle.hex}`,
       `--pv-warning-line:${warning.borderIcon.hex}`,
       `--pv-warning:${warning.bold.hex}`,
       `--pv-on-warning:${warning.onBold.hex}`,
-      `--pv-danger-soft:${danger.subtle.hex}`,
       `--pv-danger-line:${danger.borderIcon.hex}`,
       `--pv-danger:${danger.bold.hex}`,
       `--pv-on-danger:${danger.onBold.hex}`,
-      `--pv-info-soft:${information.subtle.hex}`,
       `--pv-info-line:${information.borderIcon.hex}`,
       `--pv-info:${information.bold.hex}`,
       `--pv-on-info:${information.onBold.hex}`,
@@ -554,7 +551,7 @@
         <div class="product-team"><span class="product-avatar">RM</span><span><strong>${t('preview.team')}</strong><small>${t('preview.collaboratorsCount')}</small></span></div>
       </aside>
       <div class="product-main">
-        <header class="product-toolbar"><span>${t('preview.projects')} <b>/ ${t('preview.projectName')}</b></span><div><button class="product-icon-button" aria-label="${t('aria.notifications')}">●</button><span class="product-avatar">JA</span></div></header>
+        <header class="product-toolbar"><span>${t('preview.projects')} <b>/ ${t('preview.projectName')}</b></span><div><button class="product-icon-button" aria-label="${t('aria.notifications')}"><svg class="notification-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></button><span class="product-avatar">JA</span></div></header>
         <main class="product-body">
           <section class="product-heading"><div><span class="product-kicker">${t('preview.kicker')}</span><h3>${t('preview.projectName')}</h3><p>${t('preview.projectDesc')}</p></div><div class="product-actions"><button class="product-secondary-button">${t('preview.invite')}</button><button class="product-primary-button">${t('preview.publish')}</button></div></section>
           ${profilePreviewMarkup(theme)}
@@ -587,7 +584,7 @@
             </section>
             <section class="product-panel signals-panel">
               <div class="product-panel-head"><div><h4>${t('preview.signalsTitle')}</h4><p>${t('preview.signalsDesc')}</p></div><span class="information-dot">i</span></div>
-              <div class="signal-bars" aria-label="${t('preview.signalsTitle')}"><span><i style="--signal-width:78%;--signal-color:var(--pv-success)"></i><b>78%</b><small>${t('preview.signal.completed')}</small></span><span><i style="--signal-width:42%;--signal-color:var(--pv-warning)"></i><b>42%</b><small>${t('preview.signal.risk')}</small></span><span><i style="--signal-width:14%;--signal-color:var(--pv-danger)"></i><b>14%</b><small>${t('preview.signal.blocked')}</small></span></div>
+              <div class="signal-bars" aria-label="${t('preview.signalsTitle')}"><span style="--signal-width:78%;--signal-marker:var(--pv-success-line)"><i></i><b>78%</b><small>${t('preview.signal.completed')}</small></span><span style="--signal-width:42%;--signal-marker:var(--pv-warning-line)"><i></i><b>42%</b><small>${t('preview.signal.risk')}</small></span><span style="--signal-width:14%;--signal-marker:var(--pv-danger-line)"><i></i><b>14%</b><small>${t('preview.signal.blocked')}</small></span></div>
               <div class="product-empty"><span aria-hidden="true">□</span><div><strong>${t('preview.emptyTitle')}</strong><small>${t('preview.emptyDesc')}</small></div></div>
             </section>
           </div>
@@ -661,7 +658,6 @@
     const ownerId = activeOwnerId();
     state.roles[ownerId].seed = rgbToHex(rgb);
     state.roles[ownerId].enabled = true;
-    markTouched();
     renderAll();
   }
 
@@ -675,7 +671,6 @@
     state.roles[ownerId].seed = mapped.hex;
     state.roles[ownerId].enabled = true;
     if (mapped.reduced) showToast(t('toast.gamutReduced'));
-    markTouched();
     renderAll();
   }
 
@@ -689,7 +684,6 @@
     input.removeAttribute('aria-invalid');
     state.context[kind] = rgbToHex(rgb);
     state.context.source = state.context.locked ? 'locked' : 'provided';
-    markTouched();
     renderAll();
   }
 
@@ -701,7 +695,6 @@
       state.roles[roleId].seed = suggestions[roleId].hex;
       changed += 1;
     }
-    markTouched();
     renderAll();
     showToast(t('toast.semanticGenerated', { count: changed }));
   }
@@ -721,7 +714,6 @@
       role.seed = result.hex;
       changed += 1;
     }
-    markTouched();
     renderAll();
     if (unresolved) showToast(t('toast.semanticOptimizePartial', { changed, unresolved }));
     else if (changed) showToast(t('toast.semanticOptimized', { count: changed }));
@@ -749,7 +741,6 @@
     if (field === 'usage') {
       if (!['static', 'interactive'].includes(raw)) throw new Error(`Unknown saved pair usage: ${raw}`);
       pair.usage = raw;
-      markTouched();
       renderAll();
       return;
     }
@@ -781,7 +772,6 @@
     pair.foregroundStep = next.foregroundStep;
     pair.backgroundStep = next.backgroundStep;
     refreshSavedPairSnapshot(pair);
-    markTouched();
     renderAll();
   }
 
@@ -800,7 +790,6 @@
       return;
     }
     state.savedPairs.push(createSavedPair(next));
-    markTouched();
     renderAll();
     showToast(t('toast.pairAdded'));
   }
@@ -823,7 +812,6 @@
       state.savedPairs.push(createSavedPair(spec));
       added += 1;
     }
-    markTouched();
     renderAll();
     if (!added) showToast(t('toast.starterSetExists'));
     else if (skipped) showToast(t('toast.starterSetPartial', { added, skipped }));
@@ -1001,9 +989,8 @@
     state.nextPairKey = state.savedPairs.length + 100;
     state.defaultPairInitialized = true;
     state.activeRole = project.activeRole || 'brand';
-    state.proposal = null;
+    state.generationIssue = null;
     state.previousState = null;
-    state.touched = true;
     state.userLocks = {};
     targetSelect.value = String(state.target);
     renderAll();
@@ -1064,9 +1051,8 @@
     state.profileId = null;
     state.validation = null;
     state.generation = null;
-    state.proposal = null;
+    state.generationIssue = null;
     state.previousState = null;
-    state.touched = false;
     state.userLocks = {};
     targetSelect.value = String(state.target);
     renderAll();
@@ -1113,10 +1099,6 @@
   }
 
   // --- Quick start: one-click website system ----------------------------------
-
-  function markTouched() {
-    state.touched = true;
-  }
 
   function quickOptions() {
     const characterId = $('#characterSelect').value;
@@ -1173,43 +1155,23 @@
       showToast(result.error.message);
       return;
     }
-    // A valid first proposal on an untouched session auto-applies so the first
-    // useful system is one click away. Anything else stays a proposal until the
-    // user chooses Apply, Reroll, or Cancel.
-    const canAutoApply = !state.touched && !state.generation && !state.proposal
-      && ['ready', 'ready-with-warnings'].includes(result.validation.status);
-    if (canAutoApply) {
-      if (applyProposal(result, true)) renderGenerationResult();
+    if (result.validation.status === 'needs-attention') {
+      state.generationIssue = result;
+      renderGenerationResult();
+      showToast(t('toast.generationNeedsAttention'));
       return;
     }
-    state.proposal = result;
-    renderGenerationResult();
-    showToast(t('toast.proposalReady'));
+    applyGeneration(result);
   }
 
-  function rerollProposal() {
-    const result = buildGenerationResult(quickOptions());
-    if (result.error) {
-      showToast(result.error.message);
-      return;
-    }
-    state.proposal = result;
+  function dismissGenerationIssue() {
+    state.generationIssue = null;
     renderGenerationResult();
-    showToast(t('toast.proposalReady'));
+    showToast(t('toast.generationIssueDismissed'));
   }
 
-  function cancelProposal() {
-    state.proposal = null;
-    renderGenerationResult();
-    showToast(t('toast.proposalCancelled'));
-  }
-
-  function applyProposal(result, auto = false) {
+  function applyGeneration(result) {
     const proposal = result.proposal;
-    if (proposal.validation.status === 'needs-attention') {
-      showToast(t('gen.applyBlocked'));
-      return false;
-    }
     state.previousState = JSON.stringify({
       context: state.context,
       target: state.target,
@@ -1232,12 +1194,10 @@
     state.websiteTokens = proposal.websiteTokens;
     state.validation = proposal.validation;
     state.generation = proposal.generation;
-    state.touched = true;
-    state.proposal = null;
+    state.generationIssue = null;
     targetSelect.value = String(proposal.advancedPairTarget);
     renderAll();
-    showToast(auto ? t('toast.systemAutoApplied') : t('toast.systemApplied'));
-    return true;
+    showToast(t('toast.systemGenerated'));
   }
 
   function undoApply() {
@@ -1270,31 +1230,28 @@
   function renderGenerationResult() {
     const container = $('#generationResult');
     if (!container) return;
-    if (!state.proposal) {
+    if (!state.generationIssue) {
       if (state.generation) {
-        const copy = generationStatusCopy(state.generation.status);
-        container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.appliedNote')}</small></div><button id="undoApply" class="button" type="button">${t('gen.undo')}</button></div>`;
+        const copy = generationStatusCopy(state.validation?.status || state.generation.status);
+        const undo = state.previousState ? `<button id="undoApply" class="button" type="button">${t('gen.undo')}</button>` : '';
+        container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.appliedNote')}</small></div><div class="generation-status-actions"><a class="button" href="#preview">${t('gen.preview')}</a>${undo}</div></div>`;
       } else {
         container.innerHTML = `<p class="generation-empty">${t('tokens.empty')}</p>`;
       }
       return;
     }
-    const proposal = state.proposal.proposal;
+    const proposal = state.generationIssue.proposal;
     const copy = generationStatusCopy(proposal.validation.status);
     const failures = proposal.validation.requiredFailures || [];
     const taskRows = failures.length ? `<ul class="generation-tasks">${failures.map(failure => `<li><strong>${failure.theme} · ${failure.tokenId}</strong><span>${t('gen.failureDetail', { token: failure.relationshipId, actual: Number(failure.actual).toFixed(2), required: Number(failure.required).toFixed(1) })}</span>${failure.recovery ? `<em>${t('gen.recovery', { recovery: failure.recovery })}</em>` : ''}</li>`).join('')}</ul>` : '';
     const summary = failures.length ? `<p class="generation-summary">${t('gen.taskSummary', { count: failures.length })}</p>` : '';
-    const blocked = proposal.validation.status === 'needs-attention';
-    container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t(copy.descKey)}</small></div></div>
+    container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.failureStatusDesc')}</small></div></div>
       ${summary}
       ${taskRows}
-      <p class="generation-note">${t('gen.proposalNote')}</p>
+      <p class="generation-note">${t('gen.failureNote')}</p>
       <div class="generation-actions">
-        <button id="applyProposal" class="button primary" type="button" ${blocked ? 'disabled' : ''}>${t('gen.apply')}</button>
-        <button id="rerollProposal" class="button" type="button">${t('gen.reroll')}</button>
-        <button id="cancelProposal" class="button" type="button">${t('gen.cancel')}</button>
-      </div>
-      ${blocked ? `<p class="generation-blocked-note">${t('gen.applyBlocked')}</p>` : ''}`;
+        <button id="dismissGenerationIssue" class="button" type="button">${t('gen.dismiss')}</button>
+      </div>`;
   }
 
   function renderContextSourceNote() {
@@ -1386,18 +1343,11 @@
   textHexInput.addEventListener('change', event => setContextFromHex('text', event.target.value));
   targetSelect.addEventListener('change', () => {
     state.target = Number(targetSelect.value);
-    markTouched();
     renderAll();
   });
-  $('#characterSelect').addEventListener('change', () => {
-    markTouched();
-  });
   $('#brandSourceSelect').addEventListener('change', () => {
-    markTouched();
     $('#quickBrandHexField').hidden = $('#brandSourceSelect').value !== 'hex';
   });
-  $('#quickBrandHex').addEventListener('change', () => { markTouched(); });
-  $('#quickSecondaryStrategy').addEventListener('change', () => { markTouched(); });
   $('#generateSystem').addEventListener('click', generateWebsiteSystem);
   $('#coverageProfileSelect').addEventListener('change', event => {
     const nextProfileId = event.target.value || null;
@@ -1407,8 +1357,7 @@
       return;
     }
     state.profileId = nextProfileId;
-    state.proposal = null;
-    if (state.websiteTokens) markTouched();
+    state.generationIssue = null;
     renderAll();
     const labelKey = nextProfileId
       ? window.WebsiteTokenContract.PROFILE_EXTENSIONS[nextProfileId].labelKey
@@ -1424,7 +1373,6 @@
       const suggestions = model.makeSecondarySuggestions(state.roles.brand.seed, strategy);
       state.roles.secondary.seed = suggestions[0].hex;
     }
-    markTouched();
     renderAll();
   });
   $('#lockRole').addEventListener('click', () => {
@@ -1432,7 +1380,6 @@
     const role = activeRoleState();
     role.locked = !role.locked;
     state.userLocks[ownerId] = role.locked;
-    markTouched();
     renderAll();
   });
   $('#generateSemantics').addEventListener('click', generateSemanticColors);
@@ -1463,19 +1410,9 @@
   });
 
   document.addEventListener('click', event => {
-    const applyTarget = event.target.closest('#applyProposal');
-    if (applyTarget) {
-      if (state.proposal && applyProposal(state.proposal)) renderGenerationResult();
-      return;
-    }
-    const rerollTarget = event.target.closest('#rerollProposal');
-    if (rerollTarget) {
-      rerollProposal();
-      return;
-    }
-    const cancelTarget = event.target.closest('#cancelProposal');
-    if (cancelTarget) {
-      cancelProposal();
+    const dismissTarget = event.target.closest('#dismissGenerationIssue');
+    if (dismissTarget) {
+      dismissGenerationIssue();
       return;
     }
     const undoTarget = event.target.closest('#undoApply');
@@ -1495,7 +1432,6 @@
     const removePairTarget = event.target.closest('[data-remove-pair]');
     if (removePairTarget) {
       state.savedPairs = state.savedPairs.filter(pair => pair.key !== removePairTarget.dataset.removePair);
-      markTouched();
       renderAll();
       showToast(t('toast.pairRemoved'));
       return;

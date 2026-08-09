@@ -411,49 +411,33 @@ for (const key of [...elements.savedPairs.innerHTML.matchAll(/data-remove-pair="
 assert.equal(elements.savedPairCount.textContent, '0');
 assert.match(elements.savedPairs.innerHTML, /No pairs configured/);
 
-// --- Quick start: one-click website system (session already touched above) -------
+// --- Quick start: one-click website system (session already edited above) --------
 
 elements.characterSelect.value = 'balanced';
 elements.brandSourceSelect.value = 'generated';
 elements.quickSecondaryStrategy.value = 'none';
 
-// Because the session above edited state, generation must stay a proposal
-// until explicitly applied — never silently replace an edited system.
+// Generate is the explicit replacement action even after Advanced edits. A
+// valid result applies directly and exposes Preview plus one-level Undo.
 elements.generateSystem.dispatch('click');
 assert.ok(context.window.SystemGenerator, 'SystemGenerator is not loaded');
-assert.match(elements.generationResult.innerHTML, /Apply system/, 'Generation did not stay a proposal on a touched session');
-assert.match(elements.generationResult.innerHTML, /Reroll/);
-assert.match(elements.generationResult.innerHTML, /Cancel/);
-
-documentListeners.click({ target: { closest: selector => selector === '#rerollProposal' ? {} : null } });
-assert.match(elements.generationResult.innerHTML, /Apply system/, 'Reroll did not replace the proposal');
-documentListeners.click({ target: { closest: selector => selector === '#cancelProposal' ? {} : null } });
-assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Cancel did not clear the proposal');
-// Nothing was applied in this touched session yet, so the result area returns
-// to the empty prompt instead of an applied-state display.
-assert.match(elements.generationResult.innerHTML, /token contract/, 'Cancel did not return to the empty prompt');
-
-// Regenerate and Apply explicitly.
-elements.generateSystem.dispatch('click');
-documentListeners.click({ target: { closest: selector => selector === '#applyProposal' ? {} : null } });
-assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Apply did not replace the proposal with the applied state');
-assert.match(elements.generationResult.innerHTML, /Undo apply/, 'Applied system shows no Undo');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system|Reroll|Cancel/, 'Generate returned to proposal confirmation');
+assert.match(elements.generationResult.innerHTML, /View preview/, 'Applied system has no direct Preview route');
+assert.match(elements.generationResult.innerHTML, /Undo generation/, 'Applied system shows no Undo');
 assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Website tokens did not render in Step 03');
 assert.ok(elements.websiteTokens.innerHTML.includes('--action-primary-background'), 'Website token contract is incomplete');
 assert.match(elements.contextSourceNote.textContent, /Provided|Generated/, 'Context source note is missing after generation');
 
-// Undo restores the previous state — in this touched session nothing was
-// applied before, so the result area returns to the empty prompt.
+// Undo restores the Advanced state that existed before generation.
 documentListeners.click({ target: { closest: selector => selector === '#undoApply' ? {} : null } });
 assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Undo did not clear the applied state');
 assert.match(elements.generationResult.innerHTML, /token contract/, 'Undo did not return to the empty prompt');
 
-// Provided Brand HEX stays exact after Apply.
+// Provided Brand HEX stays exact after direct generation.
 documentListeners.click({ target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'brand' } } : null } });
 elements.brandSourceSelect.value = 'hex';
 elements.quickBrandHex.value = '#B7523A';
 elements.generateSystem.dispatch('click');
-documentListeners.click({ target: { closest: selector => selector === '#applyProposal' ? {} : null } });
 assert.equal(elements.hexInput.value, '#B7523A', 'Provided HEX was not applied to the active Brand');
 
 // Invalid HEX is rejected without changing the active system.

@@ -62,7 +62,7 @@ Brand may influence their visual character, not their meaning. Semantic palettes
 
 ## Color generation model
 
-Palette generation will move from HSL-based tonal alignment to OKLCH-based alignment.
+Palette generation uses OKLCH-based tonal alignment.
 
 Reasons:
 
@@ -72,6 +72,8 @@ Reasons:
 - gamut reduction can preserve hue while reducing chroma.
 
 Every independent palette keeps the existing `50` to `950` token scale. Token `500` must preserve the exact input seed HEX. The remaining steps are derived from OKLCH lightness and chroma curves, then converted to in-gamut sRGB values. Chroma is expressed relative to the maximum sRGB chroma available for each step's `L` and `H`, with a family-specific absolute cap, so semantic hues keep comparable vividness without borrowing another hue's absolute `C`.
+
+Quick start also enforces an emphasis hierarchy for generated, unlocked roles: Neutral stays near-achromatic, Brand carries the highest recurring relative chroma, and semantic families remain recognizable below that Brand budget. Explicit user-provided or locked seeds are preserved even when they do not follow this generated hierarchy.
 
 Out-of-gamut colors must be handled observably. The generator should report when chroma was reduced; it must not silently replace a color with an unrelated fallback.
 
@@ -122,10 +124,10 @@ Component Preview uses one full-width example canvas at a time. A local Light / 
 
 The preview is one coherent application workspace, not a gallery of disconnected swatches or cards. Light and Dark render the same markup with different assignments so a user can inspect each role in context:
 
-- Brand owns the selected navigation, visible focus, progress, and primary action.
-- Neutral and its Regular alias own the application shell, default task, borders, and secondary UI.
-- Success, Warning, Danger, and Information appear in task state, validation, health, and guidance patterns with text or icons alongside color.
-- Optional Secondary appears only as an additional product action when enabled.
+- Brand owns the selected navigation, visible focus, progress, and primary action. Compact Brand progress badges use the Brand bold fill with measured on-bold ink rather than Brand-colored text on a Neutral background.
+- Neutral and its Regular alias form a near-achromatic application shell and own default tasks, surfaces, borders, metric bars, and secondary UI.
+- Success, Warning, Danger, and Information appear as compact task-state glyphs, borders, dots, feedback rows, and health signals. Meaning-bearing compact fills use the role's bold assignment plus measured on-bold ink; they do not tint large callout surfaces or fill peer actions in the shared Preview.
+- Optional Secondary appears only as a badge or label accent when enabled. Its filled badge uses the Secondary bold assignment and measured on-bold ink.
 - A compact Theme palette panel shows the enabled roles through their active semantic assignments. It is part of the workspace and not a duplicate raw scale.
 - Structured release signals and an empty state extend the sample beyond isolated controls while keeping one coherent product context.
 
@@ -159,7 +161,7 @@ The set is a projection of resolved assignments onto pair coordinates. Action ro
 
 Two selection modes carry different intent. Body text and neutral actions take the most readable token available. Links and status text take the least contrast that still passes, because a role whose meaning is carried by its hue should not collapse to near-black just to maximize a ratio. This keeps `Success` visibly green and `Danger` visibly red while still meeting the target.
 
-Only one control in a view carries a saturated fill. The primary action is filled; the second action stays neutral. `Secondary` never becomes a filled action row, because two saturated controls side by side compete for the same attention, and because this role model already states that `Secondary` must not replace neutral secondary UI by default. When `Secondary` is enabled it earns an accent pair instead — a badge or label treatment on the Neutral surface. A semantic control inside its own panel, such as a warning banner's action, may still be filled; it is that panel's single action, not a second competing one.
+Only one control in a view carries a saturated fill. The primary action is filled; the second action stays neutral. `Secondary` never becomes a filled action row, because two saturated controls side by side compete for the same attention, and because this role model already states that `Secondary` must not replace neutral secondary UI by default. When `Secondary` is enabled it earns an accent pair instead — a badge or label treatment on the Neutral surface. Semantic color remains local to state evidence; a semantic fill is reserved for a genuinely critical, isolated action and is not used by the shared Preview's peer actions.
 
 Roles that are disabled are skipped, never fabricated. Generating appends and never overwrites, so a pair the user built or edited stays theirs; an existing coordinate is simply skipped. A changed target produces different coordinates, so regenerating after a target change can leave two rows sharing a name, with the older one visibly failing. That is accepted deliberately: showing both is safer than silently rewriting a reviewed pair.
 

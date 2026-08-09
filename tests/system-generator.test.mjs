@@ -18,6 +18,12 @@ function defaultOptions(overrides = {}) {
   return { characterId: 'balanced', brandSource: 'generated', secondaryStrategy: 'none', randomSeed: 42, ...overrides };
 }
 
+function relativeChroma(hex) {
+  const color = ColorEngine.hexToOklch(hex);
+  const maximum = ColorEngine.maxChromaAt(color.L, color.h);
+  return maximum > 0 ? color.C / maximum : 0;
+}
+
 // --- Determinism -------------------------------------------------------------
 
 // The same seed and options return the same generated inputs.
@@ -81,15 +87,26 @@ function defaultOptions(overrides = {}) {
   assert.equal(keep.proposal.roles.brand.seed, '#123456', 'Keep did not preserve the current Brand');
 }
 
-// --- Neutral stays inside its low-chroma contract ----------------------------
+// --- Generated hierarchy keeps Neutral quiet and Brand dominant --------------
 
 {
   for (const characterId of Object.keys(SystemGenerator.CHARACTERS)) {
     for (const seed of [1, 5, 9]) {
       const result = run(defaultOptions({ characterId, randomSeed: seed }));
       const neutralOklch = ColorEngine.hexToOklch(result.proposal.roles.neutral.seed);
+      const neutralPercent = relativeChroma(result.proposal.roles.neutral.seed);
+      const presetPercent = SystemGenerator.CHARACTERS[characterId].neutral.chromaPercent;
       assert.ok(neutralOklch.C <= ColorEngine.familyChromaLimits.neutral + 1e-9,
         `${characterId} Neutral chroma ${neutralOklch.C} exceeds the ${ColorEngine.familyChromaLimits.neutral} contract`);
+      assert.ok(neutralPercent <= presetPercent + 0.02,
+        `${characterId} Neutral uses ${(neutralPercent * 100).toFixed(1)}% relative chroma; expected at most ${((presetPercent + 0.02) * 100).toFixed(1)}%`);
+
+      const brandPercent = relativeChroma(result.proposal.roles.brand.seed);
+      for (const roleId of ['success', 'warning', 'danger', 'information']) {
+        const semanticPercent = relativeChroma(result.proposal.roles[roleId].seed);
+        assert.ok(semanticPercent <= brandPercent + 0.02,
+          `${characterId} ${roleId} relative chroma ${(semanticPercent * 100).toFixed(1)}% overtook Brand ${(brandPercent * 100).toFixed(1)}%`);
+      }
     }
   }
 }

@@ -1,8 +1,8 @@
 # Plan: Turn the color workflow into a one-click website color system
 
-- Status: Approved (owner confirmed 2026-08-09). Phases 0–8 implementation, static verification, workflow update, and remote branch delivery are complete; browser verification is partially complete with explicit bridge-limited items below.
+- Status: Approved (owner confirmed 2026-08-09). Phases 0–9 implementation, static verification, workflow update, and prior remote branch delivery are complete; the Phase 9 browser refresh remains explicit below.
 - Date: 2026-08-09
-- Scope: Starter entry, complete-system generation, website semantic tokens, per-relationship accessibility, Light / Dark output, persistence, and export adapters
+- Scope: Starter entry, complete-system generation, website semantic tokens, color-emphasis hierarchy, per-relationship accessibility, Light / Dark output, persistence, and export adapters
 - Depends on: [`docs/color-role-model.md`](../docs/color-role-model.md)
 - Builds on: [`plans/2026-08-06-starter-pair-set.md`](2026-08-06-starter-pair-set.md)
 
@@ -22,6 +22,7 @@ Success is not “eleven palette steps exist.” Success is:
 - one generation action runs the complete pipeline;
 - required website relationships are measured against the right accessibility constraint;
 - unresolved relationships remain visible and block a false completion claim;
+- Neutral recedes into a near-achromatic foundation while Brand owns recurring emphasis and semantic hues remain local signals;
 - exported semantic tokens can be consumed by a website without inventing another naming layer;
 - existing expert controls remain available for inspection and adjustment.
 
@@ -91,7 +92,7 @@ Advanced editing retains direct Background, Text, role, HEX, OKLCH, lock, scale,
 
 `Generate website system` is the primary action. It performs the whole pipeline and returns one proposal object. It must not call a series of DOM actions or partially mutate state.
 
-On an untouched first visit, a valid proposal becomes the active result immediately, so the first useful system is one click away. Once the user has edited or applied a system, later generations remain proposals until the user chooses `Apply`, `Reroll`, or `Cancel`.
+Every valid result becomes active immediately, so both the first system and later revisions remain one-click actions. Repeating Generate is the reroll. The result links to Preview and exposes one-level Undo; it does not ask for Apply / Reroll / Cancel confirmation. A `NEEDS ATTENTION` result remains a report and never replaces the active system.
 
 ### 3. Three token layers
 
@@ -407,8 +408,8 @@ Rules:
 
 - Return proposal state, traceability metadata, validation summary, and diagnostics.
 - Do not mutate active state during search.
-- Initial untouched state may auto-apply a valid proposal.
-- Later proposals require Apply, Reroll, or Cancel.
+- Apply every valid proposal atomically at the application boundary.
+- Keep a `NEEDS ATTENTION` proposal isolated as a dismissible report; do not mutate active state.
 
 ## Proposed source ownership
 
@@ -438,7 +439,7 @@ Rules:
 `js/app.js`
 
 - only mutable state owner;
-- proposal/apply/undo interaction;
+- direct valid-generation apply, failed-generation report, Preview route, and one-level Undo;
 - rendering and event handling;
 - navigation, clipboard, download, file import, and local storage calls;
 - no color search algorithm.
@@ -595,7 +596,7 @@ Exit criteria:
 - One proposal contains a complete website token set and evidence for both themes.
 - No required generated state is accepted solely because its token number looks plausible.
 
-### Phase 4: Add the Quick start and atomic proposal UI
+### Phase 4: Add Quick start and atomic generation UI
 
 Effort: Large
 
@@ -604,21 +605,21 @@ Effort: Large
 - [x] Add the three direct choices and one `Generate website system` action.
 - [x] Keep direct HEX and OKLCH controls behind Advanced editing without removing them.
 - [x] Render generation status and task summary without relying on color alone.
-- [x] Auto-apply a valid first proposal only when state is untouched.
-- [x] Add Apply, Reroll, Cancel, and Undo for later proposals.
-- [x] Keep a failed proposal inspectable without replacing the active system.
+- [x] Apply every valid generation atomically, including after edits.
+- [x] Treat repeated Generate as the reroll and expose a direct Preview route plus one-level Undo.
+- [x] Keep a failed proposal inspectable and dismissible without replacing the active system.
 - [x] Rename Step 03 to `Website tokens` and place Custom pairs beneath the generated contract.
 - [x] Move the existing `Generate starter set` behavior behind compatibility/custom-pair UI after parity exists.
 - [x] Update Steps navigation, anchors, minimize behavior, and active-section tracking.
 - [x] Preserve reduced-motion behavior.
 
-Phase 4 result: a `Quick start` section precedes the workflow with the three choices (character, Brand source with a revealed HEX field, Secondary strategy) and one `Generate website system` action. The first valid generation on an untouched session auto-applies; later generations stay proposals with `Apply` / `Reroll` / `Cancel` and `Undo` restores the previous system. A `NEEDS ATTENTION` proposal is inspectable, names each failing relationship with measured vs required ratio and recovery, and is blocked from Apply. Step 03 is now `Website tokens` (grouped Light / Dark contract with a validation badge) with `Custom pairs` beneath it; the starter-set action is relabeled `Generate compatibility pairs`. The Steps dock gained a Quick start entry and the Website tokens label; Context shows a generated/provided/locked source note. The default brand lock is treated as a starter convenience — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand (`state.userLocks`). AGENTS.md, both READMEs, and the GitHub Pages workflow now describe the running product: seven script owners in load order, eight test suites, and the Quick start flow. New suite `tests/quick-start.test.mjs` covers untouched auto-apply, proposal flow, locks, provided HEX, and blocked Apply.
+Phase 4 result: a `Quick start` section precedes the workflow with the three choices (character, Brand source with a revealed HEX field, Secondary strategy) and one `Generate website system` action. Every valid generation applies immediately; repeating Generate creates the next deterministic revision, while the result offers Preview and one-level Undo. There is no pending valid-proposal UI. A `NEEDS ATTENTION` attempt is inspectable and dismissible, names each failing relationship with measured vs required ratio and recovery, and leaves the active system unchanged. Step 03 is now `Website tokens` (grouped Light / Dark contract with a validation badge) with `Custom pairs` beneath it; the starter-set action is relabeled `Generate compatibility pairs`. The Steps dock gained a Quick start entry and the Website tokens label; Context shows a generated/provided/locked source note. The default brand lock is treated as a starter convenience — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand (`state.userLocks`). AGENTS.md, both READMEs, and the GitHub Pages workflow describe the running product: seven script owners in load order, eight test suites, and the Quick start flow. `tests/quick-start.test.mjs` covers direct apply, repeated Generate, Preview routing, one-level Undo, locks, provided HEX, and failed-generation isolation.
 
 Exit criteria:
 
 - A fresh user reaches a rendered website system with one primary action.
 - An expert can still enter exact Context and role values.
-- Generation never destroys an edited system without an explicit Apply.
+- Generate is the explicit replacement action; one-level Undo restores the system active before the latest valid generation.
 - Quick start remains usable at narrow width without horizontal scrolling.
 
 ### Phase 5: Bind Preview to website tokens
@@ -710,6 +711,32 @@ Exit criteria:
 - Documentation describes the running product rather than the proposed product.
 - Static, browser, deployment-artifact, and direct `file://` results are reported separately.
 
+### Phase 9: Browser-review correction for generation friction and color hierarchy
+
+Effort: Medium
+
+- [x] Remove the valid-proposal confirmation surface; every valid Generate applies atomically.
+- [x] Treat repeated Generate as the reroll and keep a one-level Undo snapshot.
+- [x] Link the applied status directly to Preview.
+- [x] Keep `NEEDS ATTENTION` attempts isolated as dismissible reports that cannot mutate the active system.
+- [x] Reduce generated Neutral to a 3–4.5% relative-chroma budget depending on character.
+- [x] Keep generated semantic families below the generated Brand's relative-chroma budget while preserving their fixed hue families.
+- [x] Move semantic color in the shared Preview from large surfaces, metric bars, and peer-action fills to compact glyphs, borders, dots, and helper evidence.
+- [x] Review that first correction in a refreshed `file://` page; the review exposed grey-soft backgrounds paired with bright role-colored text in compact meaning-bearing states.
+- [x] Map compact Brand / Secondary badges, semantic state glyphs, and invalid feedback to role `bold` plus measured `onBold`, and replace the ambiguous notification dot with a recognizable bell icon.
+- [x] Add regression checks for direct apply, failure isolation, near-achromatic Neutral, Brand/semantic hierarchy, and the Preview color budget.
+- [x] Re-run the complete syntax, eight-suite, 400-profile, fixture-idempotency, and deployment-artifact matrices after the correction.
+- [ ] Re-run the compact-signal correction in a refreshed browser page; automated `file://` reload remains policy-blocked.
+
+Phase 9 rationale: browser review showed that a valid proposal had no Preview but still required a second confirmation, and that tinted Neutral surfaces plus several simultaneous semantic fills flattened the visual hierarchy. The first correction made the shell quieter, but a refreshed-page review then showed the opposite failure in compact states: grey backgrounds plus bright role-colored labels weakened meaning. The corrected interaction makes Generate the explicit replacement action and relies on reversible Undo rather than pre-apply confirmation. The corrected color policy reserves large surfaces for Neutral while compact meaning-bearing components use their role's bold fill and measured ink.
+
+Exit criteria:
+
+- One click after any valid input state produces the active website system and a direct Preview route.
+- A failed attempt names the unresolved relationships and leaves the current Website tokens byte-for-byte unchanged.
+- Generated Neutral remains visibly near-achromatic; unlocked semantic seeds do not overtake generated Brand in relative chroma.
+- The shared Light / Dark Preview keeps large surfaces Neutral, while compact Brand and semantic signals remain identifiable through role-color fills with measured foregrounds.
+
 ## Export naming direction
 
 Exact names belong in `docs/website-token-contract.md`, but CSS should follow this shape:
@@ -787,13 +814,13 @@ Theme-level website names stay stable. Consumers should not have to append `ligh
 ### Application smoke tests
 
 - Fresh-state one-click generation.
+- Edited-state direct generation and one-level Undo.
 - Provided Brand HEX generation.
-- Generated Brand Reroll.
+- Repeated Generate produces a fresh unlocked Brand revision.
 - Lock survival.
 - Secondary None / Analogous / Contrasting.
-- First auto-apply versus later proposal approval.
-- Cancel and Undo.
-- Required failure remains visible.
+- Direct Preview route and absence of Apply / Reroll / Cancel confirmation.
+- Required failure remains visible, dismissible, and isolated from the active system.
 - Target-profile change re-resolves and revalidates.
 - Website token navigation to source role.
 - Custom pair add, edit, duplicate message, remove, and export.
@@ -807,7 +834,7 @@ Run separately from source tests:
 - direct `file://` opening;
 - desktop target width;
 - narrow mobile width;
-- keyboard-only Quick start, proposal actions, Advanced editing, Preview, and Export;
+- keyboard-only Quick start, applied-result actions, failed-generation report, Advanced editing, Preview, and Export;
 - focus visibility and reduced motion;
 - Context PASS and FAIL examples;
 - Light and Dark Preview parity;
@@ -829,10 +856,23 @@ Verified over `http://127.0.0.1` in the Codex in-app browser:
 
 Not claimed as browser-verified:
 
-- Direct `file://` navigation was rejected by the browser URL policy before the page could load. Source load order and static contract pass, but direct-file behavior still needs a user-run browser check.
+- Automated direct `file://` navigation and reload are rejected by the browser URL policy. The user's browser-comment screenshots prove that the page itself opens through `file://`, but those screenshots predate the Phase 9 correction and cannot verify the changed UI.
 - `Download JSON` showed the app success toast, but the in-app browser exposed no download event. The hidden file input and visible Import label both failed to open its file chooser. Import, invalid import, and unknown-profile non-mutation remain covered by `app-smoke`, not a real chooser round trip.
 - The browser produced a visible keyboard focus outline, but its Playwright, CUA, and DOM-CUA key injection did not activate Enter / Space / Tab defaults. Keyboard-only completion therefore remains open.
 - The host reports `prefers-reduced-motion: reduce = false`, and the browser exposes no media-emulation capability. The CSS media rule and auto-scroll branch are source-tested, but a real reduced-motion session remains open.
+
+#### 2026-08-09 Phase 9 correction verification
+
+Verified from current source and generated artifacts:
+
+- All seven JavaScript owners pass `node --check`; all eight suites pass. `token-contract.test.mjs` still covers 400 generated profile systems.
+- A separate 500-system hierarchy matrix (100 seeds for each character) produced zero `NEEDS ATTENTION` systems. Quantized Neutral output stayed at or below 5.6% relative chroma, and the smallest Brand lead over the strongest semantic seed was 1.2 percentage points.
+- Direct apply, repeat Generate, Preview routing, one-level Undo, failed-generation isolation, and the absence of Apply / Reroll / Cancel are regression-tested.
+- Fixture regeneration is idempotent: all four fixture hashes were identical before and after a second regeneration. The prepared `_site/` artifact contains all seven owners and each copied script passes syntax checking.
+
+Not claimed as Phase 9 browser-verified:
+
+- The existing user-owned `file://` tab could be claimed, but automated reload was rejected by the URL security policy. The corrected result surface, Light / Dark color hierarchy, 749px browser-comment viewport, and 390px narrow layout require a manual refresh before visual approval.
 
 ### Deployment verification
 
@@ -927,7 +967,8 @@ The implementation should land milestone by milestone. Do not combine M1 through
 - [x] Quick start requires no more than three direct choices and one primary generation action.
 - [x] Generated Context Text on Background passes 4.5:1.
 - [x] Generated Brand, Neutral, optional Secondary, and semantic roles preserve the accepted role model.
-- [x] Locked and explicitly provided seeds survive Generate, Reroll, and repair.
+- [x] Locked and explicitly provided seeds survive repeated Generate and repair.
+- [x] Generated Neutral remains near-achromatic and unlocked semantic families stay below generated Brand's relative chroma budget.
 - [x] Both Light and Dark resolve the complete generic website token contract.
 - [x] Every required text, non-text, focus, and interactive-state relationship uses its applicable target.
 - [x] Interactive foreground remains stable across Default, Hover, and Pressed.
@@ -948,6 +989,6 @@ Code implementation does not begin until the owner confirms these three decision
 
 1. The first release generates one generic website system; product-specific profiles follow after the contract is stable.
 2. Step 03 becomes `Website tokens`, with existing Saved pairs retained as `Custom pairs` beneath it.
-3. The first untouched generation auto-applies when valid; later generation stays a proposal until explicitly applied.
+3. Every valid generation applies immediately; repeated Generate is reversible with one-level Undo, while `NEEDS ATTENTION` never mutates the active system. This amends the original first-only auto-apply decision after browser review.
 
 Once approved, update this plan as phases complete. If the token contract, source ownership, or product flow changes materially, revise this file before changing implementation.

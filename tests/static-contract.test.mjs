@@ -52,6 +52,21 @@ assert.match(html, /id="generateStarterSet"[^>]*data-i18n="saved\.generateLegacy
 assert.match(css, /\.product-secondary-button \{[^}]*background: transparent/s, 'The preview secondary action is filled again and competes with the primary');
 assert.doesNotMatch(app, /--pv-secondary:|--pv-on-secondary:/, 'Secondary is being used as a filled control colour again');
 assert.match(app, /--pv-accent-soft:|--pv-accent-line:/, 'Secondary lost its accent role in the preview');
+assert.match(app, /--pv-accent:\$\{accent\.bold\.hex\}/, 'Preview accent has no bold assignment for meaning-bearing badges');
+assert.match(app, /--pv-on-accent:\$\{accent\.onBold\.hex\}/, 'Preview accent badge does not use measured on-bold ink');
+assert.match(css, /\.product-kicker \{[^}]*color: var\(--pv-on-accent\);[^}]*background: var\(--pv-accent\)/s, 'The Preview kicker returned to grey plus bright accent text');
+assert.match(css, /\.progress-badge \{[^}]*color: var\(--pv-on-brand\);[^}]*background: var\(--pv-brand\)/s, 'The progress badge returned to grey plus bright Brand text');
+assert.match(css, /\.task-state \{[^}]*color: var\(--pv-on-success\);[^}]*background: var\(--pv-success\)/s, 'Success task state lost its solid semantic treatment');
+assert.match(css, /\.task-list li\.warning \.task-state \{[^}]*color: var\(--pv-on-warning\);[^}]*background: var\(--pv-warning\)/s, 'Warning task state lost its solid semantic treatment');
+assert.match(css, /\.product-field\.invalid small \{[^}]*color: var\(--pv-on-danger\);[^}]*background: var\(--pv-danger\)/s, 'Invalid feedback returned to grey plus bright Danger text');
+assert.match(app, /<svg class="notification-icon"[^>]*aria-hidden="true"/, 'The Preview notification control has no recognizable bell icon');
+assert.doesNotMatch(app, /aria\.notifications'\)\}">●<\/button>/, 'The ambiguous notification dot returned');
+assert.match(css, /\.info-callout \{[^}]*background: var\(--pv-panel\)/s, 'Information returned as a large tinted Preview surface');
+assert.match(css, /\.warning-button \{[^}]*background: transparent/s, 'Warning returned as a competing filled Preview action');
+assert.match(css, /\.signal-bars i::after \{[^}]*background: var\(--pv-neutral-bold\)/s, 'Signal bars use three competing semantic fills again');
+assert.match(css, /\.signal-bars small::before \{[^}]*background: var\(--signal-marker\)/s, 'Semantic signal markers disappeared from the neutral bars');
+assert.doesNotMatch(app, /id="applyProposal"|id="rerollProposal"|id="cancelProposal"/, 'Quick start reintroduced the redundant proposal confirmation actions');
+assert.match(app, /id="dismissGenerationIssue"/, 'A failed generation has no dismissible diagnostic report');
 assert.match(roleModel, /function starterPairSpecs/, 'The starter set moved out of the role model');
 assert.doesNotMatch(roleModel, /borderIcon\.step[^;]*starter/, 'Starter text foregrounds must not reuse the 3:1 border/icon token');
 

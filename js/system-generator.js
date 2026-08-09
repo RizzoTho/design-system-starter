@@ -23,46 +23,48 @@
 
   // Character presets. Chroma is expressed as a fraction of the sRGB maximum
   // available at each drawn L and H, then capped by the family chroma limit, so
-  // every requested color stays inside the gamut by construction.
+  // every requested color stays inside the gamut by construction. Generated
+  // systems reserve recurring color emphasis for Brand: Neutral stays nearly
+  // achromatic and semantic families sit below Brand's relative chroma budget.
   // `hue: null` means a free hue; a range draws inside that band.
   const CHARACTERS = Object.freeze({
     balanced: Object.freeze({
       labelKey: 'character.balanced',
       brand: Object.freeze({ hue: null, L: [0.50, 0.64], chromaPercent: [0.30, 0.42] }),
-      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.10, hueOffset: [-6, 10] }),
-      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.35, 0.50] }),
+      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.04, hueOffset: [-6, 10] }),
+      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.22, 0.30] }),
       temperature: 'balanced',
       context: Object.freeze({ backgroundL: 0.94, backgroundChromaPercent: 0.06 }),
     }),
     warm: Object.freeze({
       labelKey: 'character.warm',
       brand: Object.freeze({ hue: [25, 55], L: [0.50, 0.64], chromaPercent: [0.30, 0.42] }),
-      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.10, hueOffset: [-14, 4] }),
-      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.35, 0.50] }),
+      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.045, hueOffset: [-14, 4] }),
+      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.22, 0.30] }),
       temperature: 'warm',
       context: Object.freeze({ backgroundL: 0.94, backgroundChromaPercent: 0.07 }),
     }),
     cool: Object.freeze({
       labelKey: 'character.cool',
       brand: Object.freeze({ hue: [200, 260], L: [0.48, 0.62], chromaPercent: [0.28, 0.40] }),
-      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.10, hueOffset: [2, 14] }),
-      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.35, 0.50] }),
+      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.04, hueOffset: [2, 14] }),
+      semantic: Object.freeze({ L: [0.54, 0.68], chromaPercent: [0.20, 0.27] }),
       temperature: 'cool',
       context: Object.freeze({ backgroundL: 0.94, backgroundChromaPercent: 0.05 }),
     }),
     vivid: Object.freeze({
       labelKey: 'character.vivid',
       brand: Object.freeze({ hue: null, L: [0.46, 0.58], chromaPercent: [0.55, 0.72] }),
-      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.08, hueOffset: [-6, 10] }),
-      semantic: Object.freeze({ L: [0.50, 0.64], chromaPercent: [0.60, 0.78] }),
+      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.03, hueOffset: [-6, 10] }),
+      semantic: Object.freeze({ L: [0.50, 0.64], chromaPercent: [0.40, 0.52] }),
       temperature: 'balanced',
       context: Object.freeze({ backgroundL: 0.94, backgroundChromaPercent: 0.05 }),
     }),
     muted: Object.freeze({
       labelKey: 'character.muted',
-      brand: Object.freeze({ hue: null, L: [0.56, 0.70], chromaPercent: [0.12, 0.22] }),
-      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.12, hueOffset: [-6, 10] }),
-      semantic: Object.freeze({ L: [0.56, 0.70], chromaPercent: [0.15, 0.30] }),
+      brand: Object.freeze({ hue: null, L: [0.56, 0.70], chromaPercent: [0.16, 0.24] }),
+      neutral: Object.freeze({ hue: null, L: [0.55, 0.62], chromaPercent: 0.035, hueOffset: [-6, 10] }),
+      semantic: Object.freeze({ L: [0.56, 0.70], chromaPercent: [0.10, 0.16] }),
       temperature: 'balanced',
       context: Object.freeze({ backgroundL: 0.94, backgroundChromaPercent: 0.07 }),
     }),
@@ -260,12 +262,10 @@
         0.46,
         0.74
       );
-      const percent = Math.max(
-        (Array.isArray(character.semantic.chromaPercent)
-          ? between(random, character.semantic.chromaPercent[0], character.semantic.chromaPercent[1])
-          : character.semantic.chromaPercent) * (0.80 + 0.25 * brandChromaPercent),
-        0.18
-      );
+      const semanticPercent = Array.isArray(character.semantic.chromaPercent)
+        ? between(random, character.semantic.chromaPercent[0], character.semantic.chromaPercent[1])
+        : character.semantic.chromaPercent;
+      const percent = semanticPercent * (0.88 + 0.12 * brandChromaPercent);
       const drawn = toHex({
         L,
         C: Math.min(maxChromaAt(L, hue) * clamp(percent, 0, 1), familyChromaLimits[roleId]),

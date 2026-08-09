@@ -20,7 +20,7 @@ Do not turn it into a generic color picker. Its core question is:
 - `js/token-contract.js` owns generic and product-profile website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, and validation summaries.
 - `js/system-generator.js` owns character presets, deterministic Context / Brand / Neutral / Secondary / semantic batch generation, bounded constraint search, and the end-to-end `generateSystem()` proposal builder.
 - `js/project-state.js` owns schema version 2, strict project encode/decode/validation, and storage payload preparation.
-- `js/app.js` owns the single mutable state, rendering, interaction, navigation, Quick start proposals (Apply / Reroll / Cancel / Undo), copy, and export behavior.
+- `js/app.js` owns the single mutable state, rendering, interaction, navigation, direct Quick start generation, failed-generation reports, one-level Undo, copy, and export behavior.
 - `scripts/prepare-pages.sh` owns the clean `_site/` artifact used for GitHub Pages deployment.
 - `.github/workflows/pages.yml` owns verification and deployment to the `github-pages` environment from `main`.
 - `AGENTS.md` owns the project intent and maintenance rules.
@@ -44,7 +44,7 @@ If the project later adopts a framework or build system, update this file in the
 
 ## Product flow
 
-The default route is `Quick start`: up to three direct choices (color character, Brand source, Secondary strategy) and one `Generate website system` action. A valid first proposal on an untouched session auto-applies; later generations stay proposals until `Apply`, `Reroll`, or `Cancel`. `Undo` restores the previous applied system.
+The default route is `Quick start`: up to three direct choices (color character, Brand source, Secondary strategy) and one `Generate website system` action. Every valid generation applies immediately; pressing Generate again is the reroll. The result links directly to Preview, and one-level `Undo` restores the system that was active before the latest generation. A `NEEDS ATTENTION` attempt never replaces the current system.
 
 After generation, `Advanced editing` provides three ordered steps plus two separate result destinations:
 
@@ -71,6 +71,7 @@ The floating Steps window is the navigation owner for this sequence: Quick start
 - Validation statuses: `READY` (every required relationship passes in both themes), `READY WITH WARNINGS` (advisory diagnostics remain), and `NEEDS ATTENTION` (a required relationship is unresolved and must name the relationship, actual ratio, required ratio, and recovery). A system is never `READY` when either theme has a required failure.
 - Reference palettes are generated in OKLCH. Keep the exact input seed at `500`, use one shared tonal rhythm, and apply per-family chroma limits.
 - For every non-seed step, derive chroma as a family-relative percentage of the sRGB maximum for that step's `L` and `H`; do not reuse Brand's absolute `C` across semantic hues.
+- Generated color hierarchy is intentional: Neutral is a near-achromatic foundation, Brand owns recurring emphasis, and unlocked semantic families stay below the generated Brand's relative chroma budget. Semantic hue identity stays recognizable, but semantic color is a local status signal rather than ambient surface tint.
 - If an OKLCH request is outside sRGB, reduce chroma while preserving lightness and hue as far as possible, and expose a diagnostic with the requested and actual chroma instead of silently clipping.
 - Generated scale usage labels are recommendations, not guarantees:
   - 50–200: page and surface
@@ -90,8 +91,8 @@ The floating Steps window is the navigation owner for this sequence: Quick start
 - Every user-facing title, description, button label, status, and feedback change must update both `en` and `zh` catalogs in the same change.
 - Product and technical terms such as Brand, Neutral, Secondary, Regular, Success, Warning, Danger, Information, WCAG, AA, AAA, OKLCH, HEX, CSS, JSON, token, palette, surface, and contrast remain untranslated where they are the clearest label.
 - Missing translation keys or mismatched catalogs must fail visibly. Do not add a silent language fallback.
-- Quick start: the first valid proposal on an untouched session auto-applies so the first useful system is one click away. Once the user has edited or applied anything, later generations remain proposals until `Apply`, `Reroll`, or `Cancel`. `Undo` restores the previous applied system. A `NEEDS ATTENTION` proposal is inspectable but cannot be applied; it must name the failing relationships and recovery.
-- Quick start generation is deterministic: the same character, Brand source, Secondary strategy, and random seed reproduce the same inputs. Locks survive Generate and Reroll. The starter default lock on Brand is a convenience, not a commitment — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand in Advanced editing. An explicitly provided Brand HEX stays exact at `500`.
+- Quick start: every valid Generate applies atomically and immediately. Repeating Generate produces a fresh deterministic revision with the same choices. The applied status offers Preview and one-level Undo; it does not show Apply / Reroll / Cancel confirmation controls. A `NEEDS ATTENTION` attempt is inspectable and dismissible, names the failing relationships and recovery, and never replaces the active system.
+- Quick start generation is deterministic: the same character, Brand source, Secondary strategy, and random seed reproduce the same inputs. Locks survive repeated Generate. The starter default lock on Brand is a convenience, not a commitment — explicit Quick start sources produce a fresh brand unless the user deliberately locked Brand in Advanced editing. An explicitly provided Brand HEX stays exact at `500`.
 - Background, Text, and every enabled palette owner accept direct HEX input and native color input. Generated and provided Context values are marked by source in the Context panel; a user edit turns the source into `provided`.
 - Invalid HEX must be marked invalid without silently changing the last valid color.
 - Clicking a Generated scale token copies its HEX value and applies it to the active palette owner.
@@ -126,7 +127,7 @@ The floating Steps window is the navigation owner for this sequence: Quick start
 - Components use bounded widths instead of stretching to the viewport. Reading-focused results stay compact. Preview uses the full project content width with one Light or Dark example visible at a time. The scale may use the available workflow width with horizontal scrolling when needed; Pair editor fields and copy/remove controls must remain usable.
 - Preview renders one coherent application workspace using identical markup for Light and Dark. Put roles into navigation, primary and secondary actions, focus, default tasks, status, validation, guidance, structured data, empty states, and a compact semantic assignment card; do not regress to isolated component demos or a raw 50–950 gallery.
 - A selected product profile adds one bounded coverage module inside that shared workspace: Dashboard shows sidebar/table/chart coverage, Marketing shows hero/feature coverage, Portfolio shows project/media coverage, and Documentation shows navigation/code coverage.
-- Only one control in an action group carries a saturated fill. The primary action is filled; the second action stays neutral with an outline. `Secondary` is an accent that decorates a badge, never a second filled button — the role model already forbids it replacing neutral secondary UI. A semantic control scoped to its own panel, such as a warning banner's action, may still be filled.
+- Only one control in an action group carries a saturated fill. The primary action is filled; the second action stays neutral with an outline. `Secondary` is an accent that decorates a badge, never a second filled button. Large callout surfaces, metric bars, and peer actions remain Neutral. Compact meaning-bearing badges, state glyphs, and feedback rows use the owning role's `bold` fill with its measured `onBold` ink; do not put saturated role-colored text on a grey Neutral background.
 - Preview input states follow one model: Default uses a Neutral border, Focus adds a Brand outer ring, Invalid uses a Danger border and helper treatment, and Invalid + Focus keeps the Danger border with the Brand ring.
 - Generated scale metadata uses black text on one continuous light block. Do not put metadata text directly over dark swatches or reintroduce fragmented inline backgrounds.
 - Preserve the restrained editorial palette, thin borders, generous spacing, and visible information hierarchy. Avoid generic dashboard styling, gradients, or ornamental card proliferation.
@@ -154,7 +155,7 @@ For every behavior or layout change:
 6. Change the global WCAG target and confirm Role checks, saved-pair status, and Interactive state results update together.
 7. Confirm the default Brand `50` on `600` pair, edit Role/Foreground/Background/Usage fields, add a second pair, verify the Interactive state family and focus ring in CSS and JSON, then remove it.
 8. Check the Steps links (Quick start, Context, Colors, Website tokens, Preview, Export), minimize control, global target, Preview entry, and Export entry.
-9. Verify Quick start: one-click generation on a fresh session, provided Brand HEX, Reroll, Cancel, Undo, a `NEEDS ATTENTION` proposal that cannot apply, and lock survival.
+9. Verify Quick start: one-click generation on a fresh and edited session, repeated Generate, direct Preview route, provided Brand HEX, one-level Undo, a dismissible `NEEDS ATTENTION` report that leaves the active system unchanged, and lock survival.
 10. Switch through General, Dashboard, Marketing, Portfolio, and Documentation; confirm additive token groups, required relationship status, Light / Dark Preview module parity, export names, Advanced-edit re-resolution, and Save / Import persistence.
 11. Check desktop and narrow layouts. The scale and Website token table may scroll horizontally, but pair fields and copy must remain usable, and Quick start must not overflow.
 12. Report static checks and browser checks separately. Never claim visual verification if only source checks ran.

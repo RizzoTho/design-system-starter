@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-// A fresh, untouched session: the first valid generation must auto-apply so the
-// first useful system is one click away. Later generations stay proposals.
+// Every valid generation applies immediately so the useful result remains one
+// click away. Undo restores the system that was active before that generation.
 
 class FakeClassList {
   values = new Set();
@@ -121,15 +121,16 @@ for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), context, { filename: file });
 }
 
-// An untouched session: the first click must produce a rendered website system.
+// A fresh session: the first click must produce a rendered website system.
 elements.characterSelect.value = 'balanced';
 elements.brandSourceSelect.value = 'generated';
 elements.quickSecondaryStrategy.value = 'none';
 elements.generateSystem.dispatch('click');
 
 assert.match(elements.generationResult.innerHTML, /READY/, 'First generation did not reach READY');
-assert.match(elements.generationResult.innerHTML, /Undo apply/, 'Auto-applied system shows no Undo');
-assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Auto-applied system still shows Apply');
+assert.match(elements.generationResult.innerHTML, /View preview/, 'Applied system has no direct Preview route');
+assert.match(elements.generationResult.innerHTML, /Undo generation/, 'Applied system shows no Undo');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system|Reroll|Cancel/, 'Applied system still asks for proposal confirmation');
 assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Website tokens did not render');
 assert.ok(elements.websiteTokens.innerHTML.includes('--feedback-success-text'), 'Feedback tokens missing');
 assert.ok(elements.websiteTokens.innerHTML.includes('--action-primary-background-hover'), 'Action state tokens missing');
@@ -217,32 +218,21 @@ for (const pair of compatJson.pairs.filter(item => item.slug)) {
   assert.ok(pair.ratio >= compatJson.advancedPairTarget, `${pair.slug} dropped below the active target`);
 }
 
-// A second click on the now-touched session stays a proposal.
+// A second click is the reroll: it applies immediately and can be undone.
+const brandBeforeRegenerate = elements.hexInput.value;
 elements.generateSystem.dispatch('click');
-assert.match(elements.generationResult.innerHTML, /Apply system/, 'Second generation was not kept as a proposal');
-
-// Cancel clears it; the applied system remains.
-documentListeners.click({ target: { closest: selector => selector === '#cancelProposal' ? {} : null } });
-assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Cancel did not clear the proposal');
-
-// Reroll produces a fresh proposal with the same choices.
-elements.generateSystem.dispatch('click');
-const proposalBeforeReroll = elements.generationResult.innerHTML;
-documentListeners.click({ target: { closest: selector => selector === '#rerollProposal' ? {} : null } });
-assert.match(elements.generationResult.innerHTML, /Apply system/, 'Reroll did not produce a proposal');
-
-// Apply the rerolled proposal, then Undo back to the auto-applied system.
-documentListeners.click({ target: { closest: selector => selector === '#applyProposal' ? {} : null } });
-assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Apply did not replace the proposal');
+assert.notEqual(elements.hexInput.value, brandBeforeRegenerate, 'Second Generate did not produce a fresh unlocked Brand');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system|Reroll|Cancel/, 'Second Generate returned to proposal confirmation');
 documentListeners.click({ target: { closest: selector => selector === '#undoApply' ? {} : null } });
-assert.match(elements.generationResult.innerHTML, /Undo apply/, 'Undo did not restore the auto-applied state');
+assert.equal(elements.hexInput.value, brandBeforeRegenerate, 'Undo did not restore the previous Brand');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Undo generation/, 'Consumed one-level Undo remained active');
+assert.match(elements.generationResult.innerHTML, /View preview/, 'Undo lost the direct Preview route');
 assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Undo lost the website tokens');
 
 // Keep current brand source preserves the applied Brand seed.
 elements.brandSourceSelect.value = 'keep';
 const currentBrand = elements.hexInput.value;
 elements.generateSystem.dispatch('click');
-documentListeners.click({ target: { closest: selector => selector === '#applyProposal' ? {} : null } });
 assert.equal(elements.hexInput.value, currentBrand, 'Keep current did not preserve the Brand seed');
 
 // A locked Brand survives generation: lock, generate with a different source,
@@ -251,19 +241,24 @@ documentListeners.click({ target: { closest: selector => selector === '[data-sel
 elements.lockRole.dispatch('click');
 elements.brandSourceSelect.value = 'generated';
 elements.generateSystem.dispatch('click');
-documentListeners.click({ target: { closest: selector => selector === '#applyProposal' ? {} : null } });
 assert.equal(elements.hexInput.value, currentBrand, 'A locked Brand changed after generation');
 
-// NEEDS ATTENTION proposals are blocked from Apply. A locked near-white Brand
-// makes focus rings unresolvable.
+// NEEDS ATTENTION keeps the current system and only exposes a diagnostic report.
+// A locked near-white Brand makes focus rings unresolvable.
 elements.lockRole.dispatch('click'); // unlock
 elements.hexInput.value = '#FFFFFF';
 elements.hexInput.dispatch('change');
 elements.lockRole.dispatch('click'); // lock white
+const tokensBeforeFailure = elements.websiteTokens.innerHTML;
 elements.generateSystem.dispatch('click');
 assert.match(elements.generationResult.innerHTML, /NEEDS ATTENTION/, 'Locked white Brand did not produce NEEDS ATTENTION');
-assert.match(elements.generationResult.innerHTML, /cannot apply|required relationships are unresolved/i,
-  'Blocked Apply message is missing');
+assert.match(elements.generationResult.innerHTML, /current system was not changed/i,
+  'Failed generation does not explain that the current system was kept');
+assert.match(elements.generationResult.innerHTML, /Dismiss report/, 'Failed generation has no dismiss action');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system|Reroll|Cancel/, 'Failed generation exposes proposal confirmation actions');
 assert.equal(elements.hexInput.value, '#FFFFFF', 'NEEDS ATTENTION changed the active system');
+assert.equal(elements.websiteTokens.innerHTML, tokensBeforeFailure, 'NEEDS ATTENTION replaced the active website tokens');
+documentListeners.click({ target: { closest: selector => selector === '#dismissGenerationIssue' ? {} : null } });
+assert.doesNotMatch(elements.generationResult.innerHTML, /Dismiss report/, 'Dismiss did not clear the failed generation report');
 
-console.log('quick-start: untouched auto-apply, proposal flow, locks, and blocked Apply passed');
+console.log('quick-start: direct apply, repeat generation, Undo, locks, and failed-generation isolation passed');

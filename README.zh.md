@@ -30,7 +30,7 @@ python3 -m http.server 8000
 
 ## 基本流程
 
-1. **快速开始**：选择色彩性格、Brand 来源（生成 / 使用 HEX / 保留当前）与 Secondary 策略，按 `生成网站配色系统`。首套有效系统会自动应用；之后的生成保留为方案，直到 Apply / Reroll / Cancel，Undo 可恢复上一套系统。
+1. **快速开始**：选择色彩性格、Brand 来源（生成 / 使用 HEX / 保留当前）与 Secondary 策略，按 `生成网站配色系统`。每套有效结果都会直接应用；再次 Generate 可换一套，也可从结果进入 Preview 或用单步 Undo 恢复上一套。失败结果不会改动当前系统，并会列出需处理的关系。
 2. **Context**：确认或微调生成的 `Background` 与 `Text`；面板显示实测 PASS / FAIL（4.5:1）。
 3. **Colors**：检查 `Brand`、`Neutral`、可选 `Secondary` 与语义角色；微调或 Lock 各角色，并按全局 WCAG target 查看 Role checks。
 4. **网站 Token**：按用途分组查看生成的契约（surface、内容、操作、表单、反馈、强调），含浅色与深色值。可选 Dashboard、Marketing、Portfolio 或 Documentation 覆盖档案，补充组件 token 与对应 Preview 模块；自定义配对保留为可编辑快照。
