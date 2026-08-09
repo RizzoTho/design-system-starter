@@ -533,27 +533,29 @@ Phase 1 result: `js/token-contract.js` and `js/project-state.js` load in depende
 
 Effort: Large
 
-- [ ] Add character presets: Balanced, Warm, Cool, Vivid, and Muted.
-- [ ] Add generated and provided Context modes.
-- [ ] Add Brand generation with bounded OKLCH candidates.
-- [ ] Add Neutral generation related to Brand character.
-- [ ] Reuse Secondary strategies without making Secondary a filled action.
-- [ ] Add semantic batch presets whose four colors are previewed and measured together.
-- [ ] Add Reroll for generated Brand, Neutral, and Secondary only.
-- [ ] Preserve all locked and explicitly provided seeds.
-- [ ] Store a reproducible generation seed and revision.
+- [x] Add character presets: Balanced, Warm, Cool, Vivid, and Muted.
+- [x] Add generated and provided Context modes.
+- [x] Add Brand generation with bounded OKLCH candidates.
+- [x] Add Neutral generation related to Brand character.
+- [x] Reuse Secondary strategies without making Secondary a filled action.
+- [x] Add semantic batch presets whose four colors are previewed and measured together.
+- [x] Add Reroll for generated Brand, Neutral, and Secondary only.
+- [x] Preserve all locked and explicitly provided seeds.
+- [x] Store a reproducible generation seed and revision.
 - [ ] Return diagnostics when bounded search uses its best candidate rather than a complete candidate.
+
+Phase 2 result: `js/system-generator.js` builds one atomic seed proposal via `generateSystem({ currentState, options, randomSource })` — character presets (`balanced`, `warm`, `cool`, `vivid`, `muted`), generated/provided/locked Context with explicit `CONTEXT_TEXT_ON_BACKGROUND` failure, Brand generation inside character OKLCH bounds, low-chroma Neutral related to Brand temperature, Secondary from the accepted strategy offsets, and a four-color semantic batch with hue identity preserved. A deterministic mulberry32 PRNG (`createRandom`) is injected at the application boundary, so the same seed and options reproduce the same inputs and Reroll is a new seed with locks preserved. The bounded-search fallback diagnostic arrives with Phase 3's constraint solver. `tests/system-generator.test.mjs` covers determinism, revision variance, lock survival, exact provided Brand, Neutral's low-chroma contract, semantic hue families, sRGB validity, and explicit unresolved results.
 
 Required tests:
 
-- the same random seed and options return the same generated system inputs;
-- different revisions can produce different unlocked inputs;
-- locks survive Generate and Reroll;
-- provided Brand remains exact at `500`;
-- Neutral stays inside its low-chroma contract;
-- semantic hue families remain recognizable;
-- every generated HEX is valid sRGB;
-- impossible requests return an explicit unresolved result.
+- [x] the same random seed and options return the same generated system inputs;
+- [x] different revisions can produce different unlocked inputs;
+- [x] locks survive Generate and Reroll;
+- [x] provided Brand remains exact at `500`;
+- [x] Neutral stays inside its low-chroma contract;
+- [x] semantic hue families remain recognizable;
+- [x] every generated HEX is valid sRGB;
+- [x] impossible requests return an explicit unresolved result.
 
 Exit criteria:
 
