@@ -159,6 +159,43 @@ const mutedLight = (elements.websiteTokens.innerHTML.split('--content-muted')[1]
 assert.equal(elements.lightPreview.style.values['--pv-muted-text'], mutedLight,
   'Light preview muted text diverges from the token contract');
 
+// Phase 7: selecting coverage stays outside the three-choice Quick start,
+// additively re-resolves the contract, and renders the matching module with the
+// same markup in Light and Dark.
+const profileCases = {
+  dashboard: ['--surface-sidebar', 'profile-dashboard'],
+  marketing: ['--surface-hero', 'profile-marketing'],
+  portfolio: ['--surface-project-card', 'profile-portfolio'],
+  documentation: ['--surface-docs-sidebar', 'profile-documentation'],
+};
+for (const [profileId, [cssName, previewClass]] of Object.entries(profileCases)) {
+  elements.coverageProfileSelect.value = profileId;
+  elements.coverageProfileSelect.dispatch('change');
+  assert.ok(elements.websiteTokens.innerHTML.includes(cssName), `${profileId} tokens did not render`);
+  assert.ok(elements.lightPreviewContent.innerHTML.includes(previewClass), `${profileId} Light module did not render`);
+  assert.ok(elements.darkPreviewContent.innerHTML.includes(previewClass), `${profileId} Dark module did not render`);
+  assert.doesNotMatch(elements.websiteTokenStatus.innerHTML, /NEEDS ATTENTION/, `${profileId} introduced a required failure`);
+}
+
+// Advanced edits re-resolve the profile contract instead of leaving stale
+// Website tokens and Preview values behind.
+elements.coverageProfileSelect.value = 'marketing';
+elements.coverageProfileSelect.dispatch('change');
+const heroBeforeEdit = (elements.websiteTokens.innerHTML.split('--surface-hero')[1].match(/#[0-9A-F]{6}/) || [])[0];
+elements.hexInput.value = '#4F46E5';
+elements.hexInput.dispatch('change');
+const heroAfterEdit = (elements.websiteTokens.innerHTML.split('--surface-hero')[1].match(/#[0-9A-F]{6}/) || [])[0];
+assert.notEqual(heroAfterEdit, heroBeforeEdit, 'Advanced Brand edit left the Marketing contract stale');
+assert.ok(elements.lightPreviewContent.innerHTML.includes(`--pc-hero:${heroAfterEdit}`),
+  'Marketing Preview diverged from the re-resolved token');
+
+elements.copyJson.dispatch('click');
+const profileJson = JSON.parse(copiedText);
+assert.equal(profileJson.profileId, 'marketing', 'Project JSON lost the selected profile');
+assert.equal(profileJson.website.profileId, 'marketing', 'Website JSON lost the selected profile');
+elements.copyCss.dispatch('click');
+assert.ok(copiedText.includes('--surface-hero:'), 'CSS export lost the selected profile');
+
 // The applied system feeds the Advanced workflow: Context passes and palettes render.
 assert.match(elements.contextStatus.innerHTML, /PASS/, 'Generated Context does not pass');
 assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 11, 'Applied system did not render a scale');

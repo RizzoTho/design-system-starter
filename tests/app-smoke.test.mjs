@@ -466,6 +466,9 @@ assert.equal(elements.hexInput.value, seedBeforeInvalid, 'Invalid HEX changed th
 // --- Phase 6: persistence and import round trip ---------------------------------
 
 // Save writes the current project; New clears it and resets the active system.
+elements.coverageProfileSelect.value = 'portfolio';
+elements.coverageProfileSelect.dispatch('change');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-project-card'), 'Portfolio profile did not resolve before Save');
 elements.copyJson.dispatch('click');
 const savedJson = copiedText;
 elements.saveProject.dispatch('click');
@@ -473,6 +476,7 @@ assert.ok(storageStore.has('design-system-starter.project.v2'), 'Save did not wr
 const savedBrand = elements.hexInput.value;
 elements.newProject.dispatch('click');
 assert.notEqual(elements.hexInput.value, savedBrand, 'New project did not reset the active Brand');
+assert.equal(elements.coverageProfileSelect.value, '', 'New project did not reset website coverage');
 
 // Export -> Import round trip preserves the visible system and pairs.
 storageStore.clear();
@@ -487,9 +491,23 @@ elements.importFile.dispatch('change', {
 });
 await new Promise(resolve => setTimeout(resolve, 0));
 assert.equal(elements.hexInput.value, savedBrand, 'Import did not restore the saved Brand');
+assert.equal(elements.coverageProfileSelect.value, 'portfolio', 'Import did not restore website coverage');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-project-card'), 'Import lost Portfolio tokens');
+assert.ok(elements.lightPreviewContent.innerHTML.includes('profile-portfolio'), 'Import lost the Portfolio Preview module');
 assert.equal(Number(elements.savedPairCount.textContent), roundTrip.pairs.length,
   'Import changed the saved pair count');
 assert.match(elements.toast.textContent, /Project imported/, 'Import did not report success');
+
+// An unknown additive profile fails before any imported state is applied.
+const unknownProfile = { ...roundTrip, profileId: 'unknown-profile' };
+const brandBeforeUnknownProfile = elements.hexInput.value;
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => JSON.stringify(unknownProfile) }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, brandBeforeUnknownProfile, 'Unknown profile import changed the active Brand');
+assert.equal(elements.coverageProfileSelect.value, 'portfolio', 'Unknown profile import changed website coverage');
+assert.match(elements.toast.textContent, /Import failed/, 'Unknown profile import did not report a visible failure');
 
 // An invalid import fails visibly without mutating the active project.
 const activeBeforeInvalid = elements.hexInput.value;

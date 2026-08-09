@@ -137,70 +137,120 @@ const assignments = proposal.assignments;
 
 // --- Phase 7: product-specific coverage profiles ---------------------------------
 
-// The dashboard profile validates as a complete coverage contract.
+const profileIds = ['dashboard', 'marketing', 'portfolio', 'documentation'];
+
+// Every profile is a complete additive contract; unknown profiles fail fast.
 {
-  const result = contract.validateProfile('dashboard');
-  assert.deepEqual([...result.errors], [], `Dashboard profile is invalid: ${result.errors.join('; ')}`);
-  assert.equal(result.ok, true);
-  assert.equal(contract.validateProfile('unknown-profile').ok, false, 'Unknown profile was accepted');
+  for (const profileId of profileIds) {
+    const result = contract.validateProfile(profileId);
+    assert.deepEqual([...result.errors], [], `${profileId} profile is invalid: ${result.errors.join('; ')}`);
+    assert.equal(result.ok, true);
+  }
+  assert.equal(contract.validateProfile('unknown-profile').ok, false, 'Unknown profile was accepted by the validator');
+  assert.throws(
+    () => contract.resolveWebsiteTokens({ palettes, roles, assignments, profileId: 'unknown-profile' }),
+    /Unknown website coverage profile/,
+    'Unknown profile was silently projected as the generic contract'
+  );
 }
 
-// Profile tokens are additive and only resolve when the profile is requested.
+// Profile tokens resolve only when requested, preserve traceability, and pass
+// every required Light / Dark relationship under both target profiles.
 {
-  const resolution = contract.resolveWebsiteTokens({
-    palettes,
-    roles,
-    assignments,
-    targetProfileId: 'aa-interface',
-    profileId: 'dashboard',
-  });
-  assert.equal(resolution.profileId, 'dashboard');
-  for (const theme of ['light', 'dark']) {
-    const values = resolution[theme].values;
-    for (const tokenId of ['surface.sidebar', 'surface.tableStripe', 'content.tabular', 'border.table', 'chart.series.1', 'chart.series.2', 'chart.series.3', 'chart.series.4']) {
-      assert.ok(values[tokenId], `${theme} is missing profile token ${tokenId}`);
-    }
-  }
   const plain = contract.resolveWebsiteTokens({ palettes, roles, assignments });
   assert.equal(plain.profileId, null);
-  assert.equal(plain.light.values['surface.sidebar'], undefined, 'Profile token leaked without a profile');
+  for (const profileId of profileIds) {
+    for (const token of contract.profileTokens(profileId)) {
+      assert.equal(plain.light.values[token.id], undefined, `${profileId} token ${token.id} leaked into the generic contract`);
+    }
+    for (const targetProfileId of ['aa-interface', 'aaa-interface']) {
+      const resolution = contract.resolveWebsiteTokens({
+        palettes,
+        roles,
+        assignments,
+        targetProfileId,
+        profileId,
+      });
+      assert.equal(resolution.profileId, profileId);
+      for (const theme of ['light', 'dark']) {
+        const values = resolution[theme].values;
+        for (const token of contract.profileTokens(profileId)) {
+          const value = values[token.id];
+          assert.ok(value, `${profileId} ${theme} is missing ${token.id}`);
+          assert.match(value.hex, /^#[0-9A-F]{6}$/, `${profileId} ${theme} ${token.id} has invalid HEX`);
+          assert.ok(value.sourceRole, `${profileId} ${theme} ${token.id} lost sourceRole`);
+          assert.ok(['palette-token', 'measured-ink'].includes(value.sourceKind), `${profileId} ${theme} ${token.id} lost sourceKind`);
+          assert.ok(value.generatedBy, `${profileId} ${theme} ${token.id} lost generatedBy`);
+        }
+      }
+      const summary = contract.summarize(resolution);
+      const profileRelationshipIds = new Set(contract.PROFILE_EXTENSIONS[profileId].relationships.map(item => item.id));
+      const profileFailures = summary.requiredFailures.filter(item => profileRelationshipIds.has(item.relationshipId));
+      assert.equal(profileFailures.length, 0,
+        `${profileId} ${targetProfileId} has profile failures: ${profileFailures.map(item => `${item.theme}/${item.relationshipId}/${item.actual.toFixed(2)}`).join(', ')}`);
+    }
+  }
 }
 
-// Required profile relationships pass in Light and Dark; decoration is advisory.
+// Advisory profile relationships remain measurements, never fake PASS results.
 {
-  const resolution = contract.resolveWebsiteTokens({
-    palettes, roles, assignments, targetProfileId: 'aa-interface', profileId: 'dashboard',
-  });
-  const summary = contract.summarize(resolution);
-  assert.equal(summary.requiredFailures.length, 0, 'Dashboard required relationships failed');
-  for (const check of summary.relationships.filter(item => item.relationshipId === 'SIDEBAR_TEXT_ON_SIDEBAR')) {
-    assert.equal(check.pass, true, `Sidebar text failed ${check.theme}`);
-    assert.equal(check.required, 4.5, 'Sidebar text must use the text target');
-  }
-  for (const check of summary.relationships.filter(item => item.relationshipId === 'TABULAR_TEXT_ON_SURFACE')) {
-    assert.equal(check.pass, true, `Tabular text failed ${check.theme}`);
-  }
-  for (const check of summary.relationships.filter(item => item.relationshipId === 'DASHBOARD_DECORATION')) {
-    assert.equal(check.pass, 'advisory', 'Dashboard decoration must stay advisory');
+  const expectedAdvisory = {
+    dashboard: 'DASHBOARD_DECORATION',
+    marketing: 'MARKETING_DECORATION',
+    portfolio: 'PORTFOLIO_DECORATION',
+  };
+  for (const [profileId, relationshipId] of Object.entries(expectedAdvisory)) {
+    const resolution = contract.resolveWebsiteTokens({ palettes, roles, assignments, profileId });
+    const checks = contract.summarize(resolution).relationships.filter(item => item.relationshipId === relationshipId);
+    assert.ok(checks.length > 0, `${profileId} advisory relationship produced no measurements`);
+    for (const check of checks) assert.equal(check.pass, 'advisory', `${profileId} advisory measurement was labeled PASS`);
   }
 }
 
-// The profile export remains backward-compatible: generic tokens unchanged plus
-// additive profile tokens in the same website layer.
+// Export remains backward-compatible and uses every profile's explicit CSS
+// name rather than deriving a camelCase fallback from the token id.
 {
-  const resolution = contract.resolveWebsiteTokens({
-    palettes, roles, assignments, targetProfileId: 'aa-interface', profileId: 'dashboard',
-  });
-  const css = contract.serializeCss({
-    palettes,
-    assignments,
-    websiteTokens: { light: { values: resolution.light.values }, dark: { values: resolution.dark.values } },
-  });
-  assert.match(css, /--surface-page: var\(--role-neutral-light-subtle\)/, 'Generic website token changed');
-  assert.match(css, /--surface-sidebar: var\(--palette-neutral-800\)/, 'Dashboard sidebar lost its reference alias');
-  assert.match(css, /--chart-series-1: /, 'Dashboard chart series missing from export');
-  const tailwind = contract.serializeTailwind({ light: { values: resolution.light.values }, dark: { values: resolution.dark.values } });
-  assert.match(tailwind, /'surface-sidebar': 'var\(--surface-sidebar\)'/, 'Tailwind adapter lost the profile token');
+  for (const profileId of profileIds) {
+    const resolution = contract.resolveWebsiteTokens({ palettes, roles, assignments, profileId });
+    const css = contract.serializeCss({ palettes, assignments, websiteTokens: resolution });
+    assert.match(css, /--surface-page: var\(--role-neutral-light-subtle\)/, `${profileId} changed a generic website token`);
+    const tailwind = contract.serializeTailwind(resolution);
+    for (const token of contract.profileTokens(profileId)) {
+      assert.ok(css.includes(`${token.css}: `), `${profileId} CSS export lost ${token.css}`);
+      const adapterName = token.id.replace(/\./g, '-');
+      assert.ok(tailwind.includes(`'${adapterName}': 'var(${token.css})'`), `${profileId} Tailwind export lost ${token.css}`);
+    }
+  }
 }
 
-console.log('token-contract: definitions, thresholds, and coverage checks passed');
+// A deterministic 100-seed matrix per profile proves the complete generator,
+// not only a hand-picked resolution, keeps every required relationship valid.
+{
+  const characters = Object.keys(sandbox.window.SystemGenerator.CHARACTERS);
+  for (const profileId of profileIds) {
+    for (let randomSeed = 1; randomSeed <= 100; randomSeed += 1) {
+      const result = sandbox.window.SystemGenerator.generateSystem({
+        currentState: {},
+        options: {
+          characterId: characters[(randomSeed - 1) % characters.length],
+          brandSource: 'generated',
+          secondaryStrategy: randomSeed % 3 === 0 ? 'analogous' : 'none',
+          randomSeed,
+          profileId,
+        },
+      });
+      assert.equal(result.error, undefined, `${profileId} seed ${randomSeed} returned ${result.error?.code}`);
+      assert.equal(result.proposal.profileId, profileId, `${profileId} seed ${randomSeed} lost proposal profileId`);
+      assert.equal(result.proposal.websiteTokens.profileId, profileId, `${profileId} seed ${randomSeed} lost website profileId`);
+      assert.equal(result.validation.requiredFailures.length, 0,
+        `${profileId} seed ${randomSeed} has required failures: ${result.validation.requiredFailures.map(item => item.relationshipId).join(', ')}`);
+    }
+  }
+  const invalid = sandbox.window.SystemGenerator.generateSystem({
+    currentState: {},
+    options: { characterId: 'balanced', brandSource: 'generated', secondaryStrategy: 'none', profileId: 'unknown-profile' },
+  });
+  assert.equal(invalid.error.code, 'UNKNOWN_PROFILE', 'Generator accepted an unknown profile');
+}
+
+console.log('token-contract: definitions, four profiles, exports, and 400 generated profile systems passed');

@@ -307,6 +307,9 @@
     if (!['generated', 'hex', 'keep'].includes(options.brandSource || 'generated')) {
       return { error: { code: 'UNKNOWN_BRAND_SOURCE', field: 'brandSource', message: `Unknown Brand source: ${options.brandSource}` } };
     }
+    if (options.profileId && !window.WebsiteTokenContract.PROFILE_EXTENSIONS[options.profileId]) {
+      return { error: { code: 'UNKNOWN_PROFILE', field: 'profileId', message: `Unknown website coverage profile: ${options.profileId}` } };
+    }
     let brandHex = null;
     if (options.brandSource === 'hex') {
       if (!options.brandHex) {
@@ -377,6 +380,7 @@
         roles: seedRoles,
         assignments,
         targetProfileId: options.targetProfileId || 'aa-interface',
+        profileId: options.profileId || null,
       });
       const validation = window.WebsiteTokenContract.summarize(websiteTokens);
       const combinedDiagnostics = [
@@ -459,12 +463,14 @@
           secondaryStrategy: secondary.strategy,
           randomSeed: options.randomSeed || 1,
           revision: options.revision || 1,
+          profileId: websiteTokens.profileId,
           repairAttempts,
           status: finalStatus,
           diagnostics: combinedDiagnostics.filter(diagnostic => diagnostic.severity === 'error'),
         },
         context,
         targetProfileId: websiteTokens.targetProfileId,
+        profileId: websiteTokens.profileId,
         advancedPairTarget: target,
         activeRole: 'brand',
         roles,
@@ -474,6 +480,7 @@
         assignments,
         websiteTokens: {
           targetProfileId: websiteTokens.targetProfileId,
+          profileId: websiteTokens.profileId,
           light: { values: websiteTokens.light.values },
           dark: { values: websiteTokens.dark.values },
         },

@@ -37,6 +37,7 @@
     generation: null,
     websiteTokens: null,
     targetProfileId: 'aa-interface',
+    profileId: null,
     validation: null,
     generationCounter: 0,
     userLocks: {},
@@ -96,6 +97,28 @@
     state.savedPairs = state.savedPairs.filter(pair => roleIsEnabled(pair.backgroundRoleId)
       && (pair.foregroundStep === autoForeground || roleIsEnabled(pair.foregroundRoleId)));
     state.assignments = model.resolveAssignments(palettes, state.roles, state.target);
+    if (state.websiteTokens) {
+      state.websiteTokens = window.WebsiteTokenContract.resolveWebsiteTokens({
+        palettes,
+        roles: state.roles,
+        assignments: state.assignments,
+        targetProfileId: state.targetProfileId,
+        profileId: state.profileId,
+      });
+      state.validation = window.WebsiteTokenContract.summarize(state.websiteTokens);
+      if (state.generation) {
+        const nextStatus = state.validation.status === 'needs-attention'
+          ? 'needs-attention'
+          : state.generation.status === 'ready-with-warnings'
+            ? 'ready-with-warnings'
+            : state.validation.status;
+        state.generation = {
+          ...state.generation,
+          profileId: state.profileId,
+          status: nextStatus,
+        };
+      }
+    }
     scale = paletteForRole(state.activeRole)?.scale || [];
   }
 
@@ -407,6 +430,71 @@
     $('#pairList').innerHTML = summary + results.map(result => result.html).join('');
   }
 
+  function profilePreviewMarkup(theme) {
+    if (!state.profileId || !state.websiteTokens) return '';
+    const profile = window.WebsiteTokenContract.PROFILE_EXTENSIONS[state.profileId];
+    const values = state.websiteTokens[theme].values;
+    const token = tokenId => {
+      const value = values[tokenId];
+      if (!value) throw new Error(`Missing ${theme} profile token: ${tokenId}`);
+      return value.hex;
+    };
+    const themeLabel = t(theme === 'light' ? 'tokens.light' : 'tokens.dark');
+    const heading = `<header class="profile-preview-head"><div><strong>${t('preview.profile.coverage', { profile: t(profile.labelKey) })}</strong><p>${t(`preview.profile.${profile.previewKey}.desc`)}</p></div><code>${themeLabel}</code></header>`;
+
+    if (state.profileId === 'dashboard') {
+      const variables = [
+        `--pc-sidebar:${token('surface.sidebar')}`,
+        `--pc-sidebar-ink:${textColor(token('surface.sidebar'))}`,
+        `--pc-stripe:${token('surface.tableStripe')}`,
+        `--pc-tabular:${token('content.tabular')}`,
+        `--pc-table-border:${token('border.table')}`,
+        `--pc-series-1:${token('chart.series.1')}`,
+        `--pc-series-2:${token('chart.series.2')}`,
+        `--pc-series-3:${token('chart.series.3')}`,
+        `--pc-series-4:${token('chart.series.4')}`,
+      ].join(';');
+      return `<section class="product-panel profile-preview profile-dashboard" style="${variables}">${heading}<div class="dashboard-sample"><aside><b>DS</b><span>${t('preview.nav.overview')}</span><span>${t('preview.nav.activity')}</span></aside><div><dl class="dashboard-metrics"><div><dt>${t('preview.profile.dashboard.revenue')}</dt><dd>$48,200</dd></div><div><dt>${t('preview.profile.dashboard.accounts')}</dt><dd>1,284</dd></div><div><dt>${t('preview.profile.dashboard.retention')}</dt><dd>94.6%</dd></div></dl><div class="dashboard-table"><span>${t('preview.projects')}</span><b>142</b><span>${t('preview.team')}</span><b>24</b><span>${t('preview.contrastChecks')}</span><b>${t('preview.passed')}</b></div><div class="dashboard-series" aria-label="${t('preview.signalsTitle')}"><i></i><i></i><i></i><i></i></div></div></div></section>`;
+    }
+
+    if (state.profileId === 'marketing') {
+      const variables = [
+        `--pc-hero:${token('surface.hero')}`,
+        `--pc-section-accent:${token('surface.sectionAccent')}`,
+        `--pc-hero-title:${token('content.heroTitle')}`,
+        `--pc-hero-body:${token('content.heroBody')}`,
+        `--pc-feature-border:${token('border.feature')}`,
+        `--pc-highlight:${token('decoration.highlight')}`,
+      ].join(';');
+      return `<section class="product-panel profile-preview profile-marketing" style="${variables}">${heading}<div class="marketing-hero"><span>${t('preview.profile.marketing.eyebrow')}</span><h5>${t('preview.profile.marketing.title')}</h5><p>${t('preview.profile.marketing.body')}</p></div><div class="marketing-feature"><i aria-hidden="true"></i><strong>${t('preview.profile.marketing.feature')}</strong><span>${t('preview.profile.marketing.desc')}</span></div></section>`;
+    }
+
+    if (state.profileId === 'portfolio') {
+      const variables = [
+        `--pc-project-card:${token('surface.projectCard')}`,
+        `--pc-media-overlay:${token('surface.mediaOverlay')}`,
+        `--pc-project-title:${token('content.projectTitle')}`,
+        `--pc-project-meta:${token('content.projectMeta')}`,
+        `--pc-media-caption:${token('content.mediaCaption')}`,
+        `--pc-project-border:${token('border.projectCard')}`,
+        `--pc-project-index:${token('accent.projectIndex')}`,
+      ].join(';');
+      return `<section class="product-panel profile-preview profile-portfolio" style="${variables}">${heading}<article class="portfolio-card"><div class="portfolio-media"><span>${t('preview.profile.portfolio.caption')}</span></div><div class="portfolio-copy"><span>${t('preview.profile.portfolio.eyebrow')}</span><h5>${t('preview.profile.portfolio.title')}</h5><p>${t('preview.profile.portfolio.meta')}</p></div><b>03</b></article></section>`;
+    }
+
+    const variables = [
+      `--pc-docs-sidebar:${token('surface.docsSidebar')}`,
+      `--pc-code-block:${token('surface.codeBlock')}`,
+      `--pc-inline-code:${token('surface.inlineCode')}`,
+      `--pc-docs-nav:${token('content.docsNav')}`,
+      `--pc-code:${token('content.code')}`,
+      `--pc-line-number:${token('content.lineNumber')}`,
+      `--pc-inline-code-text:${token('content.inlineCode')}`,
+      `--pc-code-border:${token('border.codeBlock')}`,
+    ].join(';');
+    return `<section class="product-panel profile-preview profile-documentation" style="${variables}">${heading}<div class="documentation-sample"><nav><strong>${t('preview.profile.documentation.nav')}</strong><span>${t('preview.profile.documentation.title')}</span><span>${t('preview.paletteTitle')}</span></nav><article><h5>${t('preview.profile.documentation.title')}</h5><p>${t('preview.profile.documentation.body')} <code>--surface-page</code></p><pre><span>1</span><code>:root {</code><span>2</span><code>  color: var(--content-primary);</code><span>3</span><code>}</code></pre></article></div></section>`;
+  }
+
   function previewMarkup(theme) {
     const brand = state.assignments.brand[theme];
     const neutral = state.assignments.neutral[theme];
@@ -469,6 +557,7 @@
         <header class="product-toolbar"><span>${t('preview.projects')} <b>/ ${t('preview.projectName')}</b></span><div><button class="product-icon-button" aria-label="${t('aria.notifications')}">●</button><span class="product-avatar">JA</span></div></header>
         <main class="product-body">
           <section class="product-heading"><div><span class="product-kicker">${t('preview.kicker')}</span><h3>${t('preview.projectName')}</h3><p>${t('preview.projectDesc')}</p></div><div class="product-actions"><button class="product-secondary-button">${t('preview.invite')}</button><button class="product-primary-button">${t('preview.publish')}</button></div></section>
+          ${profilePreviewMarkup(theme)}
           <div class="product-grid">
             <section class="product-panel task-panel">
               <div class="product-panel-head"><div><h4>${t('preview.checklist')}</h4><p>${t('preview.progress')}</p></div><span class="progress-badge">57%</span></div>
@@ -847,6 +936,7 @@
       generation: state.generation,
       context: state.context,
       targetProfileId: state.targetProfileId,
+      profileId: state.profileId,
       advancedPairTarget: state.target,
       activeRole: state.activeRole,
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
@@ -854,6 +944,7 @@
       assignments: state.assignments,
       website: state.websiteTokens ? {
         targetProfileId: state.websiteTokens.targetProfileId,
+        profileId: state.websiteTokens.profileId,
         light: { values: state.websiteTokens.light.values },
         dark: { values: state.websiteTokens.dark.values },
       } : null,
@@ -888,10 +979,15 @@
   const storage = (typeof window.localStorage !== 'undefined') ? window.localStorage : null;
 
   function applyImportedProject(project) {
+    const importedProfileId = project.profileId ?? project.website?.profileId ?? null;
+    if (importedProfileId && !window.WebsiteTokenContract.PROFILE_EXTENSIONS[importedProfileId]) {
+      throw new Error(`Unknown website coverage profile: ${importedProfileId}`);
+    }
     state.context = { ...project.context };
     state.roles = project.roles;
     state.target = Number(project.advancedPairTarget ?? project.target ?? 4.5);
     state.targetProfileId = project.targetProfileId || 'aa-interface';
+    state.profileId = importedProfileId;
     state.websiteTokens = project.website || null;
     state.validation = project.validation || null;
     state.generation = project.generation || null;
@@ -965,6 +1061,7 @@
     state.nextPairKey = 1;
     state.websiteTokens = null;
     state.targetProfileId = 'aa-interface';
+    state.profileId = null;
     state.validation = null;
     state.generation = null;
     state.proposal = null;
@@ -994,14 +1091,13 @@
   }
 
   function importProjectText(json) {
-    let project;
     try {
-      project = window.ProjectState.decode(json);
+      const project = window.ProjectState.decode(json);
+      applyImportedProject(project);
     } catch (error) {
       reportError(t('toast.importFailed'), error);
       return;
     }
-    applyImportedProject(project);
     showToast(t('toast.projectImported'));
   }
 
@@ -1057,6 +1153,7 @@
         randomSeed: nextGenerationSeed(),
         revision: state.generationCounter,
         targetProfileId: state.targetProfileId,
+        profileId: state.profileId,
       },
     });
   }
@@ -1122,6 +1219,7 @@
       nextPairKey: state.nextPairKey,
       websiteTokens: state.websiteTokens,
       targetProfileId: state.targetProfileId,
+      profileId: state.profileId,
       validation: state.validation,
       generation: state.generation,
       userLocks: state.userLocks,
@@ -1129,6 +1227,7 @@
     state.context = { ...proposal.context };
     state.roles = proposal.roles;
     state.targetProfileId = proposal.targetProfileId;
+    state.profileId = proposal.profileId || null;
     state.target = proposal.advancedPairTarget;
     state.websiteTokens = proposal.websiteTokens;
     state.validation = proposal.validation;
@@ -1152,6 +1251,7 @@
     state.nextPairKey = previous.nextPairKey;
     state.websiteTokens = previous.websiteTokens;
     state.targetProfileId = previous.targetProfileId;
+    state.profileId = previous.profileId || null;
     state.validation = previous.validation;
     state.generation = previous.generation;
     state.userLocks = previous.userLocks || {};
@@ -1228,6 +1328,8 @@
   function renderWebsiteTokens() {
     const container = $('#websiteTokens');
     if (!container) return;
+    const profileSelect = $('#coverageProfileSelect');
+    profileSelect.value = state.profileId || '';
     renderWebsiteTokenStatus();
     if (!state.websiteTokens) {
       container.innerHTML = `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
@@ -1247,15 +1349,21 @@
       ['feedback', 'tokens.group.feedback'],
       ['accent', 'tokens.group.accent'],
     ];
+    const profile = state.profileId ? contract.PROFILE_EXTENSIONS[state.profileId] : null;
+    if (profile) {
+      for (const group of Object.keys(profile.groups)) {
+        order.push([group, profile.groupLabelKeys[group]]);
+      }
+    }
     const html = order.map(([group, labelKey]) => {
-      const tokens = (contract.tokenGroups[group] || []).filter(token => light[token.id] || dark[token.id]);
+      const tokens = (contract.tokenGroups[group] || profile?.groups[group] || []).filter(token => light[token.id] || dark[token.id]);
       if (!tokens.length) return '';
       const rows = tokens.map(token => {
         const lightValue = light[token.id];
         const darkValue = dark[token.id];
         return `<tr><td class="token-name"><code>${token.css}</code></td><td><span class="token-swatch" style="background:${lightValue.hex}"></span><code>${lightValue.hex}</code><small>${tokenSourceLabel(lightValue)}</small></td><td><span class="token-swatch" style="background:${darkValue.hex}"></span><code>${darkValue.hex}</code><small>${tokenSourceLabel(darkValue)}</small></td></tr>`;
       }).join('');
-      return `<div class="token-group"><h3>${t(labelKey)}</h3><table class="token-table"><thead><tr><th></th><th>${t('tokens.light')}</th><th>${t('tokens.dark')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return `<div class="token-group"><h3>${t(labelKey)}</h3><div class="token-table-scroll"><table class="token-table"><thead><tr><th></th><th>${t('tokens.light')}</th><th>${t('tokens.dark')}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }).join('');
     container.innerHTML = html || `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
   }
@@ -1291,6 +1399,22 @@
   $('#quickBrandHex').addEventListener('change', () => { markTouched(); });
   $('#quickSecondaryStrategy').addEventListener('change', () => { markTouched(); });
   $('#generateSystem').addEventListener('click', generateWebsiteSystem);
+  $('#coverageProfileSelect').addEventListener('change', event => {
+    const nextProfileId = event.target.value || null;
+    if (nextProfileId && !window.WebsiteTokenContract.PROFILE_EXTENSIONS[nextProfileId]) {
+      reportError(t('toast.profileUnknown'), new Error(`Unknown website coverage profile: ${nextProfileId}`));
+      event.target.value = state.profileId || '';
+      return;
+    }
+    state.profileId = nextProfileId;
+    state.proposal = null;
+    if (state.websiteTokens) markTouched();
+    renderAll();
+    const labelKey = nextProfileId
+      ? window.WebsiteTokenContract.PROFILE_EXTENSIONS[nextProfileId].labelKey
+      : 'profile.general';
+    showToast(t('toast.profileUpdated', { profile: t(labelKey) }));
+  });
   $('#secondaryStrategy').addEventListener('change', event => {
     const strategy = event.target.value;
     state.roles.secondary.strategy = strategy;

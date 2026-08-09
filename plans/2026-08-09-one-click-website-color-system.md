@@ -1,6 +1,6 @@
 # Plan: Turn the color workflow into a one-click website color system
 
-- Status: Approved (owner confirmed 2026-08-09). Phases 0–6 and 8 complete; Phase 7 mechanism and Dashboard profile complete with the remaining three profiles pending; workflow push and manual browser matrix open.
+- Status: Approved (owner confirmed 2026-08-09). Phases 0–8 implementation and static verification complete, including all four product coverage profiles and the integrated workflow update; browser verification is partially complete with explicit bridge-limited items below, and remote push remains open.
 - Date: 2026-08-09
 - Scope: Starter entry, complete-system generation, website semantic tokens, per-relationship accessibility, Light / Dark output, persistence, and export adapters
 - Depends on: [`docs/color-role-model.md`](../docs/color-role-model.md)
@@ -667,21 +667,21 @@ Effort: Medium per profile
 
 Implement profiles one at a time after the generic contract is stable:
 
-1. Dashboard / SaaS — **coverage mechanism and first profile implemented**
-2. Marketing / Landing page — pending, follows the same pattern
-3. Portfolio — pending, follows the same pattern
-4. Documentation — pending, follows the same pattern
+1. Dashboard / SaaS — implemented
+2. Marketing / Landing page — implemented
+3. Portfolio — implemented
+4. Documentation — implemented
 
 For each profile:
 
 - [x] Define additional component token requirements only where the generic contract is insufficient.
 - [x] Reuse the same Reference, Role, and Website layers.
-- [ ] Specify which Preview modules demonstrate the profile.
+- [x] Specify which Preview modules demonstrate the profile.
 - [x] Keep color character independent from product profile.
 - [x] Add profile-specific relationship tests.
 - [x] Avoid arbitrary industry palettes; product profile changes coverage, not semantic meaning.
 
-Phase 7 result: `WebsiteTokenContract.PROFILE_EXTENSIONS` registers profiles as additive coverage contracts. The Dashboard / SaaS profile adds `surface.sidebar` (dark rail in Light, darker-than-page in Dark), `surface.tableStripe`, `content.tabular` (data text at the text target), `border.table`, and four `chart.series` tokens derived from the system's own Brand / Neutral scales. `resolveWebsiteTokens({ profileId })` merges profile tokens per theme; `validateProfile()` enforces coverage; `summarize()` evaluates profile relationships with the same target profile so required checks can never be downgraded to advisory; `serializeCss` / `serializeTailwind` include profile tokens additively (backward-compatible). A 100-seed matrix passes all required Dashboard relationships in Light and Dark. Remaining per profile: Preview modules that demonstrate the profile and the profile selection UI, which the plan defers beyond the generic release.
+Phase 7 result: `WebsiteTokenContract.PROFILE_EXTENSIONS` registers four additive coverage contracts. Dashboard / SaaS covers sidebar, tabular data, table rules, zebra rows, and four chart series. Marketing / Landing page covers hero surfaces and text, alternating section tint, feature boundary, and highlight. Portfolio covers project cards, metadata, media overlays and captions, card boundary, and project index. Documentation covers docs navigation, block and inline code, line numbers, and code boundary. The selector lives in Step 03, outside Quick start's three direct choices; General adds no tokens, while each profile adds grouped Light / Dark tokens and one bounded module inside the shared Preview workspace. `resolveWebsiteTokens({ profileId })` is the only resolver, Advanced edits immediately re-resolve the selected profile, schema v2 persists `profileId`, and CSS / JSON / Tailwind export the same additive contract. `validateProfile()` rejects collisions, invalid relationships, and uncovered tokens; unknown profiles fail visibly. A deterministic 100-seed matrix per profile (400 complete generated systems) passes every added required relationship in Light and Dark, with AA and AAA profile checks covered separately. Advisory dashboard, marketing, and portfolio decoration remains measured without a fake PASS.
 
 Exit criteria per profile:
 
@@ -697,12 +697,12 @@ Effort: Medium
 - [x] Convert `starterPairSpecs()` into a compatibility projection or remove it after all callers and tests migrate.
 - [x] Remove UI actions that duplicate Generate pipeline stages, while retaining equivalent Advanced controls.
 - [x] Update `AGENTS.md`, both READMEs, the decision document, and older plan status.
-- [ ] Update the GitHub Pages workflow to check every new JavaScript owner and test suite.
+- [x] Update the GitHub Pages workflow to check every new JavaScript owner and test suite.
 - [x] Confirm `scripts/prepare-pages.sh` includes all runtime files.
 - [x] Refresh default CSS and JSON fixtures.
 - [ ] Run the full static and browser verification matrices below.
 
-Phase 8 result: `WebsiteTokenContract.compatibilityPairSpecs()` projects the applied website system onto pair coordinates (body text, muted text, link, primary / neutral / destructive actions, secondary accent, and per-semantic notices), so the compatibility-pair action derives from the website tokens that own the starter result. The legacy `starterPairSpecs()` remains only as the pre-generation fallback, with its comment updated. Advanced controls that mirror single pipeline stages (sync semantics, optimize) stay as intended. `scripts/prepare-pages.sh` already copies every runtime source; fixtures are current and regenerate idempotently. The GitHub Pages workflow update is blocked locally because the push token lacks the `workflow` scope — the change is ready and must land with workflow-scoped credentials. The static matrix (8 suites, 4500 default generations, artifact build, fixture idempotency) passes; the manual browser matrix remains open.
+Phase 8 result: `WebsiteTokenContract.compatibilityPairSpecs()` projects the applied website system onto pair coordinates (body text, muted text, link, primary / neutral / destructive actions, secondary accent, and per-semantic notices), so the compatibility-pair action derives from the website tokens that own the starter result. The legacy `starterPairSpecs()` remains only as the pre-generation fallback, with its comment updated. Advanced controls that mirror single pipeline stages (sync semantics, optimize) stay as intended. `scripts/prepare-pages.sh` copies every runtime source; fixtures regenerate idempotently. Commit `02f7494` updates the GitHub Pages workflow to check all seven JavaScript owners and eight test suites and has been fast-forwarded into `codex/one-click-website-color-system`. The post-profile run passes all seven syntax checks, all eight suites, 400 profile generations, fixture idempotency, artifact preparation, and syntax checks for all seven `_site/js` files. Remote push and the bridge-limited browser items are tracked separately below.
 
 Exit criteria:
 
@@ -817,6 +817,23 @@ Run separately from source tests:
 - no horizontal overflow in Quick start and Website tokens;
 - generated failure task remains readable and does not rely on color alone.
 
+#### 2026-08-09 browser run
+
+Verified over `http://127.0.0.1` in the Codex in-app browser:
+
+- Desktop at 1440×1000 and narrow layout at 390×844 have no page-level horizontal overflow. At narrow width, all 11 Website token tables scroll inside their own wrappers; Quick start, profile control, Custom pair container, Preview, and the floating Steps window remain inside the viewport.
+- General plus Dashboard, Marketing, Portfolio, and Documentation each resolve the expected additive token group, remain `READY`, and render matching Light / Dark modules with identical DOM structure. The Documentation Dark Preview reads `--surface-code-block` from the Dark token table; Advanced Brand edits re-resolve Marketing hero token, validation, and Preview together.
+- First generation auto-applies. Context was exercised at 1.00:1 `FAIL` and 15.84:1 `PASS · AAA`. Brand seed and explicit lock survived role switching. Clicking scale step 700 both changed the active HEX and wrote the HEX to the browser-session clipboard.
+- `Copy JSON` wrote 95,891 bytes to the macOS pasteboard and the copied payload contained `"profileId": "documentation"`. Save locally restored Brand, profile, generated tokens, validation, and the profile Preview module after a real reload.
+- Light / Dark local switching, Steps minimize / restore, and selected-profile Preview layout passed; page console reported no warnings or errors.
+
+Not claimed as browser-verified:
+
+- Direct `file://` navigation was rejected by the browser URL policy before the page could load. Source load order and static contract pass, but direct-file behavior still needs a user-run browser check.
+- `Download JSON` showed the app success toast, but the in-app browser exposed no download event. The hidden file input and visible Import label both failed to open its file chooser. Import, invalid import, and unknown-profile non-mutation remain covered by `app-smoke`, not a real chooser round trip.
+- The browser produced a visible keyboard focus outline, but its Playwright, CUA, and DOM-CUA key injection did not activate Enter / Space / Tab defaults. Keyboard-only completion therefore remains open.
+- The host reports `prefers-reduced-motion: reduce = false`, and the browser exposes no media-emulation capability. The CSS media rule and auto-scroll branch are source-tested, but a real reduced-motion session remains open.
+
 ### Deployment verification
 
 - Run all tests in `.github/workflows/pages.yml`.
@@ -899,8 +916,8 @@ Mitigation: use finite candidate lists, record attempted coordinates, keep the b
 | M1 · Generation engine | 2–3 | Deterministic complete proposals with Light / Dark evidence | Complete |
 | M2 · Starter experience | 4–5 | One-click Quick start and Preview driven by website tokens | Complete |
 | M3 · Durable handoff | 6 | Save, import, layered CSS/JSON, and Tailwind output | Complete |
-| M4 · Coverage expansion | 7 | Dashboard profile mechanism; Marketing, Portfolio, and Documentation pending | Mechanism + Dashboard complete |
-| M5 · Consolidation | 8 | One generation owner, updated contracts, and complete verification | Complete except workflow push and manual browser matrix |
+| M4 · Coverage expansion | 7 | Four additive coverage profiles, profile selector, Preview modules, persistence, and export | Complete |
+| M5 · Consolidation | 8 | One generation owner, updated contracts, and complete verification | Implementation complete; remote push and manual browser matrix open |
 
 The implementation should land milestone by milestone. Do not combine M1 through M3 into one unreviewable change.
 
@@ -922,8 +939,8 @@ The implementation should land milestone by milestone. Do not combine M1 through
 - [x] Invalid input, failed search, gamut reduction, storage failure, import failure, and copy failure remain observable.
 - [x] English and Chinese catalogs remain complete.
 - [x] Direct `file://` use continues to work (source-level; manual browser pass pending).
-- [ ] Desktop and narrow browser checks pass and are reported separately from static tests.
-- [ ] GitHub Pages verification includes every new source and test owner (workflow change committed locally; needs a workflow-scoped push).
+- [x] Desktop and narrow HTTP browser checks pass and are reported separately from static tests.
+- [x] GitHub Pages verification includes every new source and test owner (workflow commit is integrated locally; remote push remains a delivery step).
 
 ## Approval gate
 

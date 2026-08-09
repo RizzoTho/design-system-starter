@@ -10,11 +10,11 @@
 
 The starter result is a **website color system**, not just a palette. After role assignments resolve, a generic website profile maps component intent to named tokens for surfaces, content, actions, fields, focus, feedback, and accents. This contract names those tokens exactly, defines the relationships the system must measure, and fixes the traceability and export rules.
 
-Product-specific profiles (Dashboard, Marketing, Portfolio, Documentation) are added only after this generic contract is stable. They extend component coverage; they never rename semantic meaning.
+Product-specific profiles (Dashboard, Marketing, Portfolio, Documentation) extend the now-stable generic contract. Step 03 selects one additive coverage profile at a time. Profiles add component tokens, relationship checks, and a matching Preview module; they never rename semantic meaning or change the selected color character.
 
 ## Approved product flow decisions
 
-1. The first release generates one generic website system. Product-specific profiles follow after the contract is stable.
+1. Quick start generates the generic website system; Step 03 may add one product-specific coverage profile after generation or before the next generation.
 2. Step 03 becomes `Website tokens`; existing Saved pairs are retained as `Custom pairs` beneath it.
 3. The first untouched generation auto-applies when valid; later generation stays a proposal until explicitly applied.
 
@@ -129,6 +129,25 @@ Only when `Secondary` is enabled:
 | `--accent-secondary-text` | Accent text |
 
 `Secondary` never produces a second filled action. It is an accent decoration only.
+
+## Product coverage profiles
+
+The `General website` option resolves only the generic contract above. Selecting a profile adds the following website tokens to both Light and Dark without removing or renaming any generic token.
+
+| Profile | Additive tokens | Required relationships | Advisory measurements | Preview module |
+| --- | --- | --- | --- | --- |
+| Dashboard / SaaS | `--surface-sidebar`, `--surface-table-stripe`, `--content-tabular`, `--border-table`, `--chart-series-1`…`4` | Sidebar text and tabular text | Zebra, table rules, chart series | Sidebar, metrics, table, chart |
+| Marketing / Landing page | `--surface-hero`, `--surface-section-accent`, `--content-hero-title`, `--content-hero-body`, `--border-feature`, `--decoration-highlight` | Hero title, hero body, feature boundary | Section tint and highlight | Hero and feature strip |
+| Portfolio | `--surface-project-card`, `--surface-media-overlay`, `--content-project-title`, `--content-project-meta`, `--content-media-caption`, `--border-project-card`, `--accent-project-index` | Project title, metadata, media caption, card boundary | Project index | Project and media card |
+| Documentation | `--surface-docs-sidebar`, `--surface-code-block`, `--surface-inline-code`, `--content-docs-nav`, `--content-code`, `--content-line-number`, `--content-inline-code`, `--border-code-block` | Navigation, block code, line numbers, inline code, code boundary | None | Docs navigation and code sample |
+
+Rules:
+
+- A profile changes coverage, not palette identity. Every value still resolves from the active Brand / Neutral system and the shared Reference → Role → Website layers.
+- Only one profile is active because each represents a concrete product surface contract, not a stackable style preset.
+- Profile selection is persisted as `profileId` at project and `website` level in schema v2 JSON and is included additively in CSS and Tailwind exports.
+- Profile relationship checks use the same `aa-interface` or `aaa-interface` thresholds as the generic contract. Advisory measurements remain advisory and are never relabeled PASS.
+- Preview reads the resolved profile token values. Advanced role edits and profile changes re-resolve validation, Preview, CSS, and JSON from the same state owner.
 
 ## Traceability metadata
 

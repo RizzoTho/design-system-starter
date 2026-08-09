@@ -136,6 +136,17 @@
           <section class="workflow-block">
             <div class="section-head"><div><h2 data-i18n="tokens.editor.title">Website tokens</h2><p data-i18n="tokens.editor.desc">Purpose-named colors for surfaces, content, actions, fields, feedback, and accents. Light and Dark resolve the same names.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="tokens.editor.badge">GENERATED CONTRACT</span></div>
             <p class="tokens-theme-note" data-i18n="tokens.themeNote">Light and Dark use the same token names; values differ per theme.</p>
+            <div class="coverage-profile-control">
+              <label for="coverageProfileSelect" data-i18n="profile.selector.label">Website coverage</label>
+              <select id="coverageProfileSelect">
+                <option value="" data-i18n="profile.general">General website</option>
+                <option value="dashboard" data-i18n="profile.dashboard">Dashboard / SaaS</option>
+                <option value="marketing" data-i18n="profile.marketing">Marketing / Landing page</option>
+                <option value="portfolio" data-i18n="profile.portfolio">Portfolio</option>
+                <option value="documentation" data-i18n="profile.documentation">Documentation</option>
+              </select>
+              <p data-i18n="profile.selector.help">Profiles add component coverage and a matching Preview module. They do not change the selected color character or semantic meaning.</p>
+            </div>
             <div id="websiteTokenStatus" class="website-token-status"></div>
             <div id="websiteTokens" class="website-tokens"></div>
           </section>
