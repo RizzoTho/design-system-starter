@@ -717,7 +717,12 @@
   }
 
   function generateStarterSet() {
-    const specs = model.starterPairSpecs(state.palettes, state.roles, state.assignments, state.target);
+    // The generated website system is the starter-result owner. Once applied,
+    // the compatibility action projects website tokens onto pair coordinates;
+    // before any generation it falls back to the legacy role-model projection.
+    const specs = state.websiteTokens
+      ? window.WebsiteTokenContract.compatibilityPairSpecs(state.websiteTokens, state.roles)
+      : model.starterPairSpecs(state.palettes, state.roles, state.assignments, state.target);
     let added = 0;
     let skipped = 0;
     for (const spec of specs) {

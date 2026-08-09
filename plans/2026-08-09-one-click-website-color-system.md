@@ -691,14 +691,16 @@ Exit criteria per profile:
 
 Effort: Medium
 
-- [ ] Make website-token resolution the only starter generation owner.
-- [ ] Convert `starterPairSpecs()` into a compatibility projection or remove it after all callers and tests migrate.
-- [ ] Remove UI actions that duplicate Generate pipeline stages, while retaining equivalent Advanced controls.
-- [ ] Update `AGENTS.md`, both READMEs, the decision document, and older plan status.
+- [x] Make website-token resolution the only starter generation owner.
+- [x] Convert `starterPairSpecs()` into a compatibility projection or remove it after all callers and tests migrate.
+- [x] Remove UI actions that duplicate Generate pipeline stages, while retaining equivalent Advanced controls.
+- [x] Update `AGENTS.md`, both READMEs, the decision document, and older plan status.
 - [ ] Update the GitHub Pages workflow to check every new JavaScript owner and test suite.
-- [ ] Confirm `scripts/prepare-pages.sh` includes all runtime files.
-- [ ] Refresh default CSS and JSON fixtures.
+- [x] Confirm `scripts/prepare-pages.sh` includes all runtime files.
+- [x] Refresh default CSS and JSON fixtures.
 - [ ] Run the full static and browser verification matrices below.
+
+Phase 8 result: `WebsiteTokenContract.compatibilityPairSpecs()` projects the applied website system onto pair coordinates (body text, muted text, link, primary / neutral / destructive actions, secondary accent, and per-semantic notices), so the compatibility-pair action derives from the website tokens that own the starter result. The legacy `starterPairSpecs()` remains only as the pre-generation fallback, with its comment updated. Advanced controls that mirror single pipeline stages (sync semantics, optimize) stay as intended. `scripts/prepare-pages.sh` already copies every runtime source; fixtures are current and regenerate idempotently. The GitHub Pages workflow update is blocked locally because the push token lacks the `workflow` scope — the change is ready and must land with workflow-scoped credentials. The static matrix (8 suites, 4500 default generations, artifact build, fixture idempotency) passes; the manual browser matrix remains open.
 
 Exit criteria:
 

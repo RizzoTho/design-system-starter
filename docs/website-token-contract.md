@@ -254,7 +254,7 @@ Export rules:
 
 | File | Owns |
 | --- | --- |
-| `js/token-contract.js` | Website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, compatibility projection to generated pairs, CSS / JSON / Tailwind serialization. No DOM access. |
+| `js/token-contract.js` | Website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, compatibility projection to generated pairs (`compatibilityPairSpecs`), CSS / JSON / Tailwind serialization. No DOM access. |
 | `js/system-generator.js` | Character presets, deterministic Reroll primitives, Context / Brand / Neutral / Secondary / semantic batch generation, bounded constraint search, end-to-end `generateSystem()`. No DOM access. |
 | `js/project-state.js` | Schema version, project encode/decode and validation, import migration, storage payload preparation. No silent fallback, no DOM rendering. |
 

@@ -906,6 +906,42 @@
     return lines.join('\n');
   }
 
+  // Compatibility projection: the legacy starter set is a projection of the
+  // generated website system onto pair coordinates. Website tokens own the
+  // starter result; this function only feeds the compatibility-pair action.
+  function compatibilityPairSpecs(websiteTokens, roles) {
+    const light = websiteTokens ? websiteTokens.light.values : null;
+    if (!light) return [];
+    const specs = [];
+    const pair = (slug, nameKey, foregroundTokenId, backgroundTokenId, usage) => {
+      const foreground = light[foregroundTokenId];
+      const background = light[backgroundTokenId];
+      if (!foreground || !background) return;
+      specs.push({
+        slug,
+        nameKey,
+        foregroundRoleId: foreground.sourceRole,
+        foregroundStep: foreground.sourceKind === 'measured-ink' ? 'auto' : foreground.sourceStep,
+        backgroundRoleId: background.sourceRole,
+        backgroundStep: background.sourceStep,
+        usage,
+      });
+    };
+    pair('body-text', 'starter.bodyText', 'content.primary', 'surface.page', 'static');
+    pair('muted-text', 'starter.mutedText', 'content.muted', 'surface.page', 'static');
+    pair('link', 'starter.link', 'content.link', 'surface.page', 'static');
+    pair('primary-action', 'starter.primaryAction', 'action.primary.foreground', 'action.primary.background', 'interactive');
+    pair('neutral-action', 'starter.neutralAction', 'action.secondary.foreground', 'action.secondary.background', 'interactive');
+    if (roles.secondary && roles.secondary.enabled !== false) {
+      pair('secondary-accent', 'starter.secondaryAccent', 'accent.secondary.text', 'surface.page', 'static');
+    }
+    pair('destructive-action', 'starter.destructiveAction', 'action.destructive.foreground', 'action.destructive.background', 'interactive');
+    for (const role of ['success', 'warning', 'danger', 'information']) {
+      pair(`${role}-notice`, `starter.${role}Notice`, `feedback.${role}.text`, `feedback.${role}.surface`, 'static');
+    }
+    return specs;
+  }
+
   window.WebsiteTokenContract = {
     contract,
     feedbackRoles: FEEDBACK_ROLES,
@@ -922,5 +958,6 @@
     summarize,
     serializeCss,
     serializeTailwind,
+    compatibilityPairSpecs,
   };
 })();

@@ -163,6 +163,23 @@ assert.equal(elements.lightPreview.style.values['--pv-muted-text'], mutedLight,
 assert.match(elements.contextStatus.innerHTML, /PASS/, 'Generated Context does not pass');
 assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 11, 'Applied system did not render a scale');
 
+// The compatibility pair action projects the applied website system onto pair
+// coordinates; the website tokens own the starter result.
+const pairsBeforeCompat = Number(elements.savedPairCount.textContent);
+elements.generateStarterSet.dispatch('click');
+assert.equal(Number(elements.savedPairCount.textContent), pairsBeforeCompat + 10,
+  'Compatibility projection did not produce ten rows with Secondary disabled');
+elements.copyJson.dispatch('click');
+const compatJson = JSON.parse(copiedText);
+const compatPrimary = compatJson.pairs.find(pair => pair.slug === 'primary-action');
+const compatLink = compatJson.pairs.find(pair => pair.slug === 'link');
+assert.equal(compatPrimary.foregroundStep, 'auto', 'Primary action did not use measured ink');
+assert.equal(compatPrimary.backgroundRoleId, 'brand', 'Primary action background left the Brand role');
+assert.equal(compatLink.backgroundRoleId, 'neutral', 'Link did not sit on the Neutral surface');
+for (const pair of compatJson.pairs.filter(item => item.slug)) {
+  assert.ok(pair.ratio >= compatJson.advancedPairTarget, `${pair.slug} dropped below the active target`);
+}
+
 // A second click on the now-touched session stays a proposal.
 elements.generateSystem.dispatch('click');
 assert.match(elements.generationResult.innerHTML, /Apply system/, 'Second generation was not kept as a proposal');
