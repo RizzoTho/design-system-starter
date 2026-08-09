@@ -1,9 +1,14 @@
 {
+  "schemaVersion": 2,
+  "mode": "quick-start",
+  "generation": null,
   "context": {
     "background": "#F7F3EB",
     "text": "#25231F"
   },
-  "target": 4.5,
+  "targetProfileId": "aa-interface",
+  "advancedPairTarget": 4.5,
+  "activeRole": "brand",
   "roles": {
     "brand": {
       "enabled": true,
@@ -46,7 +51,7 @@
       "locked": false
     }
   },
-  "reference": {
+  "palettes": {
     "brand": {
       "50": "#F0EEED",
       "100": "#E3DAD8",
@@ -126,7 +131,7 @@
       "950": "#14212D"
     }
   },
-  "semantic": {
+  "assignments": {
     "brand": {
       "light": {
         "roleId": "brand",
@@ -419,6 +424,8 @@
       "aliasOf": "neutral"
     }
   },
+  "website": null,
+  "validation": null,
   "pairs": [
     {
       "slug": null,

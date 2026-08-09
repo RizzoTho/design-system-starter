@@ -771,7 +771,7 @@
     }
   }
 
-  function cssOutput() {
+  function legacyCssSection() {
     const lines = [
       ':root {',
       `  --color-background: ${state.context.background};`,
@@ -820,14 +820,39 @@
     return lines.join('\n');
   }
 
-  function jsonOutput() {
-    const reference = Object.fromEntries(Object.entries(state.palettes).map(([roleId, palette]) => [roleId, Object.fromEntries(palette.scale.map(token => [token.step, token.hex]))]));
-    return JSON.stringify({
+  function cssOutput() {
+    if (!state.websiteTokens) return legacyCssSection();
+    const layered = window.WebsiteTokenContract.serializeCss({
+      palettes: state.palettes,
+      assignments: state.assignments,
+      websiteTokens: state.websiteTokens,
       context: state.context,
-      target: state.target,
+    });
+    const deprecation = state.savedPairs.length
+      ? '/* Deprecated: --pair-* names are kept for the compatibility window; use the website tokens above instead. */'
+      : '';
+    const legacy = legacyCssSection().replace(':root {', ':root {\n  /* Deprecated: --color-* names are kept for the compatibility window; use the layered tokens above instead. */');
+    return `${layered}\n\n${deprecation ? `${deprecation}\n` : ''}${legacy}`;
+  }
+
+  function currentProject() {
+    return {
+      schemaVersion: window.ProjectState.SCHEMA_VERSION,
+      mode: state.mode,
+      generation: state.generation,
+      context: state.context,
+      targetProfileId: state.targetProfileId,
+      advancedPairTarget: state.target,
+      activeRole: state.activeRole,
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
-      reference,
-      semantic: state.assignments,
+      palettes: Object.fromEntries(Object.entries(state.palettes).map(([roleId, palette]) => [roleId, Object.fromEntries(palette.scale.map(token => [token.step, token.hex]))])),
+      assignments: state.assignments,
+      website: state.websiteTokens ? {
+        targetProfileId: state.websiteTokens.targetProfileId,
+        light: { values: state.websiteTokens.light.values },
+        dark: { values: state.websiteTokens.dark.values },
+      } : null,
+      validation: state.validation,
       pairs: state.savedPairs.map(pair => {
         const family = derivePairStateFamily(pair);
         const { key, foregroundSnapshot, backgroundSnapshot, brandPaletteSnapshot, ...publicPair } = pair;
@@ -845,7 +870,145 @@
         };
       }),
       diagnostics: state.diagnostics,
-    }, null, 2);
+    };
+  }
+
+  function jsonOutput() {
+    return JSON.stringify(currentProject(), null, 2);
+  }
+
+  // --- Persistence and import ---------------------------------------------------
+
+  const STORAGE_KEY = 'design-system-starter.project.v2';
+  const storage = (typeof window.localStorage !== 'undefined') ? window.localStorage : null;
+
+  function applyImportedProject(project) {
+    state.context = { ...project.context };
+    state.roles = project.roles;
+    state.target = Number(project.advancedPairTarget ?? project.target ?? 4.5);
+    state.targetProfileId = project.targetProfileId || 'aa-interface';
+    state.websiteTokens = project.website || null;
+    state.validation = project.validation || null;
+    state.generation = project.generation || null;
+    state.savedPairs = (project.pairs || []).map((pair, index) => ({
+      ...pair,
+      key: `pair-import-${index + 1}`,
+      foregroundSnapshot: null,
+      backgroundSnapshot: null,
+      brandPaletteSnapshot: null,
+    }));
+    state.nextPairKey = state.savedPairs.length + 100;
+    state.defaultPairInitialized = true;
+    state.activeRole = project.activeRole || 'brand';
+    state.proposal = null;
+    state.previousState = null;
+    state.touched = true;
+    state.userLocks = {};
+    targetSelect.value = String(state.target);
+    renderAll();
+  }
+
+  function saveProject() {
+    if (!storage) {
+      reportError(t('toast.saveFailed'), new Error('localStorage is unavailable'));
+      return;
+    }
+    try {
+      const payload = window.ProjectState.prepareForStorage(currentProject());
+      storage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      showToast(t('toast.projectSaved'));
+    } catch (error) {
+      reportError(t('toast.saveFailed'), error);
+    }
+  }
+
+  function loadStoredProject() {
+    if (!storage) return;
+    let raw = null;
+    try {
+      raw = storage.getItem(STORAGE_KEY);
+    } catch (error) {
+      reportError(t('toast.loadFailed'), error);
+      return;
+    }
+    if (!raw) return;
+    try {
+      const project = window.ProjectState.decode(raw);
+      applyImportedProject(project);
+      showToast(t('toast.projectLoaded'));
+    } catch (error) {
+      // A bad stored project is never silently discarded: it stays observable
+      // and the active project is left untouched.
+      reportError(t('toast.importFailed'), error);
+    }
+  }
+
+  function newProject() {
+    if (storage) {
+      try {
+        storage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        reportError(t('toast.clearFailed'), error);
+      }
+    }
+    state.context = { ...model.defaults.context };
+    state.target = model.defaults.target;
+    state.activeRole = model.defaults.activeRole;
+    state.roles = model.createInitialRoles();
+    state.savedPairs = [];
+    state.defaultPairInitialized = false;
+    state.nextPairKey = 1;
+    state.websiteTokens = null;
+    state.targetProfileId = 'aa-interface';
+    state.validation = null;
+    state.generation = null;
+    state.proposal = null;
+    state.previousState = null;
+    state.touched = false;
+    state.userLocks = {};
+    targetSelect.value = String(state.target);
+    renderAll();
+    showToast(t('toast.projectNew'));
+  }
+
+  function downloadJson() {
+    try {
+      const blob = new Blob([jsonOutput()], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'color-design-system-project.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      showToast(t('toast.downloaded'));
+    } catch (error) {
+      reportError(t('toast.downloadFailed'), error);
+    }
+  }
+
+  function importProjectText(json) {
+    let project;
+    try {
+      project = window.ProjectState.decode(json);
+    } catch (error) {
+      reportError(t('toast.importFailed'), error);
+      return;
+    }
+    applyImportedProject(project);
+    showToast(t('toast.projectImported'));
+  }
+
+  function handleImportFile(file) {
+    if (typeof file.text === 'function') {
+      file.text().then(importProjectText).catch(error => reportError(t('toast.importFailed'), error));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => importProjectText(String(reader.result));
+    reader.onerror = error => reportError(t('toast.importFailed'), error);
+    reader.readAsText(file);
   }
 
   // --- Quick start: one-click website system ----------------------------------
@@ -1149,6 +1312,21 @@
   $('#addPair').addEventListener('click', addPair);
   $('#copyCss').addEventListener('click', () => copy(cssOutput(), t('toast.cssCopied')));
   $('#copyJson').addEventListener('click', () => copy(jsonOutput(), t('toast.jsonCopied')));
+  $('#copyTailwind').addEventListener('click', () => {
+    const adapter = state.websiteTokens ? window.WebsiteTokenContract.serializeTailwind(state.websiteTokens) : '';
+    if (!adapter) {
+      showToast(t('tokens.empty'));
+      return;
+    }
+    copy(adapter, t('toast.tailwindCopied'));
+  });
+  $('#saveProject').addEventListener('click', saveProject);
+  $('#newProject').addEventListener('click', newProject);
+  $('#downloadJson').addEventListener('click', downloadJson);
+  $('#importFile').addEventListener('change', event => {
+    const file = event.target.files && event.target.files[0];
+    if (file) handleImportFile(file);
+  });
 
   document.addEventListener('change', event => {
     const pairField = event.target.closest('[data-pair-field]');
@@ -1275,4 +1453,5 @@
 
   targetSelect.value = String(state.target);
   applyLanguage('en');
+  loadStoredProject();
 })();

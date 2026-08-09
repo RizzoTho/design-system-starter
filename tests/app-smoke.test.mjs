@@ -111,6 +111,12 @@ const sandbox = {
 sandbox.window = sandbox;
 sandbox.window.isSecureContext = false;
 sandbox.window.matchMedia = () => ({ matches: true });
+const storageStore = new Map();
+sandbox.localStorage = {
+  getItem: key => (storageStore.has(key) ? storageStore.get(key) : null),
+  setItem: (key, value) => { storageStore.set(key, String(value)); },
+  removeItem: key => { storageStore.delete(key); },
+};
 
 const context = vm.createContext(sandbox);
 for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/token-contract.js', '../js/system-generator.js', '../js/project-state.js', '../js/app.js']) {
@@ -239,7 +245,7 @@ const crossRoleJson = JSON.parse(copiedText);
 assert.equal(crossRoleJson.pairs[0].foregroundRoleId, 'brand');
 assert.equal(crossRoleJson.pairs[0].backgroundRoleId, 'neutral');
 // Hover and Pressed must come from the background role's scale, not the foreground's.
-const neutralSteps = Object.values(crossRoleJson.reference.neutral);
+const neutralSteps = Object.values(crossRoleJson.palettes.neutral);
 assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.hover.background),
   'Hover did not follow the background role scale');
 assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.pressed.background),
@@ -256,8 +262,8 @@ assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
 assert.equal(exportedJson.roles.regular.aliasOf, 'neutral');
-assert.equal('secondary' in exportedJson.reference, false);
-assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
+assert.equal('secondary' in exportedJson.palettes, false);
+assert.equal(exportedJson.assignments.regular.aliasOf, 'neutral');
 assert.equal(exportedJson.pairs.length, 1);
 assert.equal('key' in exportedJson.pairs[0], false);
 assert.equal('backgroundSnapshot' in exportedJson.pairs[0], false);
@@ -347,7 +353,7 @@ assert.ok(bodyText.ratio > link.ratio, 'Body text should outrank Link in contras
 assert.equal(link.backgroundRoleId, 'neutral', 'Link should sit on the Neutral surface, not its own');
 assert.equal(link.foregroundRoleId, 'brand');
 for (const pair of starterJson.pairs.filter(item => item.slug)) {
-  assert.ok(pair.ratio >= starterJson.target, `${pair.slug} did not reach the active target`);
+  assert.ok(pair.ratio >= starterJson.advancedPairTarget, `${pair.slug} did not reach the active target`);
 }
 
 elements.copyCss.dispatch('click');
@@ -456,5 +462,42 @@ elements.quickBrandHex.value = 'not-a-color';
 elements.generateSystem.dispatch('click');
 assert.equal(elements.quickBrandHex.attributes['aria-invalid'], 'true', 'Invalid HEX was not flagged');
 assert.equal(elements.hexInput.value, seedBeforeInvalid, 'Invalid HEX changed the active system');
+
+// --- Phase 6: persistence and import round trip ---------------------------------
+
+// Save writes the current project; New clears it and resets the active system.
+elements.copyJson.dispatch('click');
+const savedJson = copiedText;
+elements.saveProject.dispatch('click');
+assert.ok(storageStore.has('design-system-starter.project.v2'), 'Save did not write to local storage');
+const savedBrand = elements.hexInput.value;
+elements.newProject.dispatch('click');
+assert.notEqual(elements.hexInput.value, savedBrand, 'New project did not reset the active Brand');
+
+// Export -> Import round trip preserves the visible system and pairs.
+storageStore.clear();
+storageStore.set('design-system-starter.project.v2', savedJson);
+const roundTrip = JSON.parse(savedJson);
+assert.equal(roundTrip.schemaVersion, 2, 'v2 JSON lost its schema version');
+assert.equal('palettes' in roundTrip, true, 'v2 JSON lost the palettes section');
+assert.equal('assignments' in roundTrip, true, 'v2 JSON lost the assignments section');
+const pairCountBeforeImport = Number(elements.savedPairCount.textContent);
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => savedJson }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, savedBrand, 'Import did not restore the saved Brand');
+assert.equal(Number(elements.savedPairCount.textContent), roundTrip.pairs.length,
+  'Import changed the saved pair count');
+assert.match(elements.toast.textContent, /Project imported/, 'Import did not report success');
+
+// An invalid import fails visibly without mutating the active project.
+const activeBeforeInvalid = elements.hexInput.value;
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => '{ not json' }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, activeBeforeInvalid, 'Invalid import changed the active project');
+assert.match(elements.toast.textContent, /Import failed/, 'Invalid import did not report a visible failure');
 
 console.log('app-smoke: startup and core role interactions passed');

@@ -823,6 +823,89 @@
     };
   }
 
+  // --- Serialization -----------------------------------------------------------
+  //
+  // Layered CSS keeps provenance inspectable: website tokens reference role
+  // tokens, role tokens reference reference palettes, and measured ink stays a
+  // literal HEX. Consumers never invent another naming layer.
+
+  function roleKindFor(assignments, roleId, theme, step) {
+    if (roleId === 'regular') roleId = 'neutral';
+    const table = assignments[roleId]?.[theme];
+    if (!table) return null;
+    if (table.subtle && table.subtle.step === step) return 'subtle';
+    if (table.borderIcon && table.borderIcon.step === step) return 'border-icon';
+    if (table.bold && table.bold.step === step) return 'bold';
+    return null;
+  }
+
+  function websiteValueRef(value, assignments, theme) {
+    if (value.sourceKind === 'measured-ink') return value.hex;
+    const kind = roleKindFor(assignments, value.sourceRole, theme, value.sourceStep);
+    if (kind) return `var(--role-${value.sourceRole}-${theme}-${kind})`;
+    return `var(--palette-${value.sourceRole}-${value.sourceStep})`;
+  }
+
+  function tokenCssName(tokenId) {
+    const token = tokenById(tokenId);
+    return token ? token.css : `--${tokenId.replace(/\./g, '-')}`;
+  }
+
+  // Reference, Role, and Website layers. Website Light resolves in :root;
+  // Website Dark resolves in [data-theme="dark"] with the same names.
+  function serializeCss({ palettes, assignments, websiteTokens, context }) {
+    const lines = [':root {', '  /* Reference */'];
+    for (const [roleId, palette] of Object.entries(palettes)) {
+      for (const token of palette.scale) {
+        lines.push(`  --palette-${roleId}-${token.step}: ${token.hex};`);
+      }
+    }
+    lines.push('', '  /* Role */');
+    for (const [roleId, themes] of Object.entries(assignments)) {
+      if (roleId === 'regular') continue;
+      for (const theme of ['light', 'dark']) {
+        const table = themes[theme];
+        if (!table) continue;
+        for (const [kind, cssKind] of [['subtle', 'subtle'], ['borderIcon', 'border-icon'], ['bold', 'bold']]) {
+          const item = table[kind];
+          if (!item) continue;
+          lines.push(`  --role-${roleId}-${theme}-${cssKind}: var(--palette-${roleId}-${item.step});`);
+        }
+        lines.push(`  --role-${roleId}-${theme}-on-bold: ${table.onBold.hex};`);
+      }
+    }
+    if (context) {
+      lines.push('', '  /* Context */');
+      lines.push(`  --color-background: ${context.background};`);
+      lines.push(`  --color-text: ${context.text};`);
+    }
+    lines.push('', '  /* Website · Light */');
+    for (const [tokenId, value] of Object.entries(websiteTokens.light.values)) {
+      lines.push(`  ${tokenCssName(tokenId)}: ${websiteValueRef(value, assignments, 'light')};`);
+    }
+    lines.push('}');
+    lines.push('', '[data-theme="dark"] {', '  /* Website · Dark */');
+    for (const [tokenId, value] of Object.entries(websiteTokens.dark.values)) {
+      lines.push(`  ${tokenCssName(tokenId)}: ${websiteValueRef(value, assignments, 'dark')};`);
+    }
+    lines.push('}');
+    return lines.join('\n');
+  }
+
+  // Tailwind adapter references the website CSS variables; it never duplicates
+  // HEX values, so Light / Dark resolution stays in CSS.
+  function serializeTailwind(websiteTokens) {
+    const names = Object.keys(websiteTokens.light.values);
+    if (!names.length) return '';
+    const lines = ["module.exports = { theme: { extend: { colors: {"];
+    for (const tokenId of names) {
+      const name = tokenId.replace(/\./g, '-');
+      lines.push(`    '${name}': 'var(${tokenCssName(tokenId)})',`);
+    }
+    lines.push('  } } } };');
+    return lines.join('\n');
+  }
+
   window.WebsiteTokenContract = {
     contract,
     feedbackRoles: FEEDBACK_ROLES,
@@ -837,5 +920,7 @@
     resolveWebsiteTokens,
     validateTheme,
     summarize,
+    serializeCss,
+    serializeTailwind,
   };
 })();

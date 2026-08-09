@@ -599,3 +599,15 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .semantic-card:hover { transform: none; }
   .semantic-card:active { transform: none; }
 }
+
+/* --- Phase 6: layered export and project actions --- */
+.export-actions { display: grid; gap: 8px; justify-items: end; }
+.export-actions .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.export-hint { margin: 10px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.export-section { align-items: start; }
+label.button { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+@media (max-width: 900px) {
+  .export-section { flex-direction: column; align-items: stretch; gap: 18px; }
+  .export-actions, .export-actions .actions { justify-items: stretch; justify-content: stretch; }
+  .export-actions .actions button, .export-actions label.button { flex: 1; }
+}

@@ -66,7 +66,7 @@ scripts/            Deployment artifact preparation
 
 ## Limitations
 
-- State is session-only and resets when the page reloads.
+- Local Save keeps the project in the browser's localStorage for this origin; Download JSON creates a portable file. State resets when storage is cleared or on a different machine.
 - Custom pairs are explicit snapshots; Interactive pairs derive state values from the saved scale, but neither type automatically becomes a semantic assignment.
 - The tool targets sRGB and does not yet simulate color-vision deficiencies.
 - Generated usage labels are recommendations; WCAG results remain the acceptance signal.

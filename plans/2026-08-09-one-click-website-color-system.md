@@ -643,15 +643,17 @@ Exit criteria:
 
 Effort: Large
 
-- [ ] Export Reference, Role, and Website layers as clearly separated CSS sections.
-- [ ] Prefer CSS aliases between layers so provenance remains inspectable.
-- [ ] Export schema-versioned project JSON with generation options, traceability, diagnostics, and custom pairs.
-- [ ] Add local Save, Load, New, JSON Download, and JSON Import actions.
+- [x] Export Reference, Role, and Website layers as clearly separated CSS sections.
+- [x] Prefer CSS aliases between layers so provenance remains inspectable.
+- [x] Export schema-versioned project JSON with generation options, traceability, diagnostics, and custom pairs.
+- [x] Add local Save, Load, New, JSON Download, and JSON Import actions.
 - [ ] Confirm local storage and file import work through `file://`.
-- [ ] Preserve current `--color-*` and `--pair-*` variables for one compatibility window.
-- [ ] Add a visible deprecation note for legacy pair names when website equivalents exist.
-- [ ] Fail an invalid import without mutating or clearing the active project.
-- [ ] Add a Tailwind adapter that references website CSS variables rather than duplicating HEX values.
+- [x] Preserve current `--color-*` and `--pair-*` variables for one compatibility window.
+- [x] Add a visible deprecation note for legacy pair names when website equivalents exist.
+- [x] Fail an invalid import without mutating or clearing the active project.
+- [x] Add a Tailwind adapter that references website CSS variables rather than duplicating HEX values.
+
+Phase 6 result: `WebsiteTokenContract.serializeCss()` emits the layered contract — Reference (`--palette-*`), Role (`--role-*-light/dark-{kind}`, aliased to reference tokens), and Website Light in `:root` with Website Dark in `[data-theme="dark"]`. Provenance stays inspectable: website tokens alias role tokens where the source is an assignment kind, else reference palettes; measured ink stays a literal HEX. The legacy `--color-*` and `--pair-*` sections are appended under visible deprecation comments for the compatibility window. JSON is now schema v2 (`palettes` / `assignments` / `website` / `validation` / `generation`), validated by `ProjectState.decode()` on every import and boot-time load. The Export section adds Save locally, New project, Download JSON, Import JSON (file input), and a Tailwind adapter copy that references website CSS variables only. Invalid imports fail with a visible toast and never mutate the active project. New fixtures `tests/fixtures/default-system-v2.{css,json}` freeze the layered default output; `scripts/regenerate-fixtures.mjs` regenerates all four fixtures.
 
 Exit criteria:
 

@@ -123,7 +123,7 @@ sandbox.window.isSecureContext = false;
 sandbox.window.matchMedia = () => ({ matches: true });
 
 const context = vm.createContext(sandbox);
-for (const file of ['js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/app.js']) {
+for (const file of ['js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/token-contract.js', 'js/system-generator.js', 'js/project-state.js', 'js/app.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, repoRoot), 'utf8'), context, { filename: file });
 }
 
@@ -134,10 +134,30 @@ elements.copyJson.dispatch('click');
 const json = copiedText;
 
 assert.match(css, /--color-background: #F7F3EB/);
-assert.match(json, /"target": 4\.5/);
+assert.match(json, /"advancedPairTarget": 4\.5/);
 
 const fixturesDir = new URL('tests/fixtures/', repoRoot);
 fs.mkdirSync(fixturesDir, { recursive: true });
 fs.writeFileSync(new URL('default-export.css', fixturesDir), css);
 fs.writeFileSync(new URL('default-export.json', fixturesDir), json);
-console.log('regenerate-fixtures: wrote tests/fixtures/default-export.css and default-export.json');
+
+// Phase 6 fixtures: the layered v2 export after the default Quick start system
+// auto-applies on an untouched session. These freeze the generated website
+// token contract plus the compatibility sections.
+elements.characterSelect.value = 'balanced';
+elements.brandSourceSelect.value = 'generated';
+elements.quickSecondaryStrategy.value = 'none';
+elements.generateSystem.dispatch('click');
+assert.match(elements.generationResult.innerHTML, /READY/);
+elements.copyCss.dispatch('click');
+const v2Css = copiedText;
+elements.copyJson.dispatch('click');
+const v2Json = copiedText;
+assert.match(v2Css, /--palette-brand-500: /);
+assert.match(v2Css, /--role-brand-light-bold: var\(--palette-brand-600\)/);
+assert.match(v2Css, /--surface-page: var\(--role-neutral-light-subtle\)/);
+assert.match(v2Css, /\[data-theme="dark"\]/);
+assert.match(v2Json, /"schemaVersion": 2/);
+fs.writeFileSync(new URL('default-system-v2.css', fixturesDir), v2Css);
+fs.writeFileSync(new URL('default-system-v2.json', fixturesDir), v2Json);
+console.log('regenerate-fixtures: wrote default-export.{css,json} and default-system-v2.{css,json}');
