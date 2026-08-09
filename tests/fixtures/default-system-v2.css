@@ -1,8 +1,8 @@
 :root {
   /* Reference */
-  --palette-brand-50: #EEEEEF;
-  --palette-brand-100: #D7DADE;
-  --palette-brand-200: #BFC7CF;
+  --palette-brand-50: #E4F0FD;
+  --palette-brand-100: #C5DDF5;
+  --palette-brand-200: #AACAE9;
   --palette-brand-300: #A5B4C3;
   --palette-brand-400: #829DB7;
   --palette-brand-500: #6785A2;
@@ -22,9 +22,9 @@
   --palette-neutral-800: #333537;
   --palette-neutral-900: #202122;
   --palette-neutral-950: #0E0F10;
-  --palette-success-50: #EDEFED;
-  --palette-success-100: #D7DED7;
-  --palette-success-200: #C0CEC0;
+  --palette-success-50: #E6F3E6;
+  --palette-success-100: #CBE4CB;
+  --palette-success-200: #B4D4B4;
   --palette-success-300: #ACBDAC;
   --palette-success-400: #93A893;
   --palette-success-500: #7C927C;
@@ -33,9 +33,9 @@
   --palette-success-800: #3E4B3E;
   --palette-success-900: #2C352C;
   --palette-success-950: #1B201B;
-  --palette-warning-50: #EFEEED;
-  --palette-warning-100: #DFDCD7;
-  --palette-warning-200: #D1CABE;
+  --palette-warning-50: #F6EDDE;
+  --palette-warning-100: #EBDABE;
+  --palette-warning-200: #DEC7A3;
   --palette-warning-300: #C2B8A7;
   --palette-warning-400: #AEA28E;
   --palette-warning-500: #998C77;
@@ -44,9 +44,9 @@
   --palette-warning-800: #50483C;
   --palette-warning-900: #39342B;
   --palette-warning-950: #23201B;
-  --palette-danger-50: #EFEEEE;
-  --palette-danger-100: #DFDCDB;
-  --palette-danger-200: #D1C9C8;
+  --palette-danger-50: #FDEAE7;
+  --palette-danger-100: #F8D3CE;
+  --palette-danger-200: #EDBFB8;
   --palette-danger-300: #C5B6B4;
   --palette-danger-400: #B89E9A;
   --palette-danger-500: #AE847E;
@@ -55,9 +55,9 @@
   --palette-danger-800: #5E433F;
   --palette-danger-900: #43312E;
   --palette-danger-950: #2A1F1D;
-  --palette-information-50: #EEEEEF;
-  --palette-information-100: #D5D7D9;
-  --palette-information-200: #BAC0C6;
+  --palette-information-50: #E3F0FD;
+  --palette-information-100: #C1DAF1;
+  --palette-information-200: #A3C4E1;
   --palette-information-300: #9FABB5;
   --palette-information-400: #7E8F9E;
   --palette-information-500: #637483;
@@ -257,9 +257,9 @@
   /* Deprecated: --color-* names are kept for the compatibility window; use the layered tokens above instead. */
   --color-background: #ECEBE8;
   --color-text: #111111;
-  --color-brand-50: #EEEEEF;
-  --color-brand-100: #D7DADE;
-  --color-brand-200: #BFC7CF;
+  --color-brand-50: #E4F0FD;
+  --color-brand-100: #C5DDF5;
+  --color-brand-200: #AACAE9;
   --color-brand-300: #A5B4C3;
   --color-brand-400: #829DB7;
   --color-brand-500: #6785A2;
@@ -279,9 +279,9 @@
   --color-neutral-800: #333537;
   --color-neutral-900: #202122;
   --color-neutral-950: #0E0F10;
-  --color-success-50: #EDEFED;
-  --color-success-100: #D7DED7;
-  --color-success-200: #C0CEC0;
+  --color-success-50: #E6F3E6;
+  --color-success-100: #CBE4CB;
+  --color-success-200: #B4D4B4;
   --color-success-300: #ACBDAC;
   --color-success-400: #93A893;
   --color-success-500: #7C927C;
@@ -290,9 +290,9 @@
   --color-success-800: #3E4B3E;
   --color-success-900: #2C352C;
   --color-success-950: #1B201B;
-  --color-warning-50: #EFEEED;
-  --color-warning-100: #DFDCD7;
-  --color-warning-200: #D1CABE;
+  --color-warning-50: #F6EDDE;
+  --color-warning-100: #EBDABE;
+  --color-warning-200: #DEC7A3;
   --color-warning-300: #C2B8A7;
   --color-warning-400: #AEA28E;
   --color-warning-500: #998C77;
@@ -301,9 +301,9 @@
   --color-warning-800: #50483C;
   --color-warning-900: #39342B;
   --color-warning-950: #23201B;
-  --color-danger-50: #EFEEEE;
-  --color-danger-100: #DFDCDB;
-  --color-danger-200: #D1C9C8;
+  --color-danger-50: #FDEAE7;
+  --color-danger-100: #F8D3CE;
+  --color-danger-200: #EDBFB8;
   --color-danger-300: #C5B6B4;
   --color-danger-400: #B89E9A;
   --color-danger-500: #AE847E;
@@ -312,9 +312,9 @@
   --color-danger-800: #5E433F;
   --color-danger-900: #43312E;
   --color-danger-950: #2A1F1D;
-  --color-information-50: #EEEEEF;
-  --color-information-100: #D5D7D9;
-  --color-information-200: #BAC0C6;
+  --color-information-50: #E3F0FD;
+  --color-information-100: #C1DAF1;
+  --color-information-200: #A3C4E1;
   --color-information-300: #9FABB5;
   --color-information-400: #7E8F9E;
   --color-information-500: #637483;
@@ -323,7 +323,7 @@
   --color-information-800: #293239;
   --color-information-900: #181E22;
   --color-information-950: #090C0E;
-  --color-brand-light-subtle: #D7DADE;
+  --color-brand-light-subtle: #C5DDF5;
   --color-brand-light-border-icon: #536D86;
   --color-brand-light-bold: #536D86;
   --color-brand-light-on-bold: #FFFFFF;
@@ -339,7 +339,7 @@
   --color-neutral-dark-border-icon: #74777B;
   --color-neutral-dark-bold: #8F9194;
   --color-neutral-dark-on-bold: #111111;
-  --color-success-light-subtle: #D7DED7;
+  --color-success-light-subtle: #CBE4CB;
   --color-success-light-border-icon: #667966;
   --color-success-light-bold: #667966;
   --color-success-light-on-bold: #FFFFFF;
@@ -347,7 +347,7 @@
   --color-success-dark-border-icon: #7C927C;
   --color-success-dark-bold: #93A893;
   --color-success-dark-on-bold: #111111;
-  --color-warning-light-subtle: #DFDCD7;
+  --color-warning-light-subtle: #EBDABE;
   --color-warning-light-border-icon: #807462;
   --color-warning-light-bold: #807462;
   --color-warning-light-on-bold: #FFFFFF;
@@ -355,7 +355,7 @@
   --color-warning-dark-border-icon: #998C77;
   --color-warning-dark-bold: #AEA28E;
   --color-warning-dark-on-bold: #111111;
-  --color-danger-light-subtle: #DFDCDB;
+  --color-danger-light-subtle: #F8D3CE;
   --color-danger-light-border-icon: #966C66;
   --color-danger-light-bold: #966C66;
   --color-danger-light-on-bold: #FFFFFF;
@@ -363,7 +363,7 @@
   --color-danger-dark-border-icon: #AE847E;
   --color-danger-dark-bold: #B89E9A;
   --color-danger-dark-on-bold: #111111;
-  --color-information-light-subtle: #D5D7D9;
+  --color-information-light-subtle: #C1DAF1;
   --color-information-light-border-icon: #637483;
   --color-information-light-bold: #4E5D6A;
   --color-information-light-on-bold: #FFFFFF;
@@ -379,6 +379,6 @@
   --color-regular-dark-border-icon: var(--color-neutral-dark-border-icon);
   --color-regular-dark-bold: var(--color-neutral-dark-bold);
   --color-regular-dark-on-bold: var(--color-neutral-dark-on-bold);
-  --pair-brand-1-foreground: #F0EEED;
+  --pair-brand-1-foreground: #FDEAE5;
   --pair-brand-1-background: #B7523A;
 }

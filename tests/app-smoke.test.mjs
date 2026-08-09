@@ -200,7 +200,7 @@ assert.match(elements.lightPreviewContent.innerHTML, /Ship a website people can 
 
 assert.equal(elements.savedPairCount.textContent, '1');
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 600/);
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #B7523A/);
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #B7523A/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-fields/);
 assert.match(elements.savedPairs.innerHTML, /Static/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-remove/);
@@ -228,7 +228,7 @@ const pairBackgroundTarget = {
 };
 documentListeners.change({ target: pairBackgroundTarget });
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #96412C/);
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #96412C/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-2' } } : null },
@@ -245,7 +245,7 @@ const crossRolePair = {
 documentListeners.change({ target: crossRolePair });
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Neutral 700/, 'A pair could not span two roles');
 // The foreground stays Brand 50 while the background leaves the Brand palette.
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #(?!96412C)/, 'Background did not follow the new role');
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #(?!96412C)/, 'Background did not follow the new role');
 
 elements.copyJson.dispatch('click');
 const crossRoleJson = JSON.parse(copiedText);
@@ -287,7 +287,7 @@ assert.ok(exportedJson.pairs[0].focusRing.hex);
 elements.copyCss.dispatch('click');
 assert.doesNotMatch(copiedText, /--color-secondary-/);
 assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
-assert.match(copiedText, /--pair-brand-1-foreground: #F0EEED/);
+assert.match(copiedText, /--pair-brand-1-foreground: #FDEAE5/);
 assert.match(copiedText, /--pair-brand-1-background-hover:/);
 assert.match(copiedText, /--pair-brand-1-background-pressed:/);
 assert.match(copiedText, /--pair-brand-1-focus-ring:/);

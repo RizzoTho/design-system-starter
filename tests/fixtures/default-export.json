@@ -53,9 +53,9 @@
   },
   "palettes": {
     "brand": {
-      "50": "#F0EEED",
-      "100": "#E3DAD8",
-      "200": "#DBC5BF",
+      "50": "#FDEAE5",
+      "100": "#F7D3CA",
+      "200": "#ECBEB3",
       "300": "#D8ADA2",
       "400": "#D98C78",
       "500": "#D8664A",
@@ -79,8 +79,8 @@
       "950": "#0B0B0B"
     },
     "success": {
-      "50": "#EBF0EB",
-      "100": "#CFE3CE",
+      "50": "#E6F3E6",
+      "100": "#CCE4CC",
       "200": "#AFD7AF",
       "300": "#94C994",
       "400": "#75B577",
@@ -92,9 +92,9 @@
       "950": "#152415"
     },
     "warning": {
-      "50": "#F0EEEB",
-      "100": "#E4DED4",
-      "200": "#DDCEB7",
+      "50": "#F6EDDE",
+      "100": "#EEDDC1",
+      "200": "#E3CDA8",
       "300": "#D7BD94",
       "400": "#C8A977",
       "500": "#B8965D",
@@ -105,9 +105,9 @@
       "950": "#332A1C"
     },
     "danger": {
-      "50": "#F0EEED",
-      "100": "#E2DAD9",
-      "200": "#D9C5C2",
+      "50": "#FDE9E7",
+      "100": "#F7D2CD",
+      "200": "#ECBDB7",
       "300": "#D5AEA9",
       "400": "#D48D85",
       "500": "#D7655B",
@@ -118,9 +118,9 @@
       "950": "#331614"
     },
     "information": {
-      "50": "#EDEFF0",
-      "100": "#D7DDE2",
-      "200": "#BFCCD8",
+      "50": "#E3F0FD",
+      "100": "#C6E0F7",
+      "200": "#ADCFEC",
       "300": "#A2BCD3",
       "400": "#78A8D1",
       "500": "#5793C4",
@@ -138,12 +138,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#E3DAD8"
+          "hex": "#F7D3CA"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#B7523A",
-          "ratioOnSubtle": 3.5703415921290094,
+          "ratioOnSubtle": 3.5327557903339746,
           "pass": true
         },
         "bold": {
@@ -234,12 +234,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#CFE3CE"
+          "hex": "#CCE4CC"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#48864B",
-          "ratioOnSubtle": 3.2444888643992247,
+          "ratioOnSubtle": 3.2454918888930946,
           "pass": true
         },
         "bold": {
@@ -282,12 +282,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#E4DED4"
+          "hex": "#EEDDC1"
         },
         "borderIcon": {
           "step": 700,
           "hex": "#82683C",
-          "ratioOnSubtle": 3.929864222831243,
+          "ratioOnSubtle": 3.9423964610509343,
           "pass": true
         },
         "bold": {
@@ -330,12 +330,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#E2DAD9"
+          "hex": "#F7D2CD"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#BA4D45",
-          "ratioOnSubtle": 3.6040520641248226,
+          "ratioOnSubtle": 3.554648751564034,
           "pass": true
         },
         "bold": {
@@ -378,12 +378,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#D7DDE2"
+          "hex": "#C6E0F7"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#457AA6",
-          "ratioOnSubtle": 3.341738632037736,
+          "ratioOnSubtle": 3.35837140626121,
           "pass": true
         },
         "bold": {
@@ -434,16 +434,16 @@
       "backgroundRoleId": "brand",
       "foregroundStep": 50,
       "backgroundStep": 600,
-      "foreground": "#F0EEED",
+      "foreground": "#FDEAE5",
       "background": "#B7523A",
       "usage": "static",
-      "ratio": 4.24,
+      "ratio": 4.22,
       "passesTarget": false,
       "states": {
         "default": {
-          "foreground": "#F0EEED",
+          "foreground": "#FDEAE5",
           "background": "#B7523A",
-          "ratio": 4.24,
+          "ratio": 4.22,
           "passesTarget": false
         }
       },

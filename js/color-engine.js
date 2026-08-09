@@ -4,6 +4,17 @@
   const steps = Object.freeze([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]);
   const lightnessFractions = Object.freeze([1, 0.82, 0.64, 0.46, 0.23, 0, 0.20, 0.40, 0.60, 0.80, 1]);
   const chromaMultipliers = Object.freeze([0.18, 0.28, 0.44, 0.62, 0.82, 1, 1.04, 1.06, 1.02, 0.92, 0.78]);
+  // Near white the sRGB gamut is narrow, so a percentage of a percentage collapses
+  // to grey: a tint step at 6% of the available chroma is not a faint hue, it is
+  // no hue. The light steps therefore take an absolute chroma floor. It is
+  // absolute rather than a share of the maximum because the available chroma
+  // swings by 4x across hues at those lightnesses, and a share floor makes the
+  // green tint shout while the red tint whispers. `tintFloorShare` only stops a
+  // hue from being pushed to the very edge of its own gamut. Neutral is excluded
+  // so it stays near-achromatic, and the floor never touches 300-950, so the seed
+  // and the bold end keep the generated Brand-over-semantics hierarchy.
+  const tintFloorChroma = Object.freeze([0.022, 0.042, 0.055, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const tintFloorShare = 0.85;
   const maxChromaSearch = 0.5;
   const familyChromaLimits = Object.freeze({
     brand: 0.25,
@@ -251,8 +262,12 @@
         L: paletteLightness(seedOklch.L, index),
         h: seedOklch.h,
       };
+      const availableChroma = maxChromaAt(requested.L, requested.h);
       const requestedChromaPercent = baseChromaPercent * chromaMultipliers[index];
-      requested.C = Math.min(maxChromaAt(requested.L, requested.h) * requestedChromaPercent, chromaLimit);
+      const tintFloor = family === 'neutral'
+        ? 0
+        : Math.min(tintFloorChroma[index], availableChroma * tintFloorShare);
+      requested.C = Math.min(Math.max(availableChroma * requestedChromaPercent, tintFloor), chromaLimit);
       const mapped = mapOklchToSrgb(requested);
       if (mapped.reduced) {
         diagnostics.push(Object.freeze({
@@ -285,6 +300,7 @@
     steps,
     lightnessFractions,
     chromaMultipliers,
+    tintFloorChroma,
     maxChromaAt,
     familyChromaLimits,
     clamp,

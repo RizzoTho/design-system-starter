@@ -31,6 +31,18 @@ assert.match(html, /<span id="scaleDiagnostics" class="scale-diagnostic-inline" 
 assert.ok(html.indexOf('id="targetSelect"') > html.indexOf('id="stepDock"'), 'WCAG target is not owned by the bottom-right global dock');
 assert.equal([...html.matchAll(/<script\b/g)].length, 7, 'Unexpected script count');
 assert.ok(idSelectors.length > 30, 'Static selector scan did not inspect the app');
+// Braces must balance: an unclosed media query silently nests every rule after
+// it and disables them outside that breakpoint.
+{
+  let depth = 0;
+  for (const ch of css) {
+    if (ch === '{') depth += 1;
+    else if (ch === '}') depth -= 1;
+    assert.ok(depth >= 0, 'styles.css closes a block that was never opened');
+  }
+  assert.equal(depth, 0, 'styles.css has an unclosed block; rules after it are nested by accident');
+}
+
 // The landing-page Preview is bound to the exported token names, so what the
 // page paints and what the export ships can never drift.
 assert.match(app, /function previewTokenVariables/, 'Preview no longer binds the exported website token names');
@@ -63,8 +75,12 @@ assert.match(html, /id="generateStarterSet"[^>]*data-i18n="saved\.generateLegacy
 assert.match(css, /\.site-button\.primary \{[^}]*background: var\(--action-primary-background\)/s, 'The primary action lost its filled treatment');
 // Neutral is never a button fill: the secondary action is a text button with no
 // fill and no border, separated from the primary action by weight.
-assert.match(css, /\.site-button\.secondary \{[^}]*background: var\(--action-secondary-background\)/s, 'The preview secondary action no longer uses the neutral secondary token');
+assert.match(css, /\.site-button\.secondary \{[^}]*background: transparent;[^}]*border-color: transparent/s, 'The secondary action regained a fill or a border');
+assert.doesNotMatch(css, /\.site-button\.[a-z-]* \{[^}]*background: var\(--action-secondary-background\)/s, 'A button is filled with the Neutral action surface again');
+assert.doesNotMatch(css, /\.site-button\.[a-z-]* \{[^}]*--surface-sunken|\.site-button\.[a-z-]* \{[^}]*--surface-raised/s, 'A button is filled with a Neutral surface again');
 assert.doesNotMatch(css, /\.site-button\.secondary \{[^}]*--action-primary-background/s, 'The secondary action is filled again and competes with the primary');
+// The preview frame and the site nav share one width.
+assert.match(css, /\.preview \{ width: min\(850px, 100%\); \}/, 'The preview frame is no longer bounded to 850px');
 assert.match(css, /\.site-accent-badge \{[^}]*background: var\(--accent-secondary-surface\)/s, 'Secondary lost its accent badge role in the preview');
 assert.doesNotMatch(css, /\.site-button\.[a-z-]* \{[^}]*--accent-secondary/s, 'Secondary became a filled action instead of an accent');
 // Semantic color is local state evidence: the landing page carries no status

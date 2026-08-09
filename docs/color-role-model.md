@@ -75,6 +75,8 @@ Every independent palette keeps the existing `50` to `950` token scale. Token `5
 
 Quick start also enforces an emphasis hierarchy for generated, unlocked roles: Neutral stays near-achromatic, Brand carries the highest recurring relative chroma, and semantic families remain recognizable below that Brand budget. Explicit user-provided or locked seeds are preserved even when they do not follow this generated hierarchy.
 
+The light end of every non-Neutral family takes an absolute chroma floor at steps 50-200. Without it a tint resolves to a fraction of a fraction: at `L 0.90` the sRGB gamut offers a red only `0.056` of chroma, and `0.26 x 0.28` of that is `0.0036` — not a faint red, no red at all, which is how a Danger callout ends up as a red border around a grey box. The floor is absolute rather than a share of the maximum because the available chroma swings roughly fourfold across hues there; a share floor makes the green tint shout while the red tint whispers.
+
 Out-of-gamut colors must be handled observably. The generator should report when chroma was reduced; it must not silently replace a color with an unrelated fallback.
 
 ## Palette tokens and semantic assignments

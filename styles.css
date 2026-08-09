@@ -269,6 +269,7 @@ main { min-width: 0; }
 /* The caption is app chrome; the canvas below it is the generated page and
    fills the frame edge to edge, so surface.page reads as the page background
    rather than as one panel floating on the app's own paper color. */
+.preview { width: min(850px, 100%); }
 .preview[hidden] { display: none; }
 .preview-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: var(--ink); }
 .preview-top strong { font: 500 18px var(--font-title); }
@@ -292,8 +293,8 @@ main { min-width: 0; }
 .site-button.primary.is-hover { background: var(--action-primary-background-hover); border-color: var(--action-primary-background-hover); }
 .site-button.primary.is-pressed { background: var(--action-primary-background-pressed); border-color: var(--action-primary-background-pressed); }
 .site-button.primary.is-focused { outline: 2px solid var(--action-primary-focus-ring); outline-offset: 2px; }
-.site-button.secondary { color: var(--action-secondary-foreground); background: var(--action-secondary-background); border-color: var(--action-secondary-border); }
-.site-button.secondary.is-hover { background: var(--action-secondary-background-hover); }
+.site-button.secondary { color: var(--content-primary); background: transparent; border-color: transparent; padding-inline: 4px; }
+.site-button.secondary.is-hover { text-decoration: underline; text-underline-offset: 3px; }
 .site-button.destructive { color: var(--action-destructive-foreground); background: var(--action-destructive-background); border-color: var(--action-destructive-background); }
 .site-button.inverse { color: var(--content-primary); background: var(--content-inverse); border-color: var(--content-inverse); }
 .site-preview button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -313,7 +314,7 @@ main { min-width: 0; }
 .site-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
 .site-trust { margin-top: 14px; color: var(--content-muted); font-size: 8px; }
 
-.site-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0 26px 46px; }
+.site-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; padding: 0 26px 46px; }
 .site-card { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 16px; border: 1px solid var(--border-default); border-radius: 10px; background: var(--surface-raised); }
 .site-card h5 { font: 600 11px var(--font-title); }
 .site-card p { color: var(--content-secondary); font-size: 9px; line-height: 1.55; }
@@ -396,7 +397,7 @@ main { min-width: 0; }
 .spec-dialog-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 11px; }
 
 .spec-palette { grid-column: 1 / -1; }
-.semantic-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.semantic-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 7px; }
 .semantic-card { min-width: 0; display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 8px; align-items: center; padding: 7px; border: 1px solid var(--border-default); border-radius: 7px; background: var(--surface-page); }
 .semantic-card-swatch { width: 42px; height: 32px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid var(--semantic-border); border-radius: 6px; background: var(--semantic-subtle); }
 .semantic-card-swatch i { background: var(--semantic-subtle); }

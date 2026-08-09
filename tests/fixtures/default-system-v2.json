@@ -64,9 +64,9 @@
   },
   "palettes": {
     "brand": {
-      "50": "#EEEEEF",
-      "100": "#D7DADE",
-      "200": "#BFC7CF",
+      "50": "#E4F0FD",
+      "100": "#C5DDF5",
+      "200": "#AACAE9",
       "300": "#A5B4C3",
       "400": "#829DB7",
       "500": "#6785A2",
@@ -90,9 +90,9 @@
       "950": "#0E0F10"
     },
     "success": {
-      "50": "#EDEFED",
-      "100": "#D7DED7",
-      "200": "#C0CEC0",
+      "50": "#E6F3E6",
+      "100": "#CBE4CB",
+      "200": "#B4D4B4",
       "300": "#ACBDAC",
       "400": "#93A893",
       "500": "#7C927C",
@@ -103,9 +103,9 @@
       "950": "#1B201B"
     },
     "warning": {
-      "50": "#EFEEED",
-      "100": "#DFDCD7",
-      "200": "#D1CABE",
+      "50": "#F6EDDE",
+      "100": "#EBDABE",
+      "200": "#DEC7A3",
       "300": "#C2B8A7",
       "400": "#AEA28E",
       "500": "#998C77",
@@ -116,9 +116,9 @@
       "950": "#23201B"
     },
     "danger": {
-      "50": "#EFEEEE",
-      "100": "#DFDCDB",
-      "200": "#D1C9C8",
+      "50": "#FDEAE7",
+      "100": "#F8D3CE",
+      "200": "#EDBFB8",
       "300": "#C5B6B4",
       "400": "#B89E9A",
       "500": "#AE847E",
@@ -129,9 +129,9 @@
       "950": "#2A1F1D"
     },
     "information": {
-      "50": "#EEEEEF",
-      "100": "#D5D7D9",
-      "200": "#BAC0C6",
+      "50": "#E3F0FD",
+      "100": "#C1DAF1",
+      "200": "#A3C4E1",
       "300": "#9FABB5",
       "400": "#7E8F9E",
       "500": "#637483",
@@ -149,12 +149,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#D7DADE"
+          "hex": "#C5DDF5"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#536D86",
-          "ratioOnSubtle": 3.8396601290915493,
+          "ratioOnSubtle": 3.8556614047431776,
           "pass": true
         },
         "bold": {
@@ -245,12 +245,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#D7DED7"
+          "hex": "#CBE4CB"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#667966",
-          "ratioOnSubtle": 3.410503019143898,
+          "ratioOnSubtle": 3.450540285296943,
           "pass": true
         },
         "bold": {
@@ -293,12 +293,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#DFDCD7"
+          "hex": "#EBDABE"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#807462",
-          "ratioOnSubtle": 3.343841044347814,
+          "ratioOnSubtle": 3.332605408004677,
           "pass": true
         },
         "bold": {
@@ -341,12 +341,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#DFDCDB"
+          "hex": "#F8D3CE"
         },
         "borderIcon": {
           "step": 600,
           "hex": "#966C66",
-          "ratioOnSubtle": 3.323001836530695,
+          "ratioOnSubtle": 3.280373786935914,
           "pass": true
         },
         "bold": {
@@ -389,12 +389,12 @@
         "theme": "light",
         "subtle": {
           "step": 100,
-          "hex": "#D5D7D9"
+          "hex": "#C1DAF1"
         },
         "borderIcon": {
           "step": 500,
           "hex": "#637483",
-          "ratioOnSubtle": 3.3402051597834057,
+          "ratioOnSubtle": 3.3436195126300374,
           "pass": true
         },
         "bold": {
@@ -744,7 +744,7 @@
           "locked": false
         },
         "feedback.success.surface": {
-          "hex": "#D7DED7",
+          "hex": "#CBE4CB",
           "sourceRole": "success",
           "sourceStep": 100,
           "sourceKind": "palette-token",
@@ -792,7 +792,7 @@
           "locked": false
         },
         "feedback.warning.surface": {
-          "hex": "#DFDCD7",
+          "hex": "#EBDABE",
           "sourceRole": "warning",
           "sourceStep": 100,
           "sourceKind": "palette-token",
@@ -840,7 +840,7 @@
           "locked": false
         },
         "feedback.danger.surface": {
-          "hex": "#DFDCDB",
+          "hex": "#F8D3CE",
           "sourceRole": "danger",
           "sourceStep": 100,
           "sourceKind": "palette-token",
@@ -888,7 +888,7 @@
           "locked": false
         },
         "feedback.information.surface": {
-          "hex": "#D5D7D9",
+          "hex": "#C1DAF1",
           "sourceRole": "information",
           "sourceStep": 100,
           "sourceKind": "palette-token",
@@ -1004,7 +1004,7 @@
           "locked": false
         },
         "content.linkHover": {
-          "hex": "#EEEEEF",
+          "hex": "#E4F0FD",
           "sourceRole": "brand",
           "sourceStep": 50,
           "sourceKind": "palette-token",
@@ -2025,8 +2025,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#516251",
-        "background": "#D7DED7",
-        "actual": 4.763790436368323,
+        "background": "#CBE4CB",
+        "actual": 4.819714487608743,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -2049,8 +2049,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#667966",
-        "background": "#D7DED7",
-        "actual": 3.410503019143898,
+        "background": "#CBE4CB",
+        "actual": 3.450540285296943,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2061,8 +2061,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#667966",
-        "background": "#D7DED7",
-        "actual": 3.410503019143898,
+        "background": "#CBE4CB",
+        "actual": 3.450540285296943,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2073,8 +2073,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#675E4E",
-        "background": "#DFDCD7",
-        "actual": 4.670632620169886,
+        "background": "#EBDABE",
+        "actual": 4.654938833020127,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -2097,8 +2097,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#807462",
-        "background": "#DFDCD7",
-        "actual": 3.343841044347814,
+        "background": "#EBDABE",
+        "actual": 3.332605408004677,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2109,8 +2109,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#807462",
-        "background": "#DFDCD7",
-        "actual": 3.343841044347814,
+        "background": "#EBDABE",
+        "actual": 3.332605408004677,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2121,8 +2121,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#7A5752",
-        "background": "#DFDCDB",
-        "actual": 4.648197648735841,
+        "background": "#F8D3CE",
+        "actual": 4.588569755149263,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -2145,8 +2145,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#966C66",
-        "background": "#DFDCDB",
-        "actual": 3.323001836530695,
+        "background": "#F8D3CE",
+        "actual": 3.280373786935914,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2157,8 +2157,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#966C66",
-        "background": "#DFDCDB",
-        "actual": 3.323001836530695,
+        "background": "#F8D3CE",
+        "actual": 3.280373786935914,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2169,8 +2169,8 @@
         "severity": "required",
         "target": "normalText",
         "foreground": "#4E5D6A",
-        "background": "#D5D7D9",
-        "actual": 4.69731532103774,
+        "background": "#C1DAF1",
+        "actual": 4.7021169099134825,
         "required": 4.5,
         "pass": true,
         "theme": "light"
@@ -2193,8 +2193,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#637483",
-        "background": "#D5D7D9",
-        "actual": 3.3402051597834057,
+        "background": "#C1DAF1",
+        "actual": 3.3436195126300374,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2205,8 +2205,8 @@
         "severity": "required",
         "target": "nonText",
         "foreground": "#637483",
-        "background": "#D5D7D9",
-        "actual": 3.3402051597834057,
+        "background": "#C1DAF1",
+        "actual": 3.3436195126300374,
         "required": 3,
         "pass": true,
         "theme": "light"
@@ -2264,9 +2264,9 @@
         "relationshipId": "TEXT_ON_SURFACE",
         "severity": "required",
         "target": "normalText",
-        "foreground": "#EEEEEF",
+        "foreground": "#E4F0FD",
         "background": "#202122",
-        "actual": 13.91002801838674,
+        "actual": 13.963450653652064,
         "required": 4.5,
         "pass": true,
         "theme": "dark"
@@ -2989,16 +2989,16 @@
       "backgroundRoleId": "brand",
       "foregroundStep": 50,
       "backgroundStep": 600,
-      "foreground": "#F0EEED",
+      "foreground": "#FDEAE5",
       "background": "#B7523A",
       "usage": "static",
-      "ratio": 4.24,
+      "ratio": 4.22,
       "passesTarget": false,
       "states": {
         "default": {
-          "foreground": "#F0EEED",
+          "foreground": "#FDEAE5",
           "background": "#B7523A",
-          "ratio": 4.24,
+          "ratio": 4.22,
           "passesTarget": false
         }
       },
