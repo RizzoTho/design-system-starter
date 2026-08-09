@@ -770,22 +770,47 @@
     return { values, checks, diagnostics, profileId: targetProfileId };
   }
 
-  function resolveWebsiteTokens({ palettes, roles, assignments, targetProfileId = 'aa-interface' }) {
-    const profileId = TARGET_PROFILES[targetProfileId] ? targetProfileId : 'aa-interface';
-    const deps = { palettes, roles, assignments, targetProfileId: profileId };
+  function resolveWebsiteTokens({ palettes, roles, assignments, targetProfileId = 'aa-interface', profileId = null }) {
+    const profileKey = TARGET_PROFILES[targetProfileId] ? targetProfileId : 'aa-interface';
+    const deps = { palettes, roles, assignments, targetProfileId: profileKey };
+    const light = resolveTheme('light', deps);
+    const dark = resolveTheme('dark', deps);
+    if (profileId && PROFILE_EXTENSIONS[profileId]) {
+      for (const [themeResult, themeName] of [[light, 'light'], [dark, 'dark']]) {
+        const extra = resolveProfileTheme(profileId, themeName, { palettes, assignments, values: themeResult.values });
+        themeResult.checks.push(...extra.checks);
+        themeResult.diagnostics.push(...extra.diagnostics);
+      }
+    }
     return {
-      targetProfileId: profileId,
-      light: resolveTheme('light', deps),
-      dark: resolveTheme('dark', deps),
+      targetProfileId: profileKey,
+      profileId: profileId && PROFILE_EXTENSIONS[profileId] ? profileId : null,
+      light,
+      dark,
     };
   }
 
   // --- Relationship validation -------------------------------------------------
 
+  // Profile relationships extend the generic table; both are evaluated with the
+  // same target profile so a profile's required checks can never be downgraded
+  // to advisory by a lookup miss. Built lazily because PROFILE_EXTENSIONS is
+  // declared later in the module.
+  let allRelationships = null;
+  function relationshipById(id) {
+    if (!allRelationships) {
+      allRelationships = [
+        ...RELATIONSHIPS,
+        ...Object.values(PROFILE_EXTENSIONS).flatMap(profile => profile.relationships),
+      ];
+    }
+    return allRelationships.find(item => item.id === id) || null;
+  }
+
   function validateTheme(themeResult) {
     const profile = TARGET_PROFILES[themeResult.profileId] || TARGET_PROFILES['aa-interface'];
     return themeResult.checks.map(check => {
-      const relationship = RELATIONSHIPS.find(item => item.id === check.relationshipId) || null;
+      const relationship = relationshipById(check.relationshipId);
       const required = relationship && relationship.severity === 'required' ? profile[check.target] : null;
       const actual = window.ColorEngine.contrast(check.foreground, check.background);
       return {
@@ -942,6 +967,148 @@
     return specs;
   }
 
+  // --- Product-specific coverage profiles --------------------------------------
+  //
+  // Profiles extend the generic website contract with component tokens only
+  // where the generic set is insufficient. They reuse the same Reference, Role,
+  // and Website layers, keep color character independent from product profile,
+  // and never rename semantic meaning. Export stays backward-compatible because
+  // profile tokens are additive. Profile selection UI and Preview modules land
+  // per profile as follow-ups; this file owns the coverage contract.
+
+  const PROFILE_EXTENSIONS = Object.freeze({
+    dashboard: Object.freeze({
+      labelKey: 'profile.dashboard',
+      groups: Object.freeze({
+        'dashboard-surface': [
+          { id: 'surface.sidebar', css: '--surface-sidebar' },
+          { id: 'surface.tableStripe', css: '--surface-table-stripe' },
+        ],
+        'dashboard-content': [
+          { id: 'content.tabular', css: '--content-tabular' },
+        ],
+        'dashboard-data': [
+          { id: 'border.table', css: '--border-table' },
+          { id: 'chart.series.1', css: '--chart-series-1' },
+          { id: 'chart.series.2', css: '--chart-series-2' },
+          { id: 'chart.series.3', css: '--chart-series-3' },
+          { id: 'chart.series.4', css: '--chart-series-4' },
+        ],
+      }),
+      relationships: Object.freeze([
+        {
+          id: 'SIDEBAR_TEXT_ON_SIDEBAR',
+          target: 'normalText',
+          severity: 'required',
+          tokens: [],
+          special: 'profile-sidebar',
+          notes: 'Sidebar text is measured against the sidebar surface at resolution time.',
+        },
+        {
+          id: 'TABULAR_TEXT_ON_SURFACE',
+          target: 'normalText',
+          severity: 'required',
+          tokens: ['content.tabular'],
+          notes: 'Data text uses the text target, never the border/icon target.',
+        },
+        {
+          id: 'DASHBOARD_DECORATION',
+          target: 'nonText',
+          severity: 'advisory',
+          tokens: ['surface.tableStripe', 'border.table', 'chart.series.1', 'chart.series.2', 'chart.series.3', 'chart.series.4'],
+          notes: 'Zebra stripes, table rules, and chart series are advisory measurements, never labeled PASS through an exemption.',
+        },
+      ]),
+    }),
+  });
+
+  function profileTokenGroups(profileId) {
+    return PROFILE_EXTENSIONS[profileId] ? PROFILE_EXTENSIONS[profileId].groups : {};
+  }
+
+  function profileTokens(profileId) {
+    return Object.values(profileTokenGroups(profileId)).flat();
+  }
+
+  // Validates one profile the same way the generic contract is validated:
+  // unique names, valid thresholds, and every required token covered.
+  function validateProfile(profileId) {
+    const profile = PROFILE_EXTENSIONS[profileId];
+    if (!profile) return { ok: false, errors: [`Unknown profile "${profileId}"`] };
+    const errors = [];
+    const seen = new Set();
+    for (const token of profileTokens(profileId)) {
+      if (seen.has(token.id)) errors.push(`duplicate profile token id "${token.id}"`);
+      seen.add(token.id);
+      if (!/^--[a-z0-9-]+$/.test(token.css)) errors.push(`profile token ${token.id} has an invalid css name "${token.css}"`);
+    }
+    const covered = new Set(profile.relationships.flatMap(relationship => relationship.tokens));
+    for (const token of profileTokens(profileId)) {
+      if (!covered.has(token.id) && token.id !== 'surface.sidebar' && token.id !== 'surface.tableStripe') {
+        errors.push(`profile token "${token.id}" has no relationship check`);
+      }
+    }
+    return { ok: errors.length === 0, errors };
+  }
+
+  // Resolves a profile's extra tokens for one theme and appends checks and
+  // diagnostics to the theme result. Pure and additive.
+  function resolveProfileTheme(profileId, theme, { palettes, assignments, values }) {
+    if (!PROFILE_EXTENSIONS[profileId]) return { values: {}, checks: [], diagnostics: [] };
+    const dark = theme === 'dark';
+    const checks = [];
+    const diagnostics = [];
+    const record = (tokenId, hex, sourceRole, sourceStep, generatedBy) => {
+      values[tokenId] = {
+        hex,
+        sourceRole,
+        sourceStep,
+        sourceKind: sourceStep === null ? 'measured-ink' : 'palette-token',
+        generatedBy,
+        locked: false,
+      };
+    };
+    const step = (roleId, stepNumber) => stepHex(palettes, roleId, stepNumber);
+
+    if (profileId === 'dashboard') {
+      // A darker sidebar rail carries inverse text in Light and primary text in
+      // Dark; both are measured against the sidebar surface.
+      const sidebar = dark ? step('neutral', 950) : step('neutral', 800);
+      const sidebarText = dark ? step('neutral', 50) : values['content.inverse'].hex;
+      record('surface.sidebar', sidebar, 'neutral', dark ? 950 : 800, 'surface.sidebar');
+      checks.push({ tokenId: 'surface.sidebar', relationshipId: 'SIDEBAR_TEXT_ON_SIDEBAR', foreground: sidebarText, background: sidebar, backgroundTokenId: null, target: 'normalText' });
+
+      const tableSurface = values['surface.page'].hex;
+      const tabular = dark ? step('neutral', 50) : step('neutral', 950);
+      record('content.tabular', tabular, 'neutral', dark ? 50 : 950, 'content.tabular');
+      checks.push({ tokenId: 'content.tabular', relationshipId: 'TABULAR_TEXT_ON_SURFACE', foreground: tabular, background: tableSurface, backgroundTokenId: null, target: 'normalText' });
+
+      const stripe = dark ? step('neutral', 950) : step('neutral', 50);
+      record('surface.tableStripe', stripe, 'neutral', dark ? 950 : 50, 'surface.tableStripe');
+      checks.push({ tokenId: 'surface.tableStripe', relationshipId: 'DASHBOARD_DECORATION', foreground: stripe, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
+
+      const tableBorder = dark ? step('neutral', 700) : step('neutral', 300);
+      record('border.table', tableBorder, 'neutral', dark ? 700 : 300, 'border.table');
+      checks.push({ tokenId: 'border.table', relationshipId: 'DASHBOARD_DECORATION', foreground: tableBorder, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
+
+      // Chart series are derived from the system's own scales (never an
+      // arbitrary industry palette) and measured as advisory.
+      const series = [
+        [dark ? 400 : 600, 'brand'],
+        [dark ? 400 : 500, 'neutral'],
+        [dark ? 200 : 300, 'brand'],
+        [dark ? 300 : 400, 'neutral'],
+      ];
+      series.forEach(([seriesStep, roleId], index) => {
+        const hex = step(roleId, seriesStep);
+        const tokenId = `chart.series.${index + 1}`;
+        record(tokenId, hex, roleId, seriesStep, tokenId);
+        checks.push({ tokenId, relationshipId: 'DASHBOARD_DECORATION', foreground: hex, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
+      });
+    }
+    return { values, checks, diagnostics };
+  }
+
   window.WebsiteTokenContract = {
     contract,
     feedbackRoles: FEEDBACK_ROLES,
@@ -950,14 +1117,18 @@
     tokenGroups: TOKEN_GROUPS,
     requiredGroups: REQUIRED_GROUPS,
     accentGroups: ACCENT_GROUPS,
+    PROFILE_EXTENSIONS,
     allTokens,
     tokenById,
     validateContract,
+    validateProfile,
+    profileTokens,
     resolveWebsiteTokens,
     validateTheme,
     summarize,
     serializeCss,
     serializeTailwind,
     compatibilityPairSpecs,
+    resolveProfileTheme,
   };
 })();

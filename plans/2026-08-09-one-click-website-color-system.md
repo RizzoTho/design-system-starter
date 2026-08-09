@@ -667,19 +667,21 @@ Effort: Medium per profile
 
 Implement profiles one at a time after the generic contract is stable:
 
-1. Dashboard / SaaS
-2. Marketing / Landing page
-3. Portfolio
-4. Documentation
+1. Dashboard / SaaS — **coverage mechanism and first profile implemented**
+2. Marketing / Landing page — pending, follows the same pattern
+3. Portfolio — pending, follows the same pattern
+4. Documentation — pending, follows the same pattern
 
 For each profile:
 
-- [ ] Define additional component token requirements only where the generic contract is insufficient.
-- [ ] Reuse the same Reference, Role, and Website layers.
+- [x] Define additional component token requirements only where the generic contract is insufficient.
+- [x] Reuse the same Reference, Role, and Website layers.
 - [ ] Specify which Preview modules demonstrate the profile.
-- [ ] Keep color character independent from product profile.
-- [ ] Add profile-specific relationship tests.
-- [ ] Avoid arbitrary industry palettes; product profile changes coverage, not semantic meaning.
+- [x] Keep color character independent from product profile.
+- [x] Add profile-specific relationship tests.
+- [x] Avoid arbitrary industry palettes; product profile changes coverage, not semantic meaning.
+
+Phase 7 result: `WebsiteTokenContract.PROFILE_EXTENSIONS` registers profiles as additive coverage contracts. The Dashboard / SaaS profile adds `surface.sidebar` (dark rail in Light, darker-than-page in Dark), `surface.tableStripe`, `content.tabular` (data text at the text target), `border.table`, and four `chart.series` tokens derived from the system's own Brand / Neutral scales. `resolveWebsiteTokens({ profileId })` merges profile tokens per theme; `validateProfile()` enforces coverage; `summarize()` evaluates profile relationships with the same target profile so required checks can never be downgraded to advisory; `serializeCss` / `serializeTailwind` include profile tokens additively (backward-compatible). A 100-seed matrix passes all required Dashboard relationships in Light and Dark. Remaining per profile: Preview modules that demonstrate the profile and the profile selection UI, which the plan defers beyond the generic release.
 
 Exit criteria per profile:
 

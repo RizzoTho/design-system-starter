@@ -306,6 +306,7 @@
       'context.source.provided': 'Provided · editable below',
       'context.source.locked': 'Locked · fixed',
       'nav.quickStart': 'Quick start',
+      'profile.dashboard': 'Dashboard / SaaS',
     }),
     zh: Object.freeze({
       'header.lede': '先固定 Background / Text，再建立 Brand、Neutral 与语义角色。每一步都用实测 contrast 验证。',
@@ -611,6 +612,7 @@
       'context.source.provided': '已提供 · 可在下方编辑',
       'context.source.locked': '已锁定 · 固定',
       'nav.quickStart': '快速开始',
+      'profile.dashboard': '数据面板 / SaaS',
     }),
   });
 
