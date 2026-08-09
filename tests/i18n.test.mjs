@@ -21,12 +21,8 @@ const referencedKeys = new Set([
   ...[...html.matchAll(/data-i18n(?:-aria-label)?="([^"]+)"/g)].map(match => match[1]),
   ...[...app.matchAll(/\bt\('([^']+)'/g)].map(match => match[1]),
   ...[...roleModel.matchAll(/(?:descriptionKey|labelKey): '([^']+)'/g)].map(match => match[1]),
-  ...[...tokenContract.matchAll(/(?:labelKey|previewKey): '([^']+)'/g)].map(match => match[1]).filter(key => key.includes('.')),
   ...[...tokenContract.matchAll(/: '(tokens\.group\.[^']+)'/g)].map(match => match[1]),
 ]);
-for (const previewKey of [...tokenContract.matchAll(/previewKey: '([^']+)'/g)].map(match => match[1])) {
-  referencedKeys.add(`preview.profile.${previewKey}.desc`);
-}
 for (const key of referencedKeys) {
   assert.ok(key in i18n.messages.en, `Missing EN translation for ${key}`);
   assert.ok(key in i18n.messages.zh, `Missing 中 translation for ${key}`);

@@ -11,7 +11,7 @@ English: [README.md](README.md)
 - **快速开始** —— 选择色彩性格（均衡、温暖、冷静、鲜明、柔和）、Brand 来源与 Secondary 策略，按一个按钮生成完整网站配色系统：Context、全部角色色阶、浅色 / 深色网站 token，以及 `READY` / `READY WITH WARNINGS` / `NEEDS ATTENTION` 验证摘要。
 - **高级编辑** —— 直接控制 `Background`、`Text`、`Brand`、`Neutral`、可选 `Secondary` 与语义角色，含 OKLCH 色阶、锁定、Role checks、网站 Token 与自定义配对。
 
-它会生成基于 OKLCH 的 50–950 色阶，按关系类型检查 WCAG contrast（正文、大字、非文本），预览 Light / Dark 组件 assignments，保存静态或交互型前景 / 背景 pair，并导出 CSS variables 或 JSON。可选的 Dashboard、Marketing、Portfolio 与 Documentation 覆盖档案会补充具体组件 token 与对应 Preview 模块，但不会改变色彩性格。界面支持英文和中文。
+它会生成基于 OKLCH 的 50–950 色阶，按关系类型检查 WCAG contrast（正文、大字、非文本），把结果预览成一个真实的落地页（Light / Dark），保存静态或交互型前景 / 背景 pair，并导出 CSS variables 或 JSON。界面支持英文和中文。
 
 ## 本地运行
 
@@ -33,8 +33,8 @@ python3 -m http.server 8000
 1. **快速开始**：选择色彩性格、Brand 来源（生成 / 使用 HEX / 保留当前）与 Secondary 策略，按 `生成网站配色系统`。每套有效结果都会直接应用；再次 Generate 可换一套，也可从结果进入 Preview 或用单步 Undo 恢复上一套。失败结果不会改动当前系统，并会列出需处理的关系。
 2. **Context**：确认或微调生成的 `Background` 与 `Text`；面板显示实测 PASS / FAIL（4.5:1）。
 3. **Colors**：检查 `Brand`、`Neutral`、可选 `Secondary` 与语义角色；微调或 Lock 各角色，并按全局 WCAG target 查看 Role checks。
-4. **网站 Token**：按用途分组查看生成的契约（surface、内容、操作、表单、反馈、强调），含浅色与深色值。可选 Dashboard、Marketing、Portfolio 或 Documentation 覆盖档案，补充组件 token 与对应 Preview 模块；自定义配对保留为可编辑快照。
-5. **预览与导出**：检查浅色 / 深色组件工作区，然后复制 CSS variables 或 JSON。
+4. **网站 Token**：按用途分组查看生成的契约（surface、内容、操作、表单、反馈、强调），含浅色与深色值；自定义配对保留为可编辑快照。
+5. **预览与导出**：在浅色或深色下检查落地页 —— 页面底色就是生成的 surface，页脚下方的系统规格区承载所有状态 —— 然后复制 CSS variables 或 JSON。
 
 ## GitHub Pages
 
@@ -68,7 +68,7 @@ scripts/            部署 artifact 准备
 
 - 本地保存把项目存在当前浏览器的 localStorage 中；下载 JSON 可生成可移植文件。清除存储或换机器后状态会重置。
 - 自定义配对是明确保存的快照；交互型 pair 会从保存时的色阶推导状态值，但两种类型都不会自动变成 semantic assignments。
-- 同一时间只启用一个产品覆盖档案。档案扩展通用契约，不是行业配色 preset，也不会改变已选的色彩性格。
+- 网站 token 契约只有通用一套。产品覆盖档案与对应的 Preview 模块已一并移除：没有可信预览面的 token 集合不构成契约。
 - 当前面向 sRGB，尚未提供色觉缺陷模拟。
 - 生成的用途标签只是建议，最终以 WCAG 检查结果为验收信号。
 

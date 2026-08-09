@@ -136,17 +136,6 @@
           <section class="workflow-block">
             <div class="section-head"><div><h2 data-i18n="tokens.editor.title">Website tokens</h2><p data-i18n="tokens.editor.desc">Purpose-named colors for surfaces, content, actions, fields, feedback, and accents. Light and Dark resolve the same names.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="tokens.editor.badge">GENERATED CONTRACT</span></div>
             <p class="tokens-theme-note" data-i18n="tokens.themeNote">Light and Dark use the same token names; values differ per theme.</p>
-            <div class="coverage-profile-control">
-              <label for="coverageProfileSelect" data-i18n="profile.selector.label">Website coverage</label>
-              <select id="coverageProfileSelect">
-                <option value="" data-i18n="profile.general">General website</option>
-                <option value="dashboard" data-i18n="profile.dashboard">Dashboard / SaaS</option>
-                <option value="marketing" data-i18n="profile.marketing">Marketing / Landing page</option>
-                <option value="portfolio" data-i18n="profile.portfolio">Portfolio</option>
-                <option value="documentation" data-i18n="profile.documentation">Documentation</option>
-              </select>
-              <p data-i18n="profile.selector.help">Profiles add component coverage and a matching Preview module. They do not change the selected color character or semantic meaning.</p>
-            </div>
             <div id="websiteTokenStatus" class="website-token-status"></div>
             <div id="websiteTokens" class="website-tokens"></div>
           </section>
@@ -165,10 +154,10 @@
     </main>
 
     <section id="preview" class="preview-section" data-workflow-step="preview">
-      <div class="section-head"><div><h2 data-i18n="preview.title">Component preview</h2><p data-i18n="preview.desc">Use the same workspace markup across themes to inspect navigation, actions, focus, task states, and form feedback.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
+      <div class="section-head"><div><h2 data-i18n="preview.title">Website preview</h2><p data-i18n="preview.desc">One landing page rendered from the exported tokens. The page background is the generated surface; the system spec below the footer holds every state.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
       <div class="preview-grid">
-        <div id="lightPreview" class="preview light"><div class="preview-top"><strong data-i18n="preview.lightTitle">Application sample · Light</strong><span data-i18n="preview.lightMeta">Same markup · Light assignments</span></div><div id="lightPreviewContent"></div></div>
-        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong data-i18n="preview.darkTitle">Application sample · Dark</strong><span data-i18n="preview.darkMeta">Same markup · Dark assignments</span></div><div id="darkPreviewContent"></div></div>
+        <div id="lightPreview" class="preview light"><div class="preview-top"><strong data-i18n="preview.lightTitle">Website sample · Light</strong><span data-i18n="preview.lightMeta">Same markup · Light values</span></div><div id="lightPreviewContent" class="preview-canvas"></div></div>
+        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong data-i18n="preview.darkTitle">Website sample · Dark</strong><span data-i18n="preview.darkMeta">Same markup · Dark values</span></div><div id="darkPreviewContent" class="preview-canvas"></div></div>
       </div>
     </section>
     <section id="export" class="export-section"><div class="export-copy"><h2 data-i18n="export.title">Export colors</h2><p data-i18n="export.desc">Copy the current colors and usage relationships as CSS variables or JSON.</p><p class="export-hint" data-i18n="export.projectHint">Save keeps this project in your browser; Download JSON creates a file you can import anywhere. Invalid imports never replace the active project.</p></div><div class="export-actions"><div class="actions"><button id="copyCss" class="button primary" data-i18n="action.copyCss">Copy CSS variables</button><button id="copyJson" class="button" data-i18n="action.copyJson">Copy JSON</button><button id="copyTailwind" class="button" data-i18n="action.copyTailwind">Copy Tailwind adapter</button></div><div class="actions"><button id="downloadJson" class="button" data-i18n="action.downloadJson">Download JSON</button><label class="button" for="importFile" data-i18n="action.importJson">Import JSON</label><input id="importFile" type="file" accept="application/json,.json" hidden /><button id="saveProject" class="button" data-i18n="action.saveProject">Save locally</button><button id="newProject" class="button" data-i18n="action.newProject">New project</button></div></div></section>

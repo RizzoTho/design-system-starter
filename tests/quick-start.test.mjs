@@ -31,7 +31,11 @@ class FakeElement {
     this.listeners = {};
     this.classList = new FakeClassList();
     this.scrollCount = 0;
-    this.style = { values: {}, setProperty: (name, value) => { this.style.values[name] = value; } };
+    this.style = {
+      values: {},
+      setProperty: (name, value) => { this.style.values[name] = value; },
+      removeProperty: (name) => { delete this.style.values[name]; },
+    };
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
@@ -143,10 +147,15 @@ const pageRow = elements.websiteTokens.innerHTML.split('--surface-page')[1].spli
 const pageLightHex = (pageRow.split('<td>')[1].match(/#[0-9A-F]{6}/) || [])[0];
 const pageDarkHex = (pageRow.split('<td>')[2].match(/#[0-9A-F]{6}/) || [])[0];
 assert.ok(pageLightHex && pageDarkHex, 'Website token table lost the surface.page values');
-assert.equal(elements.lightPreview.style.values['--pv-canvas'], pageLightHex,
+assert.equal(elements.lightPreview.style.values['--surface-page'], pageLightHex,
   'Light preview canvas does not consume the website token contract');
-assert.equal(elements.darkPreview.style.values['--pv-canvas'], pageDarkHex,
+assert.equal(elements.darkPreview.style.values['--surface-page'], pageDarkHex,
   'Dark preview canvas does not consume the website token contract');
+// The landing page paints that same value; the export and the page cannot drift.
+assert.ok(elements.lightPreviewContent.innerHTML.includes(`--surface-page:${pageLightHex}`),
+  'Light landing page is not painted by the exported surface token');
+assert.ok(elements.darkPreviewContent.innerHTML.includes(`--surface-page:${pageDarkHex}`),
+  'Dark landing page is not painted by the exported surface token');
 
 // Theme palette cards name the token source, show the measured result, and link
 // back to their role in Colors.
@@ -157,45 +166,28 @@ assert.match(elements.lightPreviewContent.innerHTML, /· PASS/, 'Palette card lo
 
 // The preview and the token contract agree on muted text.
 const mutedLight = (elements.websiteTokens.innerHTML.split('--content-muted')[1].match(/#[0-9A-F]{6}/) || [])[0];
-assert.equal(elements.lightPreview.style.values['--pv-muted-text'], mutedLight,
+assert.equal(elements.lightPreview.style.values['--content-muted'], mutedLight,
   'Light preview muted text diverges from the token contract');
 
-// Phase 7: selecting coverage stays outside the three-choice Quick start,
-// additively re-resolves the contract, and renders the matching module with the
-// same markup in Light and Dark.
-const profileCases = {
-  dashboard: ['--surface-sidebar', 'profile-dashboard'],
-  marketing: ['--surface-hero', 'profile-marketing'],
-  portfolio: ['--surface-project-card', 'profile-portfolio'],
-  documentation: ['--surface-docs-sidebar', 'profile-documentation'],
-};
-for (const [profileId, [cssName, previewClass]] of Object.entries(profileCases)) {
-  elements.coverageProfileSelect.value = profileId;
-  elements.coverageProfileSelect.dispatch('change');
-  assert.ok(elements.websiteTokens.innerHTML.includes(cssName), `${profileId} tokens did not render`);
-  assert.ok(elements.lightPreviewContent.innerHTML.includes(previewClass), `${profileId} Light module did not render`);
-  assert.ok(elements.darkPreviewContent.innerHTML.includes(previewClass), `${profileId} Dark module did not render`);
-  assert.doesNotMatch(elements.websiteTokenStatus.innerHTML, /NEEDS ATTENTION/, `${profileId} introduced a required failure`);
-}
-
-// Advanced edits re-resolve the profile contract instead of leaving stale
-// Website tokens and Preview values behind.
-elements.coverageProfileSelect.value = 'marketing';
-elements.coverageProfileSelect.dispatch('change');
-const heroBeforeEdit = (elements.websiteTokens.innerHTML.split('--surface-hero')[1].match(/#[0-9A-F]{6}/) || [])[0];
+// Advanced edits re-resolve the contract instead of leaving stale Website
+// tokens and Preview values behind.
+const primaryBeforeEdit = (elements.websiteTokens.innerHTML.split('--action-primary-background<')[1].match(/#[0-9A-F]{6}/) || [])[0];
 elements.hexInput.value = '#4F46E5';
 elements.hexInput.dispatch('change');
-const heroAfterEdit = (elements.websiteTokens.innerHTML.split('--surface-hero')[1].match(/#[0-9A-F]{6}/) || [])[0];
-assert.notEqual(heroAfterEdit, heroBeforeEdit, 'Advanced Brand edit left the Marketing contract stale');
-assert.ok(elements.lightPreviewContent.innerHTML.includes(`--pc-hero:${heroAfterEdit}`),
-  'Marketing Preview diverged from the re-resolved token');
+const primaryAfterEdit = (elements.websiteTokens.innerHTML.split('--action-primary-background<')[1].match(/#[0-9A-F]{6}/) || [])[0];
+assert.notEqual(primaryAfterEdit, primaryBeforeEdit, 'Advanced Brand edit left the contract stale');
+assert.ok(elements.lightPreviewContent.innerHTML.includes(`--action-primary-background:${primaryAfterEdit}`),
+  'Preview diverged from the re-resolved token');
 
+// Coverage profiles are gone: the project payload and the export carry the
+// generic contract only.
 elements.copyJson.dispatch('click');
-const profileJson = JSON.parse(copiedText);
-assert.equal(profileJson.profileId, 'marketing', 'Project JSON lost the selected profile');
-assert.equal(profileJson.website.profileId, 'marketing', 'Website JSON lost the selected profile');
+const websiteJson = JSON.parse(copiedText);
+assert.equal('profileId' in websiteJson, false, 'Project JSON still carries a coverage profile');
+assert.equal('profileId' in websiteJson.website, false, 'Website JSON still carries a coverage profile');
 elements.copyCss.dispatch('click');
-assert.ok(copiedText.includes('--surface-hero:'), 'CSS export lost the selected profile');
+assert.ok(copiedText.includes('--surface-page:'), 'CSS export lost the generic contract');
+assert.ok(copiedText.includes('--surface-hero:') === false, 'CSS export still emits retired profile tokens');
 
 // The applied system feeds the Advanced workflow: Context passes and palettes render.
 assert.match(elements.contextStatus.innerHTML, /PASS/, 'Generated Context does not pass');

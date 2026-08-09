@@ -202,13 +202,7 @@
   }
 
   function tokenById(id) {
-    const generic = allTokens().find(token => token.id === id);
-    if (generic) return generic;
-    for (const profile of Object.values(PROFILE_EXTENSIONS)) {
-      const token = Object.values(profile.groups).flat().find(item => item.id === id);
-      if (token) return token;
-    }
-    return null;
+    return allTokens().find(token => token.id === id) || null;
   }
 
   function validateContract(contract) {
@@ -549,7 +543,7 @@
     return best ? best.hex : null;
   }
 
-  function resolveTheme(theme, { palettes, roles, assignments, targetProfileId }) {
+  function resolveTheme(theme, { palettes, roles, assignments, targetProfileId, context }) {
     const profile = TARGET_PROFILES[targetProfileId] || TARGET_PROFILES['aa-interface'];
     const textTarget = profile.normalText;
     const nonTextTarget = profile.nonText;
@@ -773,56 +767,27 @@
       nonTextCheck('accent.secondary.border', accentBorder, accentSurface);
     }
 
-    return { values, checks, diagnostics, profileId: targetProfileId };
+    return { values, checks, diagnostics, targetProfileId };
   }
 
-  function resolveWebsiteTokens({ palettes, roles, assignments, targetProfileId = 'aa-interface', profileId = null }) {
-    if (profileId && !PROFILE_EXTENSIONS[profileId]) {
-      throw new Error(`Unknown website coverage profile: ${profileId}`);
-    }
+  function resolveWebsiteTokens({ palettes, roles, assignments, targetProfileId = 'aa-interface', context = null }) {
     const profileKey = TARGET_PROFILES[targetProfileId] ? targetProfileId : 'aa-interface';
-    const deps = { palettes, roles, assignments, targetProfileId: profileKey };
-    const light = resolveTheme('light', deps);
-    const dark = resolveTheme('dark', deps);
-    if (profileId && PROFILE_EXTENSIONS[profileId]) {
-      for (const [themeResult, themeName] of [[light, 'light'], [dark, 'dark']]) {
-        const extra = resolveProfileTheme(profileId, themeName, {
-          palettes,
-          assignments,
-          values: themeResult.values,
-          targetProfileId: profileKey,
-        });
-        themeResult.checks.push(...extra.checks);
-        themeResult.diagnostics.push(...extra.diagnostics);
-      }
-    }
+    const deps = { palettes, roles, assignments, targetProfileId: profileKey, context };
     return {
       targetProfileId: profileKey,
-      profileId: profileId && PROFILE_EXTENSIONS[profileId] ? profileId : null,
-      light,
-      dark,
+      light: resolveTheme('light', deps),
+      dark: resolveTheme('dark', deps),
     };
   }
 
   // --- Relationship validation -------------------------------------------------
 
-  // Profile relationships extend the generic table; both are evaluated with the
-  // same target profile so a profile's required checks can never be downgraded
-  // to advisory by a lookup miss. Built lazily because PROFILE_EXTENSIONS is
-  // declared later in the module.
-  let allRelationships = null;
   function relationshipById(id) {
-    if (!allRelationships) {
-      allRelationships = [
-        ...RELATIONSHIPS,
-        ...Object.values(PROFILE_EXTENSIONS).flatMap(profile => profile.relationships),
-      ];
-    }
-    return allRelationships.find(item => item.id === id) || null;
+    return RELATIONSHIPS.find(item => item.id === id) || null;
   }
 
   function validateTheme(themeResult) {
-    const profile = TARGET_PROFILES[themeResult.profileId] || TARGET_PROFILES['aa-interface'];
+    const profile = TARGET_PROFILES[themeResult.targetProfileId] || TARGET_PROFILES['aa-interface'];
     return themeResult.checks.map(check => {
       const relationship = relationshipById(check.relationshipId);
       const required = relationship && relationship.severity === 'required' ? profile[check.target] : null;
@@ -981,478 +946,6 @@
     return specs;
   }
 
-  // --- Product-specific coverage profiles --------------------------------------
-  //
-  // Profiles extend the generic website contract with component tokens only
-  // where the generic set is insufficient. They reuse the same Reference, Role,
-  // and Website layers, keep color character independent from product profile,
-  // and never rename semantic meaning. Export stays backward-compatible because
-  // profile tokens are additive. Profile selection UI and Preview modules land
-  // per profile as follow-ups; this file owns the coverage contract.
-
-  const PROFILE_EXTENSIONS = Object.freeze({
-    dashboard: Object.freeze({
-      labelKey: 'profile.dashboard',
-      previewKey: 'dashboard',
-      groupLabelKeys: Object.freeze({
-        'dashboard-surface': 'tokens.group.dashboardSurface',
-        'dashboard-content': 'tokens.group.dashboardContent',
-        'dashboard-data': 'tokens.group.dashboardData',
-      }),
-      groups: Object.freeze({
-        'dashboard-surface': [
-          { id: 'surface.sidebar', css: '--surface-sidebar' },
-          { id: 'surface.tableStripe', css: '--surface-table-stripe' },
-        ],
-        'dashboard-content': [
-          { id: 'content.tabular', css: '--content-tabular' },
-        ],
-        'dashboard-data': [
-          { id: 'border.table', css: '--border-table' },
-          { id: 'chart.series.1', css: '--chart-series-1' },
-          { id: 'chart.series.2', css: '--chart-series-2' },
-          { id: 'chart.series.3', css: '--chart-series-3' },
-          { id: 'chart.series.4', css: '--chart-series-4' },
-        ],
-      }),
-      relationships: Object.freeze([
-        {
-          id: 'SIDEBAR_TEXT_ON_SIDEBAR',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.sidebar'],
-          special: 'profile-sidebar',
-          notes: 'Sidebar text is measured against the sidebar surface at resolution time.',
-        },
-        {
-          id: 'TABULAR_TEXT_ON_SURFACE',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['content.tabular'],
-          notes: 'Data text uses the text target, never the border/icon target.',
-        },
-        {
-          id: 'DASHBOARD_DECORATION',
-          target: 'nonText',
-          severity: 'advisory',
-          tokens: ['surface.tableStripe', 'border.table', 'chart.series.1', 'chart.series.2', 'chart.series.3', 'chart.series.4'],
-          notes: 'Zebra stripes, table rules, and chart series are advisory measurements, never labeled PASS through an exemption.',
-        },
-      ]),
-    }),
-    marketing: Object.freeze({
-      labelKey: 'profile.marketing',
-      previewKey: 'marketing',
-      groupLabelKeys: Object.freeze({
-        'marketing-surface': 'tokens.group.marketingSurface',
-        'marketing-content': 'tokens.group.marketingContent',
-        'marketing-detail': 'tokens.group.marketingDetail',
-      }),
-      groups: Object.freeze({
-        'marketing-surface': [
-          { id: 'surface.hero', css: '--surface-hero' },
-          { id: 'surface.sectionAccent', css: '--surface-section-accent' },
-        ],
-        'marketing-content': [
-          { id: 'content.heroTitle', css: '--content-hero-title' },
-          { id: 'content.heroBody', css: '--content-hero-body' },
-        ],
-        'marketing-detail': [
-          { id: 'border.feature', css: '--border-feature' },
-          { id: 'decoration.highlight', css: '--decoration-highlight' },
-        ],
-      }),
-      relationships: Object.freeze([
-        {
-          id: 'MARKETING_HERO_TITLE_ON_HERO',
-          target: 'largeText',
-          severity: 'required',
-          tokens: ['content.heroTitle'],
-          notes: 'Hero title uses the large-text target against the generated hero surface.',
-        },
-        {
-          id: 'MARKETING_HERO_BODY_ON_HERO',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.hero', 'content.heroBody'],
-          notes: 'Hero supporting copy remains normal text even when the headline is large.',
-        },
-        {
-          id: 'MARKETING_FEATURE_BOUNDARY',
-          target: 'nonText',
-          severity: 'required',
-          tokens: ['border.feature'],
-          notes: 'Feature-card boundaries are meaningful UI boundaries and meet 3:1.',
-        },
-        {
-          id: 'MARKETING_DECORATION',
-          target: 'nonText',
-          severity: 'advisory',
-          tokens: ['surface.sectionAccent', 'decoration.highlight'],
-          notes: 'Alternating section tint and highlight marks are decorative measurements.',
-        },
-      ]),
-    }),
-    portfolio: Object.freeze({
-      labelKey: 'profile.portfolio',
-      previewKey: 'portfolio',
-      groupLabelKeys: Object.freeze({
-        'portfolio-surface': 'tokens.group.portfolioSurface',
-        'portfolio-content': 'tokens.group.portfolioContent',
-        'portfolio-detail': 'tokens.group.portfolioDetail',
-      }),
-      groups: Object.freeze({
-        'portfolio-surface': [
-          { id: 'surface.projectCard', css: '--surface-project-card' },
-          { id: 'surface.mediaOverlay', css: '--surface-media-overlay' },
-        ],
-        'portfolio-content': [
-          { id: 'content.projectTitle', css: '--content-project-title' },
-          { id: 'content.projectMeta', css: '--content-project-meta' },
-          { id: 'content.mediaCaption', css: '--content-media-caption' },
-        ],
-        'portfolio-detail': [
-          { id: 'border.projectCard', css: '--border-project-card' },
-          { id: 'accent.projectIndex', css: '--accent-project-index' },
-        ],
-      }),
-      relationships: Object.freeze([
-        {
-          id: 'PORTFOLIO_PROJECT_TITLE_ON_CARD',
-          target: 'largeText',
-          severity: 'required',
-          tokens: ['surface.projectCard', 'content.projectTitle'],
-          notes: 'Project title is measured as large text against the project card.',
-        },
-        {
-          id: 'PORTFOLIO_PROJECT_META_ON_CARD',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['content.projectMeta'],
-          notes: 'Project metadata remains readable normal text.',
-        },
-        {
-          id: 'PORTFOLIO_MEDIA_CAPTION_ON_OVERLAY',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.mediaOverlay', 'content.mediaCaption'],
-          notes: 'Media captions are measured against the overlay, not the page behind it.',
-        },
-        {
-          id: 'PORTFOLIO_PROJECT_CARD_BOUNDARY',
-          target: 'nonText',
-          severity: 'required',
-          tokens: ['border.projectCard'],
-          notes: 'Project-card boundaries reach the non-text target against the card surface.',
-        },
-        {
-          id: 'PORTFOLIO_DECORATION',
-          target: 'nonText',
-          severity: 'advisory',
-          tokens: ['accent.projectIndex'],
-          notes: 'Project index is a decorative accent and is measured without a PASS exemption.',
-        },
-      ]),
-    }),
-    documentation: Object.freeze({
-      labelKey: 'profile.documentation',
-      previewKey: 'documentation',
-      groupLabelKeys: Object.freeze({
-        'documentation-surface': 'tokens.group.documentationSurface',
-        'documentation-content': 'tokens.group.documentationContent',
-        'documentation-detail': 'tokens.group.documentationDetail',
-      }),
-      groups: Object.freeze({
-        'documentation-surface': [
-          { id: 'surface.docsSidebar', css: '--surface-docs-sidebar' },
-          { id: 'surface.codeBlock', css: '--surface-code-block' },
-          { id: 'surface.inlineCode', css: '--surface-inline-code' },
-        ],
-        'documentation-content': [
-          { id: 'content.docsNav', css: '--content-docs-nav' },
-          { id: 'content.code', css: '--content-code' },
-          { id: 'content.lineNumber', css: '--content-line-number' },
-          { id: 'content.inlineCode', css: '--content-inline-code' },
-        ],
-        'documentation-detail': [
-          { id: 'border.codeBlock', css: '--border-code-block' },
-        ],
-      }),
-      relationships: Object.freeze([
-        {
-          id: 'DOCUMENTATION_NAV_ON_SIDEBAR',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.docsSidebar', 'content.docsNav'],
-          notes: 'Documentation navigation remains normal text on the sidebar surface.',
-        },
-        {
-          id: 'DOCUMENTATION_CODE_ON_BLOCK',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.codeBlock', 'content.code', 'content.lineNumber'],
-          notes: 'Code and line numbers are measured against the code-block surface.',
-        },
-        {
-          id: 'DOCUMENTATION_INLINE_CODE',
-          target: 'normalText',
-          severity: 'required',
-          tokens: ['surface.inlineCode', 'content.inlineCode'],
-          notes: 'Inline code remains readable on its local surface.',
-        },
-        {
-          id: 'DOCUMENTATION_CODE_BOUNDARY',
-          target: 'nonText',
-          severity: 'required',
-          tokens: ['border.codeBlock'],
-          notes: 'Code-block boundary reaches 3:1 against its adjacent page surface.',
-        },
-      ]),
-    }),
-  });
-
-  function profileTokenGroups(profileId) {
-    return PROFILE_EXTENSIONS[profileId] ? PROFILE_EXTENSIONS[profileId].groups : {};
-  }
-
-  function profileTokens(profileId) {
-    return Object.values(profileTokenGroups(profileId)).flat();
-  }
-
-  // Validates one profile the same way the generic contract is validated:
-  // unique names, valid thresholds, and every required token covered.
-  function validateProfile(profileId) {
-    const profile = PROFILE_EXTENSIONS[profileId];
-    if (!profile) return { ok: false, errors: [`Unknown profile "${profileId}"`] };
-    const errors = [];
-    const seen = new Set();
-    const seenCss = new Set();
-    const genericIds = new Set(allTokens().map(token => token.id));
-    const genericCss = new Set(allTokens().map(token => token.css));
-    for (const token of profileTokens(profileId)) {
-      if (seen.has(token.id)) errors.push(`duplicate profile token id "${token.id}"`);
-      seen.add(token.id);
-      if (!/^--[a-z0-9-]+$/.test(token.css)) errors.push(`profile token ${token.id} has an invalid css name "${token.css}"`);
-      if (seenCss.has(token.css)) errors.push(`duplicate profile css name "${token.css}"`);
-      seenCss.add(token.css);
-      if (genericIds.has(token.id)) errors.push(`profile token id "${token.id}" collides with the generic contract`);
-      if (genericCss.has(token.css)) errors.push(`profile css name "${token.css}" collides with the generic contract`);
-    }
-    const relationshipIds = new Set(RELATIONSHIPS.map(relationship => relationship.id));
-    for (const [otherId, otherProfile] of Object.entries(PROFILE_EXTENSIONS)) {
-      if (otherId === profileId) continue;
-      for (const relationship of otherProfile.relationships) relationshipIds.add(relationship.id);
-    }
-    const covered = new Set(profile.relationships.flatMap(relationship => relationship.tokens));
-    for (const relationship of profile.relationships) {
-      if (relationshipIds.has(relationship.id)) errors.push(`duplicate profile relationship id "${relationship.id}"`);
-      relationshipIds.add(relationship.id);
-      if (!['required', 'advisory'].includes(relationship.severity)) errors.push(`profile relationship "${relationship.id}" has invalid severity`);
-      if (!['normalText', 'largeText', 'nonText'].includes(relationship.target)) errors.push(`profile relationship "${relationship.id}" has invalid target`);
-      for (const tokenId of relationship.tokens) {
-        if (!seen.has(tokenId)) errors.push(`profile relationship "${relationship.id}" references unknown token "${tokenId}"`);
-      }
-    }
-    for (const token of profileTokens(profileId)) {
-      if (!covered.has(token.id)) {
-        errors.push(`profile token "${token.id}" has no relationship check`);
-      }
-    }
-    return { ok: errors.length === 0, errors };
-  }
-
-  // Resolves a profile's extra tokens for one theme and appends checks and
-  // diagnostics to the theme result. Pure and additive.
-  function resolveProfileTheme(profileId, theme, { palettes, assignments, values, targetProfileId = 'aa-interface' }) {
-    if (!PROFILE_EXTENSIONS[profileId]) return { values: {}, checks: [], diagnostics: [] };
-    const dark = theme === 'dark';
-    const checks = [];
-    const diagnostics = [];
-    const targetProfile = TARGET_PROFILES[targetProfileId] || TARGET_PROFILES['aa-interface'];
-    const record = (tokenId, hex, sourceRole, sourceStep, generatedBy) => {
-      values[tokenId] = {
-        hex,
-        sourceRole,
-        sourceStep,
-        sourceKind: sourceStep === null ? 'measured-ink' : 'palette-token',
-        generatedBy,
-        locked: false,
-      };
-    };
-    const step = (roleId, stepNumber) => stepHex(palettes, roleId, stepNumber);
-    const check = (tokenId, relationshipId, foreground, background, target) => {
-      checks.push({ tokenId, relationshipId, foreground, background, backgroundTokenId: null, target });
-    };
-    const copyValue = (tokenId, value, generatedBy = tokenId) => {
-      record(tokenId, value.hex, value.sourceRole, value.sourceStep, generatedBy);
-      values[tokenId].sourceKind = value.sourceKind;
-    };
-    const readable = (tokenId, roleId, background, target, relationshipId, mode = 'maxContrast') => {
-      const candidate = window.ColorRoleModel.foregroundToken(palettes[roleId], background, targetProfile[target], mode);
-      record(tokenId, candidate.hex, roleId, candidate.step, tokenId);
-      check(tokenId, relationshipId, candidate.hex, background, target);
-      return candidate;
-    };
-    const measuredSurface = (tokenId, roleId, candidates, target, relationshipId) => {
-      let best = null;
-      for (const stepNumber of candidates) {
-        const hex = step(roleId, stepNumber);
-        const ink = window.ColorEngine.textColor(hex);
-        const ratio = window.ColorEngine.contrast(ink, hex);
-        if (!best || ratio > best.ratio) best = { step: stepNumber, hex, ink, ratio };
-        if (ratio >= targetProfile[target]) {
-          best = { step: stepNumber, hex, ink, ratio };
-          break;
-        }
-      }
-      record(tokenId, best.hex, roleId, best.step, tokenId);
-      check(tokenId, relationshipId, best.ink, best.hex, target);
-      return best;
-    };
-    const boundary = (tokenId, roleId, candidates, background, relationshipId) => {
-      let best = null;
-      for (const stepNumber of candidates) {
-        const hex = step(roleId, stepNumber);
-        const ratio = window.ColorEngine.contrast(hex, background);
-        if (!best || ratio > best.ratio) best = { step: stepNumber, hex, ratio };
-        if (ratio >= targetProfile.nonText) {
-          best = { step: stepNumber, hex, ratio };
-          break;
-        }
-      }
-      record(tokenId, best.hex, roleId, best.step, tokenId);
-      check(tokenId, relationshipId, best.hex, background, 'nonText');
-      return best;
-    };
-
-    if (profileId === 'dashboard') {
-      // A darker sidebar rail carries inverse text in Light and primary text in
-      // Dark; both are measured against the sidebar surface.
-      const sidebar = dark ? step('neutral', 950) : step('neutral', 800);
-      const sidebarText = dark ? step('neutral', 50) : values['content.inverse'].hex;
-      record('surface.sidebar', sidebar, 'neutral', dark ? 950 : 800, 'surface.sidebar');
-      checks.push({ tokenId: 'surface.sidebar', relationshipId: 'SIDEBAR_TEXT_ON_SIDEBAR', foreground: sidebarText, background: sidebar, backgroundTokenId: null, target: 'normalText' });
-
-      const tableSurface = values['surface.page'].hex;
-      const tabular = dark ? step('neutral', 50) : step('neutral', 950);
-      record('content.tabular', tabular, 'neutral', dark ? 50 : 950, 'content.tabular');
-      checks.push({ tokenId: 'content.tabular', relationshipId: 'TABULAR_TEXT_ON_SURFACE', foreground: tabular, background: tableSurface, backgroundTokenId: null, target: 'normalText' });
-
-      const stripe = dark ? step('neutral', 950) : step('neutral', 50);
-      record('surface.tableStripe', stripe, 'neutral', dark ? 950 : 50, 'surface.tableStripe');
-      checks.push({ tokenId: 'surface.tableStripe', relationshipId: 'DASHBOARD_DECORATION', foreground: stripe, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
-
-      const tableBorder = dark ? step('neutral', 700) : step('neutral', 300);
-      record('border.table', tableBorder, 'neutral', dark ? 700 : 300, 'border.table');
-      checks.push({ tokenId: 'border.table', relationshipId: 'DASHBOARD_DECORATION', foreground: tableBorder, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
-
-      // Chart series are derived from the system's own scales (never an
-      // arbitrary industry palette) and measured as advisory.
-      const series = [
-        [dark ? 400 : 600, 'brand'],
-        [dark ? 400 : 500, 'neutral'],
-        [dark ? 200 : 300, 'brand'],
-        [dark ? 300 : 400, 'neutral'],
-      ];
-      series.forEach(([seriesStep, roleId], index) => {
-        const hex = step(roleId, seriesStep);
-        const tokenId = `chart.series.${index + 1}`;
-        record(tokenId, hex, roleId, seriesStep, tokenId);
-        checks.push({ tokenId, relationshipId: 'DASHBOARD_DECORATION', foreground: hex, background: tableSurface, backgroundTokenId: null, target: 'nonText' });
-      });
-    }
-    if (profileId === 'marketing') {
-      const hero = measuredSurface(
-        'surface.hero',
-        'brand',
-        dark ? [900, 950, 800, 700, 600] : [800, 900, 700, 950, 600],
-        'normalText',
-        'MARKETING_HERO_BODY_ON_HERO'
-      );
-      record('content.heroTitle', hero.ink, 'brand', null, 'content.heroTitle');
-      check('content.heroTitle', 'MARKETING_HERO_TITLE_ON_HERO', hero.ink, hero.hex, 'largeText');
-      record('content.heroBody', hero.ink, 'brand', null, 'content.heroBody');
-      check('content.heroBody', 'MARKETING_HERO_BODY_ON_HERO', hero.ink, hero.hex, 'normalText');
-
-      const sectionAccent = assignmentFor(assignments, 'brand', theme).subtle;
-      record('surface.sectionAccent', sectionAccent.hex, 'brand', sectionAccent.step, 'surface.sectionAccent');
-      check('surface.sectionAccent', 'MARKETING_DECORATION', sectionAccent.hex, values['surface.page'].hex, 'nonText');
-
-      boundary(
-        'border.feature',
-        'neutral',
-        dark ? [500, 400, 600, 300, 700] : [500, 600, 400, 700, 300],
-        values['surface.raised'].hex,
-        'MARKETING_FEATURE_BOUNDARY'
-      );
-      const highlightStep = dark ? 400 : 600;
-      const highlight = step('brand', highlightStep);
-      record('decoration.highlight', highlight, 'brand', highlightStep, 'decoration.highlight');
-      check('decoration.highlight', 'MARKETING_DECORATION', highlight, values['surface.raised'].hex, 'nonText');
-    }
-    if (profileId === 'portfolio') {
-      const card = values['surface.raised'];
-      copyValue('surface.projectCard', card, 'surface.projectCard');
-      const title = readable('content.projectTitle', 'neutral', card.hex, 'largeText', 'PORTFOLIO_PROJECT_TITLE_ON_CARD', 'maxContrast');
-      check('surface.projectCard', 'PORTFOLIO_PROJECT_TITLE_ON_CARD', title.hex, card.hex, 'largeText');
-      readable('content.projectMeta', 'neutral', card.hex, 'normalText', 'PORTFOLIO_PROJECT_META_ON_CARD', 'minPassing');
-
-      const overlay = measuredSurface(
-        'surface.mediaOverlay',
-        'neutral',
-        dark ? [950, 900, 800] : [950, 900, 800],
-        'normalText',
-        'PORTFOLIO_MEDIA_CAPTION_ON_OVERLAY'
-      );
-      record('content.mediaCaption', overlay.ink, 'neutral', null, 'content.mediaCaption');
-      check('content.mediaCaption', 'PORTFOLIO_MEDIA_CAPTION_ON_OVERLAY', overlay.ink, overlay.hex, 'normalText');
-
-      boundary(
-        'border.projectCard',
-        'neutral',
-        dark ? [500, 400, 600, 300, 700] : [500, 600, 400, 700, 300],
-        card.hex,
-        'PORTFOLIO_PROJECT_CARD_BOUNDARY'
-      );
-      const indexStep = dark ? 400 : 600;
-      const projectIndex = step('brand', indexStep);
-      record('accent.projectIndex', projectIndex, 'brand', indexStep, 'accent.projectIndex');
-      check('accent.projectIndex', 'PORTFOLIO_DECORATION', projectIndex, card.hex, 'nonText');
-    }
-    if (profileId === 'documentation') {
-      const sidebarStep = dark ? 900 : 100;
-      const sidebar = step('neutral', sidebarStep);
-      record('surface.docsSidebar', sidebar, 'neutral', sidebarStep, 'surface.docsSidebar');
-      const nav = readable('content.docsNav', 'neutral', sidebar, 'normalText', 'DOCUMENTATION_NAV_ON_SIDEBAR', 'maxContrast');
-      check('surface.docsSidebar', 'DOCUMENTATION_NAV_ON_SIDEBAR', nav.hex, sidebar, 'normalText');
-
-      const codeSurface = measuredSurface(
-        'surface.codeBlock',
-        'neutral',
-        [950, 900, 800],
-        'normalText',
-        'DOCUMENTATION_CODE_ON_BLOCK'
-      );
-      readable('content.code', 'neutral', codeSurface.hex, 'normalText', 'DOCUMENTATION_CODE_ON_BLOCK', 'maxContrast');
-      readable('content.lineNumber', 'neutral', codeSurface.hex, 'normalText', 'DOCUMENTATION_CODE_ON_BLOCK', 'minPassing');
-
-      const inlineStep = dark ? 800 : 100;
-      const inlineSurface = step('neutral', inlineStep);
-      record('surface.inlineCode', inlineSurface, 'neutral', inlineStep, 'surface.inlineCode');
-      const inlineText = readable('content.inlineCode', 'neutral', inlineSurface, 'normalText', 'DOCUMENTATION_INLINE_CODE', 'maxContrast');
-      check('surface.inlineCode', 'DOCUMENTATION_INLINE_CODE', inlineText.hex, inlineSurface, 'normalText');
-
-      boundary(
-        'border.codeBlock',
-        'neutral',
-        dark ? [500, 400, 600, 300, 700] : [500, 600, 400, 700, 300],
-        values['surface.page'].hex,
-        'DOCUMENTATION_CODE_BOUNDARY'
-      );
-    }
-    return { values, checks, diagnostics };
-  }
-
   window.WebsiteTokenContract = {
     contract,
     feedbackRoles: FEEDBACK_ROLES,
@@ -1461,19 +954,14 @@
     tokenGroups: TOKEN_GROUPS,
     requiredGroups: REQUIRED_GROUPS,
     accentGroups: ACCENT_GROUPS,
-    PROFILE_EXTENSIONS,
     allTokens,
     tokenById,
     validateContract,
-    validateProfile,
-    profileTokenGroups,
-    profileTokens,
     resolveWebsiteTokens,
     validateTheme,
     summarize,
     serializeCss,
     serializeTailwind,
     compatibilityPairSpecs,
-    resolveProfileTheme,
   };
 })();

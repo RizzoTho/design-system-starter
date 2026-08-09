@@ -38,7 +38,11 @@ class FakeElement {
     this.listeners = {};
     this.classList = new FakeClassList();
     this.scrollCount = 0;
-    this.style = { values: {}, setProperty: (name, value) => { this.style.values[name] = value; } };
+    this.style = {
+      values: {},
+      setProperty: (name, value) => { this.style.values[name] = value; },
+      removeProperty: (name) => { delete this.style.values[name]; },
+    };
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   setAttribute(name, value) { this.attributes[name] = String(value); }

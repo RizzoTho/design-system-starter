@@ -11,7 +11,7 @@ A dependency-free browser tool with two paths:
 - **Quick start** — choose a color character (Balanced, Warm, Cool, Vivid, or Muted), a Brand source, and a Secondary strategy, then press one action to generate a complete website color system: Context, all role palettes, Light and Dark website tokens, and a `READY` / `READY WITH WARNINGS` / `NEEDS ATTENTION` validation summary.
 - **Advanced editing** — the direct workflow for `Background`, `Text`, `Brand`, `Neutral`, optional `Secondary`, and semantic roles with OKLCH scales, locks, Role checks, Website tokens, and Custom pairs.
 
-It generates OKLCH-based 50–950 scales, evaluates WCAG contrast with relationship-specific targets (text, large text, and non-text), previews Light and Dark component assignments, saves static or interactive foreground/background pairs, and exports CSS variables or JSON. Optional Dashboard, Marketing, Portfolio, and Documentation coverage profiles add concrete component tokens and matching Preview modules without changing the color character. The interface supports English and Chinese.
+It generates OKLCH-based 50–950 scales, evaluates WCAG contrast with relationship-specific targets (text, large text, and non-text), previews the result as one real landing page in Light and Dark, saves static or interactive foreground/background pairs, and exports CSS variables or JSON. The interface supports English and Chinese.
 
 ## Run locally
 
@@ -33,8 +33,8 @@ Then open `http://localhost:8000`.
 1. **Quick start**: pick a color character, a Brand source (Generate, HEX, or Keep current), and a Secondary strategy, then press `Generate website system`. Every valid result applies immediately; press Generate again for a fresh revision, open Preview from the result, or use one-level Undo. A failed result keeps the active system unchanged and reports the relationships to fix.
 2. **Context**: confirm or tune the generated `Background` and `Text`; the panel shows a measured PASS or FAIL at 4.5:1.
 3. **Colors**: inspect `Brand`, `Neutral`, optional `Secondary`, and the semantic roles; tune or lock individual roles and review Role checks against the global WCAG target.
-4. **Website tokens**: review the generated contract grouped by intent (surfaces, content, actions, fields, feedback, accent) with Light and Dark values. Optionally select a Dashboard, Marketing, Portfolio, or Documentation coverage profile to add component tokens and a matching Preview module; Custom pairs stay editable snapshots beneath it.
-5. **Preview and Export**: inspect the Light / Dark component workspace, then copy CSS variables or JSON.
+4. **Website tokens**: review the generated contract grouped by intent (surfaces, content, actions, fields, feedback, accent) with Light and Dark values. Custom pairs stay editable snapshots beneath it.
+5. **Preview and Export**: inspect the landing page in Light or Dark — the page background is the generated surface, and the system spec below the footer holds every state — then copy CSS variables or JSON.
 
 ## GitHub Pages
 
@@ -68,7 +68,7 @@ scripts/            Deployment artifact preparation
 
 - Local Save keeps the project in the browser's localStorage for this origin; Download JSON creates a portable file. State resets when storage is cleared or on a different machine.
 - Custom pairs are explicit snapshots; Interactive pairs derive state values from the saved scale, but neither type automatically becomes a semantic assignment.
-- One product coverage profile can be active at a time. Profiles extend the generic contract; they are not industry color presets and do not change the selected color character.
+- The website token contract is generic. Product coverage profiles were removed together with their Preview modules: a token set with no honest preview surface is not a contract.
 - The tool targets sRGB and does not yet simulate color-vision deficiencies.
 - Generated usage labels are recommendations; WCAG results remain the acceptance signal.
 

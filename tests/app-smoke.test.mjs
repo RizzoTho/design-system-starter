@@ -28,7 +28,11 @@ class FakeElement {
     this.listeners = {};
     this.classList = new FakeClassList();
     this.scrollCount = 0;
-    this.style = { values: {}, setProperty: (name, value) => { this.style.values[name] = value; } };
+    this.style = {
+      values: {},
+      setProperty: (name, value) => { this.style.values[name] = value; },
+      removeProperty: (name) => { delete this.style.values[name]; },
+    };
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
@@ -159,37 +163,40 @@ documentListeners.click({
   target: { closest: selector => selector === '[data-edit-role]' ? { dataset: { editRole: 'brand' } } : null },
 });
 assert.equal(elements['step-candidates'].scrollCount, 1, 'Fit report did not navigate to Colors');
+// The landing page and the spec zone render identically in both themes.
 for (const content of [elements.lightPreviewContent.innerHTML, elements.darkPreviewContent.innerHTML]) {
-  assert.match(content, /Publish update/);
-  assert.match(content, /Review focus order/);
-  assert.match(content, /Check empty states/);
-  assert.match(content, /Enter a complete email address/);
-  assert.match(content, /Accessibility review/);
-  assert.match(content, /Contrast checks/);
+  assert.match(content, /class="site-nav"/);
+  assert.match(content, /Ship a website people can actually read/);
+  assert.match(content, /class="site-card"/);
+  assert.match(content, /class="site-footer"/);
+  assert.match(content, /System spec/);
   assert.match(content, /Theme palette/);
-  assert.match(content, /Release signals/);
-  assert.match(content, /No archived releases/);
-  assert.match(content, /class="product-field focused"/);
-  assert.match(content, /class="product-field invalid"/);
+  assert.match(content, /class="spec-field is-focused"/);
+  assert.match(content, /class="spec-field is-invalid"/);
+  assert.match(content, /class="spec-notice danger"/);
+  assert.match(content, /class="spec-overlay"/);
+  assert.doesNotMatch(content, /class="product-/, 'The retired workspace preview returned');
 }
-assert.match(elements.lightPreviewContent.innerHTML, /previewReleaseNote-light/);
-assert.match(elements.darkPreviewContent.innerHTML, /previewReleaseNote-dark/);
+assert.match(elements.lightPreviewContent.innerHTML, /siteEmail-light/);
+assert.match(elements.darkPreviewContent.innerHTML, /siteEmail-dark/);
 const previewIds = [...`${elements.lightPreviewContent.innerHTML}${elements.darkPreviewContent.innerHTML}`.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(new Set(previewIds).size, previewIds.length, 'Light and Dark preview markup contains duplicate IDs');
-assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 4.5);
-assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 4.5);
+// Muted body text stays readable on the generated page surface in both themes.
+for (const preview of [elements.lightPreview, elements.darkPreview]) {
+  assert.ok(context.window.ColorEngine.contrast(preview.style.values['--content-muted'], preview.style.values['--surface-page']) >= 4.5);
+}
 
 languageButtons[1].dispatch('click');
 assert.equal(document.documentElement.lang, 'zh-CN');
 assert.equal(languageButtons[0].attributes['aria-pressed'], 'false');
 assert.equal(languageButtons[1].attributes['aria-pressed'], 'true');
 assert.match(elements.activeRoleDescription.textContent, /核心识别色/);
-assert.match(elements.lightPreviewContent.innerHTML, /发布更新/);
+assert.match(elements.lightPreviewContent.innerHTML, /做一个真正读得清楚的网站/);
 assert.match(elements.contextStatus.innerHTML, /要求 · 4\.5:1/);
 assert.match(elements.pairList.innerHTML, /需要优化/);
 languageButtons[0].dispatch('click');
 assert.equal(document.documentElement.lang, 'en');
-assert.match(elements.lightPreviewContent.innerHTML, /Publish update/);
+assert.match(elements.lightPreviewContent.innerHTML, /Ship a website people can actually read/);
 
 assert.equal(elements.savedPairCount.textContent, '1');
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 600/);
@@ -379,8 +386,12 @@ assert.equal((elements.secondarySuggestions.innerHTML.match(/class="suggestion"/
 elements.targetSelect.value = '7';
 elements.targetSelect.dispatch('change');
 assert.match(elements.savedPairs.innerHTML, /FAIL/, 'Saved pair status did not follow the global target');
-assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 7);
-assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 7);
+// The advanced pair target governs pairs and Role checks. Website tokens follow
+// the contract's own target profile, so Preview keeps meeting that target
+// instead of quietly re-resolving to a different one.
+for (const preview of [elements.lightPreview, elements.darkPreview]) {
+  assert.ok(context.window.ColorEngine.contrast(preview.style.values['--content-muted'], preview.style.values['--surface-page']) >= 4.5);
+}
 
 elements.hexInput.value = 'invalid';
 elements.hexInput.dispatch('change');
@@ -450,9 +461,7 @@ assert.equal(elements.hexInput.value, seedBeforeInvalid, 'Invalid HEX changed th
 // --- Phase 6: persistence and import round trip ---------------------------------
 
 // Save writes the current project; New clears it and resets the active system.
-elements.coverageProfileSelect.value = 'portfolio';
-elements.coverageProfileSelect.dispatch('change');
-assert.ok(elements.websiteTokens.innerHTML.includes('--surface-project-card'), 'Portfolio profile did not resolve before Save');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'The generic contract did not resolve before Save');
 elements.copyJson.dispatch('click');
 const savedJson = copiedText;
 elements.saveProject.dispatch('click');
@@ -460,7 +469,6 @@ assert.ok(storageStore.has('design-system-starter.project.v2'), 'Save did not wr
 const savedBrand = elements.hexInput.value;
 elements.newProject.dispatch('click');
 assert.notEqual(elements.hexInput.value, savedBrand, 'New project did not reset the active Brand');
-assert.equal(elements.coverageProfileSelect.value, '', 'New project did not reset website coverage');
 
 // Export -> Import round trip preserves the visible system and pairs.
 storageStore.clear();
@@ -475,23 +483,23 @@ elements.importFile.dispatch('change', {
 });
 await new Promise(resolve => setTimeout(resolve, 0));
 assert.equal(elements.hexInput.value, savedBrand, 'Import did not restore the saved Brand');
-assert.equal(elements.coverageProfileSelect.value, 'portfolio', 'Import did not restore website coverage');
-assert.ok(elements.websiteTokens.innerHTML.includes('--surface-project-card'), 'Import lost Portfolio tokens');
-assert.ok(elements.lightPreviewContent.innerHTML.includes('profile-portfolio'), 'Import lost the Portfolio Preview module');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Import lost the website token contract');
+assert.ok(elements.lightPreviewContent.innerHTML.includes('class="site-preview"'), 'Import lost the website Preview');
+assert.equal('profileId' in roundTrip, false, 'The retired coverage profile is still written to the project payload');
 assert.equal(Number(elements.savedPairCount.textContent), roundTrip.pairs.length,
   'Import changed the saved pair count');
 assert.match(elements.toast.textContent, /Project imported/, 'Import did not report success');
 
-// An unknown additive profile fails before any imported state is applied.
-const unknownProfile = { ...roundTrip, profileId: 'unknown-profile' };
-const brandBeforeUnknownProfile = elements.hexInput.value;
+// A project saved with a retired coverage profile fails visibly instead of
+// losing those tokens to a silent drop.
+const retiredProfile = { ...roundTrip, profileId: 'portfolio' };
+const brandBeforeRetiredProfile = elements.hexInput.value;
 elements.importFile.dispatch('change', {
-  target: { files: [{ text: async () => JSON.stringify(unknownProfile) }] },
+  target: { files: [{ text: async () => JSON.stringify(retiredProfile) }] },
 });
 await new Promise(resolve => setTimeout(resolve, 0));
-assert.equal(elements.hexInput.value, brandBeforeUnknownProfile, 'Unknown profile import changed the active Brand');
-assert.equal(elements.coverageProfileSelect.value, 'portfolio', 'Unknown profile import changed website coverage');
-assert.match(elements.toast.textContent, /Import failed/, 'Unknown profile import did not report a visible failure');
+assert.equal(elements.hexInput.value, brandBeforeRetiredProfile, 'Retired profile import changed the active Brand');
+assert.match(elements.toast.textContent, /Import failed/, 'Retired profile import did not report a visible failure');
 
 // An invalid import fails visibly without mutating the active project.
 const activeBeforeInvalid = elements.hexInput.value;

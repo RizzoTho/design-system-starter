@@ -10,11 +10,11 @@
 
 The starter result is a **website color system**, not just a palette. After role assignments resolve, a generic website profile maps component intent to named tokens for surfaces, content, actions, fields, focus, feedback, and accents. This contract names those tokens exactly, defines the relationships the system must measure, and fixes the traceability and export rules.
 
-Product-specific profiles (Dashboard, Marketing, Portfolio, Documentation) extend the now-stable generic contract. Step 03 selects one additive coverage profile at a time. Profiles add component tokens, relationship checks, and a matching Preview module; they never rename semantic meaning or change the selected color character.
+The contract is generic. Product-specific coverage profiles were removed; see [Product coverage profiles (removed)](#product-coverage-profiles-removed).
 
 ## Approved product flow decisions
 
-1. Quick start generates the generic website system; Step 03 may add one product-specific coverage profile after generation or before the next generation.
+1. Quick start generates the website system; Step 03 shows the resolved contract and keeps Custom pairs beneath it.
 2. Step 03 becomes `Website tokens`; existing Saved pairs are retained as `Custom pairs` beneath it.
 3. Every valid Generate applies atomically and immediately. Repeating Generate creates a fresh deterministic revision; the result offers a direct Preview route and one-level Undo instead of a second Apply / Reroll / Cancel confirmation.
 4. A `NEEDS ATTENTION` attempt remains inspectable but never replaces the active system. Its report names every required failure and recovery and may be dismissed.
@@ -131,24 +131,15 @@ Only when `Secondary` is enabled:
 
 `Secondary` never produces a second filled action. It is an accent decoration only.
 
-## Product coverage profiles
+## Product coverage profiles (removed)
 
-The `General website` option resolves only the generic contract above. Selecting a profile adds the following website tokens to both Light and Dark without removing or renaming any generic token.
+Dashboard, Marketing, Portfolio, and Documentation coverage profiles were removed together with their Preview modules. Each profile added component tokens (`--surface-sidebar`, `--surface-hero`, `--surface-project-card`, `--surface-code-block`, and their peers) whose only evidence was a small profile-specific Preview module. Once Preview became one honest website page, those modules had nowhere to live, and a token nobody can see measured is not a contract.
 
-| Profile | Additive tokens | Required relationships | Advisory measurements | Preview module |
-| --- | --- | --- | --- | --- |
-| Dashboard / SaaS | `--surface-sidebar`, `--surface-table-stripe`, `--content-tabular`, `--border-table`, `--chart-series-1`…`4` | Sidebar text and tabular text | Zebra, table rules, chart series | Sidebar, metrics, table, chart |
-| Marketing / Landing page | `--surface-hero`, `--surface-section-accent`, `--content-hero-title`, `--content-hero-body`, `--border-feature`, `--decoration-highlight` | Hero title, hero body, feature boundary | Section tint and highlight | Hero and feature strip |
-| Portfolio | `--surface-project-card`, `--surface-media-overlay`, `--content-project-title`, `--content-project-meta`, `--content-media-caption`, `--border-project-card`, `--accent-project-index` | Project title, metadata, media caption, card boundary | Project index | Project and media card |
-| Documentation | `--surface-docs-sidebar`, `--surface-code-block`, `--surface-inline-code`, `--content-docs-nav`, `--content-code`, `--content-line-number`, `--content-inline-code`, `--border-code-block` | Navigation, block code, line numbers, inline code, code boundary | None | Docs navigation and code sample |
+Rules that follow from the removal:
 
-Rules:
-
-- A profile changes coverage, not palette identity. Every value still resolves from the active Brand / Neutral system and the shared Reference → Role → Website layers.
-- Only one profile is active because each represents a concrete product surface contract, not a stackable style preset.
-- Profile selection is persisted as `profileId` at project and `website` level in schema v2 JSON and is included additively in CSS and Tailwind exports.
-- Profile relationship checks use the same `aa-interface` or `aaa-interface` thresholds as the generic contract. Advisory measurements remain advisory and are never relabeled PASS.
-- Preview reads the resolved profile token values. Advanced role edits and profile changes re-resolve validation, Preview, CSS, and JSON from the same state owner.
+- The website contract is generic. Surfaces, content, borders and focus, the three action families, fields, feedback, and accent cover a normal website.
+- `profileId` is no longer written to schema v2 JSON at project or `website` level. A project that still carries one fails to import with a visible error naming the profile; it is never repaired by silently dropping it.
+- Reintroducing a product-specific token layer requires a Preview surface that measures it. Do not add tokens whose only proof is the token table.
 
 ## Traceability metadata
 
@@ -274,10 +265,10 @@ Export rules:
 
 | File | Owns |
 | --- | --- |
-| `js/token-contract.js` | Website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, compatibility projection to generated pairs (`compatibilityPairSpecs`), CSS / JSON / Tailwind serialization. No DOM access. |
+| `js/token-contract.js` | Generic website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, compatibility projection to generated pairs (`compatibilityPairSpecs`), CSS / JSON / Tailwind serialization. No DOM access. |
 | `js/system-generator.js` | Character presets, deterministic revision primitives, Context / Brand / near-achromatic Neutral / subordinate semantic batch generation, bounded constraint search, end-to-end `generateSystem()`. No DOM access. |
 | `js/project-state.js` | Schema version, project encode/decode and validation, import migration, storage payload preparation. No silent fallback, no DOM rendering. |
-| `js/app.js` | Atomic direct-apply interaction, failed-generation report, Preview route, one-level Undo, and all rendering. A valid result has no pending UI proposal state. |
+| `js/app.js` | Atomic direct-apply interaction, failed-generation report, Preview route, one-level Undo, and all rendering. Preview is bound to the exported token names and derives no colors of its own. A valid result has no pending UI proposal state. |
 
 Browser script order: `color-engine.js` → `i18n.js` → `role-model.js` → `token-contract.js` → `system-generator.js` → `project-state.js` → `app.js`. The order is enforced by `index.html` and `tests/static-contract.test.mjs`.
 

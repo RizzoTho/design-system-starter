@@ -7,7 +7,6 @@
     "secondaryStrategy": "none",
     "randomSeed": 7919,
     "revision": 1,
-    "profileId": null,
     "repairAttempts": 0,
     "status": "ready",
     "diagnostics": []
@@ -19,7 +18,6 @@
     "locked": false
   },
   "targetProfileId": "aa-interface",
-  "profileId": null,
   "advancedPairTarget": 4.5,
   "activeRole": "brand",
   "roles": {
@@ -439,7 +437,6 @@
   },
   "website": {
     "targetProfileId": "aa-interface",
-    "profileId": null,
     "light": {
       "values": {
         "surface.page": {

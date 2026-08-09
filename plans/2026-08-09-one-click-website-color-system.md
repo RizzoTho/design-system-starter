@@ -1,6 +1,6 @@
 # Plan: Turn the color workflow into a one-click website color system
 
-- Status: Approved (owner confirmed 2026-08-09). Phases 0–9 implementation, static verification, workflow update, and prior remote branch delivery are complete; the Phase 9 browser refresh remains explicit below.
+- Status: Approved (owner confirmed 2026-08-09). Phases 0–10 implementation, static verification, workflow update, and prior remote branch delivery are complete; the Phase 9 and Phase 10 browser reviews remain explicit below.
 - Date: 2026-08-09
 - Scope: Starter entry, complete-system generation, website semantic tokens, color-emphasis hierarchy, per-relationship accessibility, Light / Dark output, persistence, and export adapters
 - Depends on: [`docs/color-role-model.md`](../docs/color-role-model.md)
@@ -737,6 +737,68 @@ Exit criteria:
 - Generated Neutral remains visibly near-achromatic; unlocked semantic seeds do not overtake generated Brand in relative chroma.
 - The shared Light / Dark Preview keeps large surfaces Neutral, while compact Brand and semantic signals remain identifiable through role-color fills with measured foregrounds.
 
+### Phase 10: One landing-page Preview, coverage profiles removed
+
+Effort: Large
+
+- [x] Delete the four coverage profiles: token groups, relationships, validator, resolver, generator plumbing, Step 03 selector, and the four Preview modules.
+- [x] Stop writing `profileId` to schema v2 JSON; fail a project that still carries one with a visible, named error instead of dropping it silently.
+- [x] Replace the workspace Preview with one landing page: navigation, hero, feature cards, one alternating band, an inverse call-to-action, a signup form, and a footer.
+- [x] Make `surface.page` the largest area — no page chrome between the app frame and the generated background.
+- [x] Bind Preview to the exported token names, resolving the contract live before the first generation, and delete the ad hoc `shiftLightness` / muted-text fallbacks.
+- [x] Move every state — action hover/pressed/focus, three field states, four feedback roles with bold plus measured ink, destructive action, overlay scrim with raised dialog, Theme palette — into a visibly separated `System spec` zone below the footer.
+- [x] Rewrite the affected assertions in the static-contract, app-smoke, quick-start, i18n, and token-contract suites.
+- [x] Refresh both catalogs, both READMEs, `AGENTS.md`, `docs/color-role-model.md`, and `docs/website-token-contract.md`.
+- [ ] Browser review of the landing page in Light and Dark at desktop and narrow widths.
+
+Phase 10 rationale: the previous Preview proved role *coverage* — every role appears somewhere — by rendering an application workspace. A workspace is the one context where heavy color use looks normal, so it was the wrong evidence for a tool that claims to produce a website palette. The four coverage profiles shared that problem from the other direction: their tokens' only proof was a small profile-specific module. One honest landing page plus one spec zone replaces both. The page shows what a website actually does with color — a large quiet background, one recurring emphasis, no status color while nothing has status — and the spec zone keeps the accessibility evidence that the page has no reason to display. Removing `profileId` is a deliberate breaking change for saved projects that used a profile; a visible import failure is preferred over silently discarding those tokens.
+
+Exit criteria:
+
+- Preview reads as a website, not a dashboard, and its page background equals the `surface.page` value shown in Step 03 for that theme.
+- No Preview color is derived outside the exported token contract.
+- Semantic color does not appear on the landing page; every state is measurable in the spec zone.
+- Nothing in the runtime, exports, or tests references a coverage profile.
+
+### Phase 11: The page surface is the Context Background
+
+Effort: Medium
+
+- [x] Resolve Light `surface.page` from the Context `Background` instead of Neutral subtle; keep Dark Neutral-derived because there is no user-provided dark Context.
+- [x] Collapse `surface.raised` / `surface.sunken` onto the page when they land on the wrong side of it, instead of asserting an elevation that is not there.
+- [x] Record the new `context-color` source kind, serialize it as a literal (no role or palette alias exists for it), and label it in the token table.
+- [x] Report a malformed Context Background as `CONTEXT_BACKGROUND_INVALID` rather than falling back silently.
+- [x] Skip the compatibility pairs that sat on `surface.page`; the legacy pair model cannot express a surface with no palette coordinate.
+- [ ] Browser review of the Light page against the Step 03 `surface.page` value.
+
+Phase 11 rationale: the product's first promise is "fix Background and Text, everything else follows", but `surface.page` resolved to Neutral 100 while the generated Context Background sat at roughly `1.18:1` away from it. The Step 01 decision reached the export's legacy `--color-background` and nothing else, so the largest area on the page was a color the user never chose, and every text token was measured against that same wrong surface. Re-pointing the page at Context also fixes the inverted light elevation: with a near-white page, Neutral 50 reads as a card and Neutral 200 as a band, instead of a grey page with lighter cards floating on it.
+
+Exit criteria:
+
+- The Light Preview page background equals the Context Background shown in Step 01.
+- Content, border, focus, and feedback tokens are re-measured against that surface and still pass.
+- No surface claims an elevation it does not have.
+- Dark remains Neutral-derived and is unchanged.
+
+### Phase 12: Button fills, preview width, and readable tints
+
+Effort: Medium
+
+- [x] Ban Neutral as a button fill: the secondary action becomes a text button with no fill and no border, in both the landing page and the spec zone.
+- [x] Bound the Preview frame to 850px so the site navigation spans exactly the frame; make the feature and palette grids follow the canvas width instead of the viewport.
+- [x] Give steps 50-200 of every non-Neutral family an absolute chroma floor so a tint reads as its hue.
+- [x] Add a brace-balance assertion over `styles.css` after an unclosed media query silently nested the file's tail.
+- [ ] Browser review of the 850px frame and the tinted callouts at desktop and narrow widths.
+
+Phase 12 rationale: the Danger callout showed a red border around a grey box, which looked like a bug and was one. Phase 9 lowered semantic relative chroma, and the scale multiplies again at the tint end, so `feedback.danger.surface` resolved to `0.0036` chroma out of the `0.0561` available at that lightness — six percent, when a conventional tint uses about ninety. The border was picked by a real 3:1 measurement, so it stayed red against a surface that had lost its hue entirely. An absolute floor on the tint steps fixes the whole family of surfaces at once, including the Secondary accent badge and the subtle swatches in the Theme palette. The button rule is separate and simpler: two boxes side by side read as two competing actions regardless of how quiet the second box is, so the second action stops being a box.
+
+Exit criteria:
+
+- No button anywhere in Preview is filled with a Neutral surface or carries a border on a Neutral fill.
+- The Preview frame and the site navigation are the same width.
+- Every feedback surface is recognizably its own hue in Light, and text on it still passes.
+- Neutral remains near-achromatic and the bold end of every family is unchanged.
+
 ## Export naming direction
 
 Exact names belong in `docs/website-token-contract.md`, but CSS should follow this shape:
@@ -956,8 +1018,9 @@ Mitigation: use finite candidate lists, record attempted coordinates, keep the b
 | M1 · Generation engine | 2–3 | Deterministic complete proposals with Light / Dark evidence | Complete |
 | M2 · Starter experience | 4–5 | One-click Quick start and Preview driven by website tokens | Complete |
 | M3 · Durable handoff | 6 | Save, import, layered CSS/JSON, and Tailwind output | Complete |
-| M4 · Coverage expansion | 7 | Four additive coverage profiles, profile selector, Preview modules, persistence, and export | Complete |
+| M4 · Coverage expansion | 7 | Four additive coverage profiles, profile selector, Preview modules, persistence, and export | Superseded by Phase 10 (profiles removed) |
 | M5 · Consolidation | 8 | One generation owner, updated contracts, and complete verification | Implementation and remote delivery complete; bridge-limited browser items open |
+| M6 · Website preview | 9–12 | Atomic generation, a landing-page Preview, a generic-only contract, a Context-owned page surface, and readable tints | Implementation complete; browser review open |
 
 The implementation should land milestone by milestone. Do not combine M1 through M3 into one unreviewable change.
 
@@ -973,7 +1036,7 @@ The implementation should land milestone by milestone. Do not combine M1 through
 - [x] Every required text, non-text, focus, and interactive-state relationship uses its applicable target.
 - [x] Interactive foreground remains stable across Default, Hover, and Pressed.
 - [x] A required failure produces `NEEDS ATTENTION`, never a false `READY`.
-- [x] Preview consumes website tokens rather than separate ad hoc color selection.
+- [x] Preview consumes website tokens rather than separate ad hoc color selection, and is styled by the exported token names.
 - [x] Website token names remain stable across Light and Dark.
 - [x] Custom Saved pairs remain editable snapshots and do not become live assignments.
 - [x] CSS, JSON, Tailwind, Preview, and imported projects agree.
