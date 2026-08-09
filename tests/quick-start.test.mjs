@@ -137,6 +137,28 @@ assert.match(elements.contextSourceNote.textContent, /Generated/, 'Context sourc
 assert.ok(elements.websiteTokenStatus.innerHTML.includes('READY'), 'Step 03 status is not READY');
 assert.ok(elements.websiteTokenStatus.innerHTML.includes('READY WITH WARNINGS') === false, 'Unexpected warnings on default');
 
+// Phase 5: Preview consumes the website token contract, not ad hoc colors.
+const pageRow = elements.websiteTokens.innerHTML.split('--surface-page')[1].split('</tr>')[0];
+const pageLightHex = (pageRow.split('<td>')[1].match(/#[0-9A-F]{6}/) || [])[0];
+const pageDarkHex = (pageRow.split('<td>')[2].match(/#[0-9A-F]{6}/) || [])[0];
+assert.ok(pageLightHex && pageDarkHex, 'Website token table lost the surface.page values');
+assert.equal(elements.lightPreview.style.values['--pv-canvas'], pageLightHex,
+  'Light preview canvas does not consume the website token contract');
+assert.equal(elements.darkPreview.style.values['--pv-canvas'], pageDarkHex,
+  'Dark preview canvas does not consume the website token contract');
+
+// Theme palette cards name the token source, show the measured result, and link
+// back to their role in Colors.
+assert.match(elements.lightPreviewContent.innerHTML, /feedback\.success\.bold/, 'Palette card lost its token source');
+assert.match(elements.lightPreviewContent.innerHTML, /action\.primary\.background/, 'Brand card lost its token source');
+assert.match(elements.lightPreviewContent.innerHTML, /data-select-role="danger"/, 'Palette card does not link back to Colors');
+assert.match(elements.lightPreviewContent.innerHTML, /· PASS/, 'Palette card lost its measured result');
+
+// The preview and the token contract agree on muted text.
+const mutedLight = (elements.websiteTokens.innerHTML.split('--content-muted')[1].match(/#[0-9A-F]{6}/) || [])[0];
+assert.equal(elements.lightPreview.style.values['--pv-muted-text'], mutedLight,
+  'Light preview muted text diverges from the token contract');
+
 // The applied system feeds the Advanced workflow: Context passes and palettes render.
 assert.match(elements.contextStatus.innerHTML, /PASS/, 'Generated Context does not pass');
 assert.equal((elements.scale.innerHTML.match(/class="swatch"/g) || []).length, 11, 'Applied system did not render a scale');

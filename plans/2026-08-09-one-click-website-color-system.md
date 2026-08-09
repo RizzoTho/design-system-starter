@@ -625,12 +625,14 @@ Exit criteria:
 
 Effort: Medium
 
-- [ ] Replace Preview-only ad hoc color selection with website token consumption.
-- [ ] Keep one coherent workspace and identical markup across Light and Dark.
-- [ ] Bind navigation, surfaces, content, links, actions, fields, focus, feedback, structured data, and empty states to named website tokens.
-- [ ] Show the active token source and relationship result in the compact Theme palette.
-- [ ] Keep Secondary as a badge/accent treatment.
-- [ ] Make every unresolved Preview state link back to its website token or source role.
+- [x] Replace Preview-only ad hoc color selection with website token consumption.
+- [x] Keep one coherent workspace and identical markup across Light and Dark.
+- [x] Bind navigation, surfaces, content, links, actions, fields, focus, feedback, structured data, and empty states to named website tokens.
+- [x] Show the active token source and relationship result in the compact Theme palette.
+- [x] Keep Secondary as a badge/accent treatment.
+- [x] Make every unresolved Preview state link back to its website token or source role.
+
+Phase 5 result: when a website system is applied, `renderPreviews()` derives the preview canvas, panel, sunken surface, text, muted text, and border from the website token contract (`surface.page`, `surface.raised`, `surface.sunken`, `content.primary`, `content.muted`, `border.default`) for both themes; the pre-generation fallback is preserved. The preview markup stays identical across Light and Dark. Theme palette cards are now buttons that name their token source (`action.primary.background`, `feedback.success.bold`, …), show the measured on-bold ratio and PASS / FAIL in text, and link back to the role in Colors via `data-select-role` — an unresolved state is always reachable from the card. Semantic variables still come from role assignments (the role layer is part of the export contract); the general UI variables come from website tokens. `tests/quick-start.test.mjs` asserts Light and Dark preview canvases and muted text equal the rendered token contract, and that palette cards carry token ids, results, and role links.
 
 Exit criteria:
 

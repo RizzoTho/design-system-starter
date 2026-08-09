@@ -573,3 +573,29 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .generation-status .button { grid-column: 1 / -1; }
   .token-name { width: 40%; }
 }
+
+/* --- Phase 5: Preview consumes the website token contract --- */
+.semantic-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: transform 140ms var(--ease-out), border-color 140ms ease;
+}
+.semantic-card:hover { border-color: var(--pv-neutral-line); transform: translateY(-1px); }
+.semantic-card:active { transform: scale(.98); }
+.semantic-card em {
+  display: block;
+  margin-top: 3px;
+  font: 700 8px/1.2 var(--font-title);
+  font-style: normal;
+  letter-spacing: .02em;
+}
+.semantic-card em.pass { color: var(--good); }
+.semantic-card em.fail { color: var(--bad); }
+@media (prefers-reduced-motion: reduce) {
+  .semantic-card { transition-duration: 0ms; }
+  .semantic-card:hover { transform: none; }
+  .semantic-card:active { transform: none; }
+}

@@ -448,6 +448,12 @@
       `--pv-on-info:${information.onBold.hex}`,
     ].join(';');
 
+    const tokenIdForRole = (roleId) => {
+      if (roleId === 'brand') return 'action.primary.background';
+      if (roleId === 'neutral') return 'surface.page';
+      if (roleId === 'secondary') return 'accent.secondary.surface';
+      return `feedback.${roleId}.bold`;
+    };
     return `<div class="product-preview" style="${variables}">
       <aside class="product-sidebar" aria-label="${t('aria.workspaceNavigation')}">
         <div class="product-mark"><span>W</span><strong>${t('preview.mark')}</strong></div>
@@ -486,7 +492,8 @@
               <div class="product-panel-head"><div><h4>${t('preview.paletteTitle')}</h4><p>${t('preview.paletteDesc')}</p></div><span class="palette-count">${paletteRoles.length}</span></div>
               <div class="semantic-card-grid">${paletteRoles.map(roleId => {
                 const assignment = state.assignments[roleId][theme];
-                return `<div class="semantic-card"><span class="semantic-card-swatch" style="--semantic-subtle:${assignment.subtle.hex};--semantic-border:${assignment.borderIcon.hex};--semantic-bold:${assignment.bold.hex};--semantic-on:${assignment.onBold.hex}"><i></i><b>Aa</b></span><span><strong>${model.roles[roleId].label}</strong><small>${assignment.bold.hex}</small></span></div>`;
+                const onBoldPass = assignment.onBold.pass;
+                return `<button class="semantic-card" type="button" data-select-role="${roleId}" aria-label="${t('preview.openRole', { role: model.roles[roleId].label })}" title="${t('preview.openRole', { role: model.roles[roleId].label })}"><span class="semantic-card-swatch" style="--semantic-subtle:${assignment.subtle.hex};--semantic-border:${assignment.borderIcon.hex};--semantic-bold:${assignment.bold.hex};--semantic-on:${assignment.onBold.hex}"><i></i><b>Aa</b></span><span><strong>${model.roles[roleId].label}</strong><small>${assignment.bold.hex} · ${tokenIdForRole(roleId)}</small><em class="${onBoldPass ? 'pass' : 'fail'}">Aa ${assignment.onBold.ratio.toFixed(1)}:1 · ${onBoldPass ? 'PASS' : 'FAIL'}</em></span></button>`;
               }).join('')}</div>
             </section>
             <section class="product-panel signals-panel">
@@ -501,16 +508,22 @@
   }
 
   function renderPreviews() {
-    const lightCanvas = state.context.background;
-    const lightText = state.context.text;
-    const lightCard = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? 2 : 6);
-    const lightMuted = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
-    const darkCanvas = shiftLightness(lightCanvas, -70);
-    const darkText = textColor(darkCanvas);
-    const darkCard = shiftLightness(darkCanvas, 5);
-    const darkMuted = shiftLightness(darkCanvas, 9);
+    // When a website system is applied, Preview consumes the export contract:
+    // the same website token values that CSS and JSON export, not ad hoc colors.
+    const websiteValues = state.websiteTokens
+      ? { light: state.websiteTokens.light.values, dark: state.websiteTokens.dark.values }
+      : null;
+    const lightCanvas = websiteValues ? websiteValues.light['surface.page'].hex : state.context.background;
+    const lightText = websiteValues ? websiteValues.light['content.primary'].hex : state.context.text;
+    const lightPanel = websiteValues ? websiteValues.light['surface.raised'].hex : shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? 2 : 6);
+    const lightMuted = websiteValues ? websiteValues.light['surface.sunken'].hex : shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
+    const darkCanvas = websiteValues ? websiteValues.dark['surface.page'].hex : shiftLightness(lightCanvas, -70);
+    const darkText = websiteValues ? websiteValues.dark['content.primary'].hex : textColor(darkCanvas);
+    const darkPanel = websiteValues ? websiteValues.dark['surface.raised'].hex : shiftLightness(darkCanvas, 5);
+    const darkMuted = websiteValues ? websiteValues.dark['surface.sunken'].hex : shiftLightness(darkCanvas, 9);
     const neutralScale = paletteForRole('neutral').scale;
     const findMutedText = (background, theme) => {
+      if (websiteValues) return websiteValues[theme]['content.muted'].hex;
       const candidateSteps = theme === 'light' ? [600, 700, 800, 900, 950] : [400, 300, 200, 100, 50];
       const required = Math.max(4.5, state.target);
       return candidateSteps
@@ -518,9 +531,12 @@
         .find(token => contrast(token.hex, background) >= required)?.hex
         || textColor(background);
     };
+    const lineColor = (theme) => websiteValues
+      ? websiteValues[theme]['border.default'].hex
+      : (theme === 'light' ? shiftLightness(lightText, 62) : shiftLightness(darkText, -56));
     const setVariables = (element, values) => Object.entries(values).forEach(([key, value]) => element.style.setProperty(key, value));
-    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--pv-canvas': lightCanvas, '--pv-panel': lightCard, '--pv-muted-surface': lightMuted, '--pv-text': lightText, '--pv-muted-text': findMutedText(lightCard, 'light'), '--pv-line': shiftLightness(lightText, 62) });
-    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--pv-canvas': darkCanvas, '--pv-panel': darkCard, '--pv-muted-surface': darkMuted, '--pv-text': darkText, '--pv-muted-text': findMutedText(darkCard, 'dark'), '--pv-line': shiftLightness(darkText, -56) });
+    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--pv-canvas': lightCanvas, '--pv-panel': lightPanel, '--pv-muted-surface': lightMuted, '--pv-text': lightText, '--pv-muted-text': findMutedText(lightPanel, 'light'), '--pv-line': lineColor('light') });
+    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--pv-canvas': darkCanvas, '--pv-panel': darkPanel, '--pv-muted-surface': darkMuted, '--pv-text': darkText, '--pv-muted-text': findMutedText(darkPanel, 'dark'), '--pv-line': lineColor('dark') });
     $('#lightPreviewContent').innerHTML = previewMarkup('light');
     $('#darkPreviewContent').innerHTML = previewMarkup('dark');
   }
