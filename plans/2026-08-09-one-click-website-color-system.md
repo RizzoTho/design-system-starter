@@ -1,6 +1,6 @@
 # Plan: Turn the color workflow into a one-click website color system
 
-- Status: Approved (owner confirmed 2026-08-09; Phase 0 complete, Phases 1–8 open)
+- Status: Approved (owner confirmed 2026-08-09). Phases 0–6 and 8 complete; Phase 7 mechanism and Dashboard profile complete with the remaining three profiles pending; workflow push and manual browser matrix open.
 - Date: 2026-08-09
 - Scope: Starter entry, complete-system generation, website semantic tokens, per-relationship accessibility, Light / Dark output, persistence, and export adapters
 - Depends on: [`docs/color-role-model.md`](../docs/color-role-model.md)
@@ -893,37 +893,37 @@ Mitigation: use finite candidate lists, record attempted coordinates, keep the b
 
 ## Milestones
 
-| Milestone | Phases | User-visible result |
-| --- | --- | --- |
-| M0 · Contract and baseline | 0–1 | Stable website token and validation contracts with no UI regression |
-| M1 · Generation engine | 2–3 | Deterministic complete proposals with Light / Dark evidence |
-| M2 · Starter experience | 4–5 | One-click Quick start and Preview driven by website tokens |
-| M3 · Durable handoff | 6 | Save, import, layered CSS/JSON, and Tailwind output |
-| M4 · Coverage expansion | 7 | Dashboard, Marketing, Portfolio, and Documentation profiles |
-| M5 · Consolidation | 8 | One generation owner, updated contracts, and complete verification |
+| Milestone | Phases | User-visible result | Status |
+| --- | --- | --- | --- |
+| M0 · Contract and baseline | 0–1 | Stable website token and validation contracts with no UI regression | Complete |
+| M1 · Generation engine | 2–3 | Deterministic complete proposals with Light / Dark evidence | Complete |
+| M2 · Starter experience | 4–5 | One-click Quick start and Preview driven by website tokens | Complete |
+| M3 · Durable handoff | 6 | Save, import, layered CSS/JSON, and Tailwind output | Complete |
+| M4 · Coverage expansion | 7 | Dashboard profile mechanism; Marketing, Portfolio, and Documentation pending | Mechanism + Dashboard complete |
+| M5 · Consolidation | 8 | One generation owner, updated contracts, and complete verification | Complete except workflow push and manual browser matrix |
 
 The implementation should land milestone by milestone. Do not combine M1 through M3 into one unreviewable change.
 
 ## Full success criteria
 
-- [ ] A fresh user can generate a complete initial system without entering HEX.
-- [ ] Quick start requires no more than three direct choices and one primary generation action.
-- [ ] Generated Context Text on Background passes 4.5:1.
-- [ ] Generated Brand, Neutral, optional Secondary, and semantic roles preserve the accepted role model.
-- [ ] Locked and explicitly provided seeds survive Generate, Reroll, and repair.
-- [ ] Both Light and Dark resolve the complete generic website token contract.
-- [ ] Every required text, non-text, focus, and interactive-state relationship uses its applicable target.
-- [ ] Interactive foreground remains stable across Default, Hover, and Pressed.
-- [ ] A required failure produces `NEEDS ATTENTION`, never a false `READY`.
-- [ ] Preview consumes website tokens rather than separate ad hoc color selection.
-- [ ] Website token names remain stable across Light and Dark.
-- [ ] Custom Saved pairs remain editable snapshots and do not become live assignments.
-- [ ] CSS, JSON, Tailwind, Preview, and imported projects agree.
-- [ ] Invalid input, failed search, gamut reduction, storage failure, import failure, and copy failure remain observable.
-- [ ] English and Chinese catalogs remain complete.
-- [ ] Direct `file://` use continues to work.
+- [x] A fresh user can generate a complete initial system without entering HEX.
+- [x] Quick start requires no more than three direct choices and one primary generation action.
+- [x] Generated Context Text on Background passes 4.5:1.
+- [x] Generated Brand, Neutral, optional Secondary, and semantic roles preserve the accepted role model.
+- [x] Locked and explicitly provided seeds survive Generate, Reroll, and repair.
+- [x] Both Light and Dark resolve the complete generic website token contract.
+- [x] Every required text, non-text, focus, and interactive-state relationship uses its applicable target.
+- [x] Interactive foreground remains stable across Default, Hover, and Pressed.
+- [x] A required failure produces `NEEDS ATTENTION`, never a false `READY`.
+- [x] Preview consumes website tokens rather than separate ad hoc color selection.
+- [x] Website token names remain stable across Light and Dark.
+- [x] Custom Saved pairs remain editable snapshots and do not become live assignments.
+- [x] CSS, JSON, Tailwind, Preview, and imported projects agree.
+- [x] Invalid input, failed search, gamut reduction, storage failure, import failure, and copy failure remain observable.
+- [x] English and Chinese catalogs remain complete.
+- [x] Direct `file://` use continues to work (source-level; manual browser pass pending).
 - [ ] Desktop and narrow browser checks pass and are reported separately from static tests.
-- [ ] GitHub Pages verification includes every new source and test owner.
+- [ ] GitHub Pages verification includes every new source and test owner (workflow change committed locally; needs a workflow-scoped push).
 
 ## Approval gate
 
