@@ -6,6 +6,8 @@ A starter should reach a batch of usable, exportable color combinations without 
 
 The accepted product and color decisions live in [`docs/color-role-model.md`](../docs/color-role-model.md). The eight-role execution history lives in [`2026-07-20-color-role-expansion.md`](2026-07-20-color-role-expansion.md). This file owns the next round of friction reduction only.
 
+> **Superseded by [`2026-08-09-one-click-website-color-system.md`](2026-08-09-one-click-website-color-system.md).** That plan's Quick start generation subsumes the unfinished Reroll (Phase 3) and semantic preset batch (Phase 4) work below. The completed pair phases (cross-role pairs, starter set, Secondary-as-accent) remain valid, are still the running product, and must not be silently removed. The website token contract lives in [`docs/website-token-contract.md`](../docs/website-token-contract.md).
+
 ## Current state
 
 The previous round moved role checks into Colors, replaced the contrast matrix with a Pair editor, and made semantic optimization a single action. The middle of the workflow is no longer the bottleneck. Two ends remain.
