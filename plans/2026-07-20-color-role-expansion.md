@@ -6,6 +6,8 @@ Turn the current Brand and Neutral prototype into a starter-friendly eight-role 
 
 The accepted product and color decisions live in [`docs/color-role-model.md`](../docs/color-role-model.md). This file owns execution order only.
 
+**Later history.** Friction reduction from seed to starter pairs: [`2026-08-06-starter-pair-set.md`](2026-08-06-starter-pair-set.md). One-click website color system (current phase, subsumes that plan's unfinished reroll and preset phases): [`2026-08-09-one-click-website-color-system.md`](2026-08-09-one-click-website-color-system.md). Website semantic token decisions: [`docs/website-token-contract.md`](../docs/website-token-contract.md).
+
 ## Current state
 
 - `index.html` is the direct runnable entry point; source ownership is split across HTML, CSS, and three JavaScript files.

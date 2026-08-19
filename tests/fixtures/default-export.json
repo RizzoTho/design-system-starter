@@ -1,25 +1,454 @@
 {
+  "schemaVersion": 2,
+  "mode": "quick-start",
+  "generation": null,
   "context": {
     "background": "#F7F3EB",
     "text": "#25231F"
   },
-  "candidates": {
-    "brand": "#D8664A",
-    "neutral": "#3B7A78"
-  },
+  "targetProfileId": "aa-interface",
+  "advancedPairTarget": 4.5,
   "activeRole": "brand",
-  "target": 4.5,
-  "activeScale": {
-    "50": "#FBF5F4",
-    "100": "#F7EBE8",
-    "200": "#F1D6D0",
-    "300": "#EAB6A9",
-    "400": "#E28E78",
-    "500": "#D8664A",
-    "600": "#BB4325",
-    "700": "#95351D",
-    "800": "#6F2715",
-    "900": "#4D1B0F",
-    "950": "#33120A"
-  }
+  "roles": {
+    "brand": {
+      "enabled": true,
+      "seed": "#D8664A",
+      "locked": true
+    },
+    "neutral": {
+      "enabled": true,
+      "seed": "#6F736E",
+      "temperature": "balanced",
+      "locked": false
+    },
+    "secondary": {
+      "enabled": false,
+      "seed": null,
+      "strategy": "none",
+      "locked": false
+    },
+    "regular": {
+      "aliasOf": "neutral"
+    },
+    "success": {
+      "enabled": true,
+      "seed": "#5AA05D",
+      "locked": false
+    },
+    "warning": {
+      "enabled": true,
+      "seed": "#B8965D",
+      "locked": false
+    },
+    "danger": {
+      "enabled": true,
+      "seed": "#D7655B",
+      "locked": false
+    },
+    "information": {
+      "enabled": true,
+      "seed": "#5793C4",
+      "locked": false
+    }
+  },
+  "palettes": {
+    "brand": {
+      "50": "#FDEAE5",
+      "100": "#F7D3CA",
+      "200": "#ECBEB3",
+      "300": "#D8ADA2",
+      "400": "#D98C78",
+      "500": "#D8664A",
+      "600": "#B7523A",
+      "700": "#96412C",
+      "800": "#733222",
+      "900": "#51251A",
+      "950": "#321811"
+    },
+    "neutral": {
+      "50": "#EEEEEE",
+      "100": "#D5D7D5",
+      "200": "#BEC1BD",
+      "300": "#A7AAA6",
+      "400": "#8A8E89",
+      "500": "#6F736E",
+      "600": "#595C58",
+      "700": "#434643",
+      "800": "#2F312F",
+      "900": "#1C1D1C",
+      "950": "#0B0B0B"
+    },
+    "success": {
+      "50": "#E6F3E6",
+      "100": "#CCE4CC",
+      "200": "#AFD7AF",
+      "300": "#94C994",
+      "400": "#75B577",
+      "500": "#5AA05D",
+      "600": "#48864B",
+      "700": "#386C3A",
+      "800": "#2B532D",
+      "900": "#203B21",
+      "950": "#152415"
+    },
+    "warning": {
+      "50": "#F6EDDE",
+      "100": "#EEDDC1",
+      "200": "#E3CDA8",
+      "300": "#D7BD94",
+      "400": "#C8A977",
+      "500": "#B8965D",
+      "600": "#9D7E4B",
+      "700": "#82683C",
+      "800": "#675230",
+      "900": "#4C3E26",
+      "950": "#332A1C"
+    },
+    "danger": {
+      "50": "#FDE9E7",
+      "100": "#F7D2CD",
+      "200": "#ECBDB7",
+      "300": "#D5AEA9",
+      "400": "#D48D85",
+      "500": "#D7655B",
+      "600": "#BA4D45",
+      "700": "#983C36",
+      "800": "#752F29",
+      "900": "#53231F",
+      "950": "#331614"
+    },
+    "information": {
+      "50": "#E3F0FD",
+      "100": "#C6E0F7",
+      "200": "#ADCFEC",
+      "300": "#A2BCD3",
+      "400": "#78A8D1",
+      "500": "#5793C4",
+      "600": "#457AA6",
+      "700": "#366387",
+      "800": "#2A4C68",
+      "900": "#1F3649",
+      "950": "#14212D"
+    }
+  },
+  "assignments": {
+    "brand": {
+      "light": {
+        "roleId": "brand",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#F7D3CA"
+        },
+        "borderIcon": {
+          "step": 600,
+          "hex": "#B7523A",
+          "ratioOnSubtle": 3.5327557903339746,
+          "pass": true
+        },
+        "bold": {
+          "step": 600,
+          "hex": "#B7523A"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 4.904856380148174,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "brand",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#51251A"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#D8664A",
+          "ratioOnSubtle": 3.632737476840552,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#D98C78"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 7.169079379390856,
+          "pass": true
+        }
+      }
+    },
+    "neutral": {
+      "light": {
+        "roleId": "neutral",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#D5D7D5"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#6F736E",
+          "ratioOnSubtle": 3.333114093761101,
+          "pass": true
+        },
+        "bold": {
+          "step": 600,
+          "hex": "#595C58"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 6.781754139340479,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "neutral",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#1C1D1C"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#6F736E",
+          "ratioOnSubtle": 3.5054274694778735,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#8A8E89"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 5.674884652865809,
+          "pass": true
+        }
+      }
+    },
+    "success": {
+      "light": {
+        "roleId": "success",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#CCE4CC"
+        },
+        "borderIcon": {
+          "step": 600,
+          "hex": "#48864B",
+          "ratioOnSubtle": 3.2454918888930946,
+          "pass": true
+        },
+        "bold": {
+          "step": 700,
+          "hex": "#386C3A"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 6.2235626341783705,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "success",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#203B21"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#5AA05D",
+          "ratioOnSubtle": 3.874349564064893,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#75B577"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 7.762118553374577,
+          "pass": true
+        }
+      }
+    },
+    "warning": {
+      "light": {
+        "roleId": "warning",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#EEDDC1"
+        },
+        "borderIcon": {
+          "step": 700,
+          "hex": "#82683C",
+          "ratioOnSubtle": 3.9423964610509343,
+          "pass": true
+        },
+        "bold": {
+          "step": 700,
+          "hex": "#82683C"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 5.257176078114374,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "warning",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#4C3E26"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#B8965D",
+          "ratioOnSubtle": 3.7338978822194533,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#C8A977"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 8.450116500010909,
+          "pass": true
+        }
+      }
+    },
+    "danger": {
+      "light": {
+        "roleId": "danger",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#F7D2CD"
+        },
+        "borderIcon": {
+          "step": 600,
+          "hex": "#BA4D45",
+          "ratioOnSubtle": 3.554648751564034,
+          "pass": true
+        },
+        "bold": {
+          "step": 600,
+          "hex": "#BA4D45"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 4.958319699283952,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "danger",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#53231F"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#D7655B",
+          "ratioOnSubtle": 3.625281617976485,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#D48D85"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 7.146835138333414,
+          "pass": true
+        }
+      }
+    },
+    "information": {
+      "light": {
+        "roleId": "information",
+        "theme": "light",
+        "subtle": {
+          "step": 100,
+          "hex": "#C6E0F7"
+        },
+        "borderIcon": {
+          "step": 600,
+          "hex": "#457AA6",
+          "ratioOnSubtle": 3.35837140626121,
+          "pass": true
+        },
+        "bold": {
+          "step": 600,
+          "hex": "#457AA6"
+        },
+        "onBold": {
+          "hex": "#FFFFFF",
+          "ratio": 4.577666662482834,
+          "pass": true
+        }
+      },
+      "dark": {
+        "roleId": "information",
+        "theme": "dark",
+        "subtle": {
+          "step": 900,
+          "hex": "#1F3649"
+        },
+        "borderIcon": {
+          "step": 500,
+          "hex": "#5793C4",
+          "ratioOnSubtle": 3.7903236736191763,
+          "pass": true
+        },
+        "bold": {
+          "step": 400,
+          "hex": "#78A8D1"
+        },
+        "onBold": {
+          "hex": "#111111",
+          "ratio": 7.481609506352617,
+          "pass": true
+        }
+      }
+    },
+    "regular": {
+      "aliasOf": "neutral"
+    }
+  },
+  "website": null,
+  "validation": null,
+  "pairs": [
+    {
+      "slug": null,
+      "nameKey": null,
+      "foregroundRoleId": "brand",
+      "backgroundRoleId": "brand",
+      "foregroundStep": 50,
+      "backgroundStep": 600,
+      "foreground": "#FDEAE5",
+      "background": "#B7523A",
+      "usage": "static",
+      "ratio": 4.22,
+      "passesTarget": false,
+      "states": {
+        "default": {
+          "foreground": "#FDEAE5",
+          "background": "#B7523A",
+          "ratio": 4.22,
+          "passesTarget": false
+        }
+      },
+      "focusRing": null
+    }
+  ],
+  "diagnostics": []
 }

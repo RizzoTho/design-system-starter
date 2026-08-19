@@ -62,7 +62,7 @@ Brand may influence their visual character, not their meaning. Semantic palettes
 
 ## Color generation model
 
-Palette generation will move from HSL-based tonal alignment to OKLCH-based alignment.
+Palette generation uses OKLCH-based tonal alignment.
 
 Reasons:
 
@@ -72,6 +72,10 @@ Reasons:
 - gamut reduction can preserve hue while reducing chroma.
 
 Every independent palette keeps the existing `50` to `950` token scale. Token `500` must preserve the exact input seed HEX. The remaining steps are derived from OKLCH lightness and chroma curves, then converted to in-gamut sRGB values. Chroma is expressed relative to the maximum sRGB chroma available for each step's `L` and `H`, with a family-specific absolute cap, so semantic hues keep comparable vividness without borrowing another hue's absolute `C`.
+
+Quick start also enforces an emphasis hierarchy for generated, unlocked roles: Neutral stays near-achromatic, Brand carries the highest recurring relative chroma, and semantic families remain recognizable below that Brand budget. Explicit user-provided or locked seeds are preserved even when they do not follow this generated hierarchy.
+
+The light end of every non-Neutral family takes an absolute chroma floor at steps 50-200. Without it a tint resolves to a fraction of a fraction: at `L 0.90` the sRGB gamut offers a red only `0.056` of chroma, and `0.26 x 0.28` of that is `0.0036` — not a faint red, no red at all, which is how a Danger callout ends up as a red border around a grey box. The floor is absolute rather than a share of the maximum because the available chroma swings roughly fourfold across hues there; a share floor makes the green tint shout while the red tint whispers.
 
 Out-of-gamut colors must be handled observably. The generator should report when chroma was reduced; it must not silently replace a color with an unrelated fallback.
 
@@ -118,18 +122,20 @@ The system then suggests `Success`, `Warning`, `Danger`, and `Information`. Each
 
 The quick picker must show the consequence of a choice, not only the swatch. A suggestion is accepted together with its contrast result and representative component usage.
 
-Component Preview uses one full-width example canvas at a time. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. The WCAG target remains globally available in the bottom-right Steps window. Role checks stay in Step 02 Colors because they validate generated roles. Step 03 is a compact Pair editor rather than a second matrix selection surface.
+Website Preview uses one full-width example canvas at a time, and the canvas is styled by the exported token names so the page and the export cannot drift. A local Light / Dark switch changes the surface; the two themes are not displayed side by side. The WCAG target remains globally available in the bottom-right Steps window. Role checks stay in Step 02 Colors because they validate generated roles. Step 03 is a compact Pair editor rather than a second matrix selection surface.
 
-The preview is one coherent application workspace, not a gallery of disconnected swatches or cards. Light and Dark render the same markup with different assignments so a user can inspect each role in context:
+The preview is one landing page — navigation, hero, feature cards, one alternating band, an inverse call-to-action, a signup form, and a footer — not a gallery of disconnected swatches or cards. This is deliberate: a workspace shell is the one context where heavy color use looks normal, so it is the wrong place to judge a website palette. Light and Dark render the same markup with different values so a user can inspect each role in context:
 
-- Brand owns the selected navigation, visible focus, progress, and primary action.
-- Neutral and its Regular alias own the application shell, default task, borders, and secondary UI.
-- Success, Warning, Danger, and Information appear in task state, validation, health, and guidance patterns with text or icons alongside color.
-- Optional Secondary appears only as an additional product action when enabled.
-- A compact Theme palette panel shows the enabled roles through their active semantic assignments. It is part of the workspace and not a duplicate raw scale.
-- Structured release signals and an empty state extend the sample beyond isolated controls while keeping one coherent product context.
+- The page surface owns the largest area, and it is the Context `Background` itself — the one color the user fixes before anything else. Navigation, hero, features, signup, and footer sit directly on it; the raised surface is only for cards and the dialog, and the sunken surface only for the single alternating band and the spec zone.
+- Brand owns the primary action, links, visible focus, and the brand mark. Its emphasis is recurring but bounded — one filled control per action group. The second action is a text button: Neutral is never a button fill, and those buttons carry no border, because a grey box beside a colored one reads as a second competing control rather than a quieter one.
+- Neutral and its Regular alias form the near-achromatic page: surfaces, borders, secondary actions, metrics, and body hierarchy.
+- Success, Warning, Danger, and Information do not appear on the landing page at all. A website shows status when something has status; the page in a good state shows none. They live in the system-spec zone below the footer as compact notices — surface, border, icon, and text per role, plus the bold fill with its measured on-bold ink.
+- Optional Secondary appears only as a badge accent when enabled, using the accent surface, border, and text tokens.
+- A compact Theme palette panel in the spec zone shows the enabled roles through their active semantic assignments. It is evidence, not a duplicate raw scale.
 
-Text-input states use consistent ownership: Neutral draws the default boundary, Brand owns the focus ring, and Danger owns invalid borders and helper content. When an invalid field is focused, Danger remains on the inner border and Brand remains on the outer ring.
+The spec zone is visibly separated from the page above and owns every state the page itself does not need to show: action hover, pressed and focus, the three field states, the four feedback roles, the destructive action, and an overlay scrim with a raised dialog. The overlay carries no text of its own, so no ink token has to be invented for it.
+
+Text-input states use consistent ownership: Neutral draws the default boundary, Brand owns the focus ring, and Danger owns invalid borders and helper content. When an invalid field is focused, Danger remains on the inner border and the danger-context ring remains outside.
 
 ## Saved pair state families
 
@@ -159,7 +165,7 @@ The set is a projection of resolved assignments onto pair coordinates. Action ro
 
 Two selection modes carry different intent. Body text and neutral actions take the most readable token available. Links and status text take the least contrast that still passes, because a role whose meaning is carried by its hue should not collapse to near-black just to maximize a ratio. This keeps `Success` visibly green and `Danger` visibly red while still meeting the target.
 
-Only one control in a view carries a saturated fill. The primary action is filled; the second action stays neutral. `Secondary` never becomes a filled action row, because two saturated controls side by side compete for the same attention, and because this role model already states that `Secondary` must not replace neutral secondary UI by default. When `Secondary` is enabled it earns an accent pair instead — a badge or label treatment on the Neutral surface. A semantic control inside its own panel, such as a warning banner's action, may still be filled; it is that panel's single action, not a second competing one.
+Only one control in a view carries a saturated fill. The primary action is filled; the second action stays neutral. `Secondary` never becomes a filled action row, because two saturated controls side by side compete for the same attention, and because this role model already states that `Secondary` must not replace neutral secondary UI by default. When `Secondary` is enabled it earns an accent pair instead — a badge or label treatment on the Neutral surface. Semantic color remains local to state evidence; a semantic fill is reserved for a genuinely critical, isolated action and never appears on the landing page.
 
 Roles that are disabled are skipped, never fabricated. Generating appends and never overwrites, so a pair the user built or edited stays theirs; an existing coordinate is simply skipped. A changed target produces different coordinates, so regenerating after a target change can leave two rows sharing a name, with the older one visibly failing. That is accepted deliberately: showing both is safer than silently rewriting a reviewed pair.
 

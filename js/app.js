@@ -7,7 +7,6 @@
     rgbToHex,
     hexToOklch,
     mapOklchToSrgb,
-    shiftLightness,
     contrast,
     textColor,
     makePalette,
@@ -30,6 +29,15 @@
     defaultPairInitialized: false,
     nextPairKey: 1,
     language: 'en',
+    mode: 'quick-start',
+    generationIssue: null,
+    previousState: null,
+    generation: null,
+    websiteTokens: null,
+    targetProfileId: 'aa-interface',
+    validation: null,
+    generationCounter: 0,
+    userLocks: {},
   };
 
   const seedColor = $('#seedColor');
@@ -86,6 +94,27 @@
     state.savedPairs = state.savedPairs.filter(pair => roleIsEnabled(pair.backgroundRoleId)
       && (pair.foregroundStep === autoForeground || roleIsEnabled(pair.foregroundRoleId)));
     state.assignments = model.resolveAssignments(palettes, state.roles, state.target);
+    if (state.websiteTokens) {
+      state.websiteTokens = window.WebsiteTokenContract.resolveWebsiteTokens({
+        palettes,
+        roles: state.roles,
+        assignments: state.assignments,
+        targetProfileId: state.targetProfileId,
+        context: state.context,
+      });
+      state.validation = window.WebsiteTokenContract.summarize(state.websiteTokens);
+      if (state.generation) {
+        const nextStatus = state.validation.status === 'needs-attention'
+          ? 'needs-attention'
+          : state.generation.status === 'ready-with-warnings'
+            ? 'ready-with-warnings'
+            : state.validation.status;
+        state.generation = {
+          ...state.generation,
+          status: nextStatus,
+        };
+      }
+    }
     scale = paletteForRole(state.activeRole)?.scale || [];
   }
 
@@ -397,122 +426,178 @@
     $('#pairList').innerHTML = summary + results.map(result => result.html).join('');
   }
 
-  function previewMarkup(theme) {
-    const brand = state.assignments.brand[theme];
-    const neutral = state.assignments.neutral[theme];
-    const secondary = state.assignments.secondary?.[theme];
-    const success = state.assignments.success[theme];
-    const warning = state.assignments.warning[theme];
-    const danger = state.assignments.danger[theme];
-    const information = state.assignments.information[theme];
-    // Secondary is an accent, not a second filled action. It decorates a badge; it never
-    // fills a control that would compete with the primary action for attention.
-    const accent = secondary || brand;
-    const paletteRoles = model.paletteOwnerIds.filter(roleId => roleIsEnabled(roleId));
-    const variables = [
-      `--pv-brand:${brand.bold.hex}`,
-      `--pv-on-brand:${brand.onBold.hex}`,
-      `--pv-brand-soft:${brand.subtle.hex}`,
-      `--pv-brand-line:${brand.borderIcon.hex}`,
-      `--pv-neutral-soft:${neutral.subtle.hex}`,
-      `--pv-neutral-line:${neutral.borderIcon.hex}`,
-      `--pv-neutral-bold:${neutral.bold.hex}`,
-      `--pv-on-neutral:${neutral.onBold.hex}`,
-      `--pv-accent-soft:${accent.subtle.hex}`,
-      `--pv-accent-line:${accent.borderIcon.hex}`,
-      `--pv-success-soft:${success.subtle.hex}`,
-      `--pv-success-line:${success.borderIcon.hex}`,
-      `--pv-success:${success.bold.hex}`,
-      `--pv-on-success:${success.onBold.hex}`,
-      `--pv-warning-soft:${warning.subtle.hex}`,
-      `--pv-warning-line:${warning.borderIcon.hex}`,
-      `--pv-warning:${warning.bold.hex}`,
-      `--pv-on-warning:${warning.onBold.hex}`,
-      `--pv-danger-soft:${danger.subtle.hex}`,
-      `--pv-danger-line:${danger.borderIcon.hex}`,
-      `--pv-danger:${danger.bold.hex}`,
-      `--pv-on-danger:${danger.onBold.hex}`,
-      `--pv-info-soft:${information.subtle.hex}`,
-      `--pv-info-line:${information.borderIcon.hex}`,
-      `--pv-info:${information.bold.hex}`,
-      `--pv-on-info:${information.onBold.hex}`,
-    ].join(';');
+  // Preview is one landing page, not a component gallery. It is styled by the
+  // exported website token names, so what the page shows and what the export
+  // ships are the same values. surface.page owns the largest area: nav, hero,
+  // features and signup sit directly on it. surface.raised is only for cards
+  // and surface.sunken only for the single alternating band and the spec zone.
+  // Semantic color stays local to state evidence, so the page itself carries no
+  // status fills and the system-spec zone below the footer owns every state.
+  function previewTokenValues(theme) {
+    if (state.websiteTokens) return state.websiteTokens[theme].values;
+    // Before the first generation the same resolver that produces the export is
+    // run for display only. The result is never stored and never exported.
+    return window.WebsiteTokenContract.resolveWebsiteTokens({
+      palettes: state.palettes,
+      roles: state.roles,
+      assignments: state.assignments,
+      targetProfileId: state.targetProfileId,
+      context: state.context,
+    })[theme].values;
+  }
 
-    return `<div class="product-preview" style="${variables}">
-      <aside class="product-sidebar" aria-label="${t('aria.workspaceNavigation')}">
-        <div class="product-mark"><span>W</span><strong>${t('preview.mark')}</strong></div>
-        <nav class="product-nav">
-          <a class="active" href="#preview"><span aria-hidden="true">⌂</span>${t('preview.nav.overview')}</a>
-          <a href="#preview"><span aria-hidden="true">✓</span>${t('preview.nav.tasks')} <b>4</b></a>
-          <a href="#preview"><span aria-hidden="true">◫</span>${t('preview.nav.files')}</a>
-          <a href="#preview"><span aria-hidden="true">↗</span>${t('preview.nav.activity')}</a>
+  // Accent tokens resolve only when Secondary is enabled. An absent token is
+  // skipped rather than replaced by an invented fallback color.
+  function previewTokenVariables(values) {
+    return window.WebsiteTokenContract.allTokens()
+      .filter(token => values[token.id])
+      .map(token => `${token.css}:${values[token.id].hex}`)
+      .join(';');
+  }
+
+  function specNoticeMarkup(roleId) {
+    const glyphs = { success: '✓', warning: '!', danger: '×', information: 'i' };
+    const label = model.roles[roleId].label;
+    return `<div class="spec-notice ${roleId}">
+      <span class="spec-notice-icon" aria-hidden="true">${glyphs[roleId]}</span>
+      <span class="spec-notice-copy"><strong>${label}</strong><small>${t(`preview.spec.message.${roleId}`)}</small></span>
+      <b class="spec-chip">${t('preview.spec.chip')}</b>
+    </div>`;
+  }
+
+  function specPaletteMarkup(theme) {
+    const tokenIdForRole = (roleId) => {
+      if (roleId === 'brand') return 'action.primary.background';
+      if (roleId === 'neutral') return 'surface.page';
+      if (roleId === 'secondary') return 'accent.secondary.surface';
+      return `feedback.${roleId}.bold`;
+    };
+    return model.paletteOwnerIds.filter(roleId => roleIsEnabled(roleId)).map(roleId => {
+      const assignment = state.assignments[roleId][theme];
+      const onBoldPass = assignment.onBold.pass;
+      return `<button class="semantic-card" type="button" data-select-role="${roleId}" aria-label="${t('preview.openRole', { role: model.roles[roleId].label })}" title="${t('preview.openRole', { role: model.roles[roleId].label })}"><span class="semantic-card-swatch" style="--semantic-subtle:${assignment.subtle.hex};--semantic-border:${assignment.borderIcon.hex};--semantic-bold:${assignment.bold.hex};--semantic-on:${assignment.onBold.hex}"><i></i><b>Aa</b></span><span><strong>${model.roles[roleId].label}</strong><small>${assignment.bold.hex} · ${tokenIdForRole(roleId)}</small><em class="${onBoldPass ? 'pass' : 'fail'}">Aa ${assignment.onBold.ratio.toFixed(1)}:1 · ${onBoldPass ? 'PASS' : 'FAIL'}</em></span></button>`;
+    }).join('');
+  }
+
+  function sitePreviewMarkup(theme, values) {
+    const themeLabel = t(theme === 'light' ? 'tokens.light' : 'tokens.dark');
+    // Secondary is an accent. When it is enabled it decorates one badge; it
+    // never becomes a second filled action next to the primary one.
+    const accentBadge = values['accent.secondary.surface']
+      ? `<span class="site-accent-badge">${t('preview.site.featureBadge')}</span>`
+      : '';
+    const features = ['one', 'two', 'three'].map((key, index) => `<article class="site-card">
+        ${index === 0 ? accentBadge : ''}
+        <h5>${t(`preview.site.feature.${key}.title`)}</h5>
+        <p>${t(`preview.site.feature.${key}.desc`)}</p>
+        <a class="site-link" href="#preview">${t('preview.site.featureLink')}</a>
+      </article>`).join('');
+    const metrics = ['one', 'two', 'three'].map(key => `<div><dt>${t(`preview.site.metric.${key}.label`)}</dt><dd>${t(`preview.site.metric.${key}.value`)}</dd></div>`).join('');
+    const footerLinks = ['privacy', 'terms', 'status'].map(key => `<a class="site-link" href="#preview">${t(`preview.site.footer.${key}`)}</a>`).join('');
+    const notices = ['success', 'warning', 'danger', 'information'].map(specNoticeMarkup).join('');
+
+    return `<div class="site-preview" style="${previewTokenVariables(values)}">
+      <header class="site-nav">
+        <span class="site-brand"><i aria-hidden="true"></i>${t('preview.site.brand')}</span>
+        <nav class="site-nav-links" aria-label="${t('aria.siteNavigation')}">
+          <a class="active" href="#preview">${t('preview.site.nav.product')}</a>
+          <a href="#preview">${t('preview.site.nav.pricing')}</a>
+          <a href="#preview">${t('preview.site.nav.docs')}</a>
+          <a href="#preview">${t('preview.site.nav.blog')}</a>
         </nav>
-        <div class="product-team"><span class="product-avatar">RM</span><span><strong>${t('preview.team')}</strong><small>${t('preview.collaboratorsCount')}</small></span></div>
-      </aside>
-      <div class="product-main">
-        <header class="product-toolbar"><span>${t('preview.projects')} <b>/ ${t('preview.projectName')}</b></span><div><button class="product-icon-button" aria-label="${t('aria.notifications')}">●</button><span class="product-avatar">JA</span></div></header>
-        <main class="product-body">
-          <section class="product-heading"><div><span class="product-kicker">${t('preview.kicker')}</span><h3>${t('preview.projectName')}</h3><p>${t('preview.projectDesc')}</p></div><div class="product-actions"><button class="product-secondary-button">${t('preview.invite')}</button><button class="product-primary-button">${t('preview.publish')}</button></div></section>
-          <div class="product-grid">
-            <section class="product-panel task-panel">
-              <div class="product-panel-head"><div><h4>${t('preview.checklist')}</h4><p>${t('preview.progress')}</p></div><span class="progress-badge">57%</span></div>
-              <div class="product-progress"><i></i></div>
-              <ul class="task-list">
-                <li class="done"><span class="task-state">✓</span><span><strong>${t('preview.task.hierarchy')}</strong><small>${t('preview.task.completedBy')}</small></span><em>${t('preview.task.done')}</em></li>
-                <li><span class="task-state regular">○</span><span><strong>${t('preview.task.focus')}</strong><small>${t('preview.task.assigned')}</small></span><em>${t('preview.task.regular')}</em></li>
-                <li class="warning"><span class="task-state">!</span><span><strong>${t('preview.task.empty')}</strong><small>${t('preview.task.review')}</small></span><em>${t('preview.task.warning')}</em></li>
-              </ul>
-              <div class="product-field focused"><label for="previewReleaseNote-${theme}">${t('preview.releaseNote')}</label><input id="previewReleaseNote-${theme}" value="${t('preview.releaseNoteValue')}" readonly /><small><span aria-hidden="true">i</span>${t('preview.focusHelp')}</small></div>
-              <div class="product-field invalid"><label for="previewOwner-${theme}">${t('preview.ownerEmail')}</label><input id="previewOwner-${theme}" value="jane@" aria-invalid="true" readonly /><small><span aria-hidden="true">!</span>${t('preview.invalidEmail')}</small></div>
-            </section>
-            <aside class="product-aside">
-              <section class="info-callout"><span aria-hidden="true">i</span><div><strong>${t('preview.a11yReview')}</strong><p>${t('preview.contrastUpdate')}</p></div></section>
-              <section class="product-panel compact-panel"><div class="product-panel-head"><div><h4>${t('preview.health')}</h4><p>${t('preview.latestChecks')}</p></div><span class="success-dot">✓</span></div><dl class="health-list"><div><dt>${t('preview.componentsReady')}</dt><dd>18 / 20</dd></div><div><dt>${t('preview.contrastChecks')}</dt><dd class="success-text">${t('preview.passed')}</dd></div><div><dt>${t('preview.blockingIssues')}</dt><dd class="danger-text">${t('preview.open')}</dd></div></dl><button class="warning-button">${t('preview.reviewWarning')}</button></section>
-              <section class="product-panel people-panel"><div><h4>${t('preview.collaborators')}</h4><p>${t('preview.collaboratorsDesc')}</p></div><div class="avatar-stack"><span>JA</span><span>MK</span><span>RL</span><b>+3</b></div></section>
-            </aside>
+        <div class="site-nav-actions"><a class="site-link" href="#preview">${t('preview.site.nav.signIn')}</a><button class="site-button primary compact" type="button">${t('preview.site.nav.cta')}</button></div>
+      </header>
+      <section class="site-hero">
+        <p class="site-eyebrow">${t('preview.site.eyebrow')}</p>
+        <h3>${t('preview.site.title')}</h3>
+        <p class="site-lede">${t('preview.site.lede')}</p>
+        <div class="site-actions"><button class="site-button primary" type="button">${t('preview.site.primaryAction')}</button><button class="site-button secondary" type="button">${t('preview.site.secondaryAction')}</button></div>
+        <p class="site-trust">${t('preview.site.trust')}</p>
+      </section>
+      <section class="site-features">${features}</section>
+      <section class="site-band">
+        <blockquote>${t('preview.site.quote')}<cite>${t('preview.site.quoteAuthor')}</cite></blockquote>
+        <dl class="site-metrics">${metrics}</dl>
+      </section>
+      <section class="site-cta">
+        <div><strong>${t('preview.site.cta.title')}</strong><p>${t('preview.site.cta.body')}</p></div>
+        <button class="site-button inverse" type="button">${t('preview.site.cta.action')}</button>
+      </section>
+      <section class="site-signup">
+        <div class="site-signup-copy"><h5>${t('preview.site.signup.title')}</h5><p>${t('preview.site.signup.body')}</p></div>
+        <div class="site-form">
+          <label for="siteEmail-${theme}">${t('preview.site.signup.label')}</label>
+          <div class="site-form-row">
+            <input id="siteEmail-${theme}" placeholder="${t('preview.site.signup.placeholder')}" readonly />
+            <button class="site-button primary" type="button">${t('preview.site.signup.action')}</button>
           </div>
-          <div class="product-insights">
-            <section class="product-panel palette-panel">
-              <div class="product-panel-head"><div><h4>${t('preview.paletteTitle')}</h4><p>${t('preview.paletteDesc')}</p></div><span class="palette-count">${paletteRoles.length}</span></div>
-              <div class="semantic-card-grid">${paletteRoles.map(roleId => {
-                const assignment = state.assignments[roleId][theme];
-                return `<div class="semantic-card"><span class="semantic-card-swatch" style="--semantic-subtle:${assignment.subtle.hex};--semantic-border:${assignment.borderIcon.hex};--semantic-bold:${assignment.bold.hex};--semantic-on:${assignment.onBold.hex}"><i></i><b>Aa</b></span><span><strong>${model.roles[roleId].label}</strong><small>${assignment.bold.hex}</small></span></div>`;
-              }).join('')}</div>
-            </section>
-            <section class="product-panel signals-panel">
-              <div class="product-panel-head"><div><h4>${t('preview.signalsTitle')}</h4><p>${t('preview.signalsDesc')}</p></div><span class="information-dot">i</span></div>
-              <div class="signal-bars" aria-label="${t('preview.signalsTitle')}"><span><i style="--signal-width:78%;--signal-color:var(--pv-success)"></i><b>78%</b><small>${t('preview.signal.completed')}</small></span><span><i style="--signal-width:42%;--signal-color:var(--pv-warning)"></i><b>42%</b><small>${t('preview.signal.risk')}</small></span><span><i style="--signal-width:14%;--signal-color:var(--pv-danger)"></i><b>14%</b><small>${t('preview.signal.blocked')}</small></span></div>
-              <div class="product-empty"><span aria-hidden="true">□</span><div><strong>${t('preview.emptyTitle')}</strong><small>${t('preview.emptyDesc')}</small></div></div>
-            </section>
-          </div>
-        </main>
-      </div>
+          <p class="site-form-note">${t('preview.site.signup.note')}</p>
+        </div>
+      </section>
+      <footer class="site-footer">
+        <span>${t('preview.site.footer.copyright')}</span>
+        <nav class="site-footer-links" aria-label="${t('aria.siteFooter')}">${footerLinks}</nav>
+      </footer>
+      <section class="spec-zone">
+        <header class="spec-head"><div><strong>${t('preview.spec.title')}</strong><p>${t('preview.spec.desc')}</p></div><code>${themeLabel}</code></header>
+        <div class="spec-grid">
+          <article class="spec-block">
+            <h5>${t('preview.spec.actions')}</h5>
+            <div class="spec-row">
+              <span class="spec-item"><button class="site-button primary" type="button">${t('preview.site.primaryAction')}</button><small>${t('preview.spec.state.default')}</small></span>
+              <span class="spec-item"><button class="site-button primary is-hover" type="button">${t('preview.site.primaryAction')}</button><small>${t('preview.spec.state.hover')}</small></span>
+              <span class="spec-item"><button class="site-button primary is-pressed" type="button">${t('preview.site.primaryAction')}</button><small>${t('preview.spec.state.pressed')}</small></span>
+              <span class="spec-item"><button class="site-button primary is-focused" type="button">${t('preview.site.primaryAction')}</button><small>${t('preview.spec.state.focus')}</small></span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-item"><button class="site-button secondary" type="button">${t('preview.site.secondaryAction')}</button><small>${t('preview.spec.state.default')}</small></span>
+              <span class="spec-item"><button class="site-button secondary is-hover" type="button">${t('preview.site.secondaryAction')}</button><small>${t('preview.spec.state.hover')}</small></span>
+              <span class="spec-item"><button class="site-button destructive" type="button">${t('preview.spec.destructive')}</button><small>${t('preview.spec.destructiveNote')}</small></span>
+            </div>
+          </article>
+          <article class="spec-block">
+            <h5>${t('preview.spec.fields')}</h5>
+            <div class="spec-field"><label for="specDefault-${theme}">${t('preview.spec.state.default')}</label><input id="specDefault-${theme}" value="${t('preview.spec.fieldValue')}" readonly /></div>
+            <div class="spec-field is-focused"><label for="specFocus-${theme}">${t('preview.spec.state.focus')}</label><input id="specFocus-${theme}" value="${t('preview.spec.fieldValue')}" readonly /></div>
+            <div class="spec-field is-invalid"><label for="specInvalid-${theme}">${t('preview.spec.state.invalid')}</label><input id="specInvalid-${theme}" value="jane@" aria-invalid="true" readonly /><small>${t('preview.spec.fieldHelper')}</small></div>
+          </article>
+          <article class="spec-block spec-feedback">
+            <h5>${t('preview.spec.feedback')}</h5>
+            <p class="spec-note">${t('preview.spec.feedbackDesc')}</p>
+            ${notices}
+          </article>
+          <article class="spec-block">
+            <h5>${t('preview.spec.overlay')}</h5>
+            <p class="spec-note">${t('preview.spec.overlayDesc')}</p>
+            <div class="spec-overlay">
+              <div class="spec-dialog">
+                <strong>${t('preview.spec.overlayTitle')}</strong>
+                <p>${t('preview.spec.overlayBody')}</p>
+                <div class="spec-dialog-actions"><button class="site-button secondary compact" type="button">${t('preview.spec.overlayCancel')}</button><button class="site-button destructive compact" type="button">${t('preview.spec.overlayConfirm')}</button></div>
+              </div>
+            </div>
+          </article>
+          <article class="spec-block spec-palette">
+            <h5>${t('preview.paletteTitle')}</h5>
+            <p class="spec-note">${t('preview.paletteDesc')}</p>
+            <div class="semantic-card-grid">${specPaletteMarkup(theme)}</div>
+          </article>
+        </div>
+      </section>
     </div>`;
   }
 
   function renderPreviews() {
-    const lightCanvas = state.context.background;
-    const lightText = state.context.text;
-    const lightCard = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? 2 : 6);
-    const lightMuted = shiftLightness(lightCanvas, hexToOklch(lightCanvas).L > 0.5 ? -3 : 6);
-    const darkCanvas = shiftLightness(lightCanvas, -70);
-    const darkText = textColor(darkCanvas);
-    const darkCard = shiftLightness(darkCanvas, 5);
-    const darkMuted = shiftLightness(darkCanvas, 9);
-    const neutralScale = paletteForRole('neutral').scale;
-    const findMutedText = (background, theme) => {
-      const candidateSteps = theme === 'light' ? [600, 700, 800, 900, 950] : [400, 300, 200, 100, 50];
-      const required = Math.max(4.5, state.target);
-      return candidateSteps
-        .map(step => neutralScale.find(token => token.step === step))
-        .find(token => contrast(token.hex, background) >= required)?.hex
-        || textColor(background);
-    };
-    const setVariables = (element, values) => Object.entries(values).forEach(([key, value]) => element.style.setProperty(key, value));
-    setVariables($('#lightPreview'), { '--light-canvas': lightCanvas, '--light-text': lightText, '--pv-canvas': lightCanvas, '--pv-panel': lightCard, '--pv-muted-surface': lightMuted, '--pv-text': lightText, '--pv-muted-text': findMutedText(lightCard, 'light'), '--pv-line': shiftLightness(lightText, 62) });
-    setVariables($('#darkPreview'), { '--dark-canvas': darkCanvas, '--dark-text': darkText, '--pv-canvas': darkCanvas, '--pv-panel': darkCard, '--pv-muted-surface': darkMuted, '--pv-text': darkText, '--pv-muted-text': findMutedText(darkCard, 'dark'), '--pv-line': shiftLightness(darkText, -56) });
-    $('#lightPreviewContent').innerHTML = previewMarkup('light');
-    $('#darkPreviewContent').innerHTML = previewMarkup('dark');
+    // Both themes render identical markup; only the token values differ.
+    for (const [theme, container] of [['light', '#lightPreview'], ['dark', '#darkPreview']]) {
+      const values = previewTokenValues(theme);
+      const element = $(container);
+      for (const token of window.WebsiteTokenContract.allTokens()) {
+        if (values[token.id]) element.style.setProperty(token.css, values[token.id].hex);
+        else element.style.removeProperty(token.css);
+      }
+      $(`${container}Content`).innerHTML = sitePreviewMarkup(theme, values);
+    }
   }
 
   function renderAll() {
@@ -531,6 +616,9 @@
     renderPairings();
     renderSavedPairs();
     renderPreviews();
+    renderGenerationResult();
+    renderContextSourceNote();
+    renderWebsiteTokens();
   }
 
   function setRoleSeed(value) {
@@ -568,6 +656,7 @@
     }
     input.removeAttribute('aria-invalid');
     state.context[kind] = rgbToHex(rgb);
+    state.context.source = state.context.locked ? 'locked' : 'provided';
     renderAll();
   }
 
@@ -679,7 +768,12 @@
   }
 
   function generateStarterSet() {
-    const specs = model.starterPairSpecs(state.palettes, state.roles, state.assignments, state.target);
+    // The generated website system is the starter-result owner. Once applied,
+    // the compatibility action projects website tokens onto pair coordinates;
+    // before any generation it falls back to the legacy role-model projection.
+    const specs = state.websiteTokens
+      ? window.WebsiteTokenContract.compatibilityPairSpecs(state.websiteTokens, state.roles)
+      : model.starterPairSpecs(state.palettes, state.roles, state.assignments, state.target);
     let added = 0;
     let skipped = 0;
     for (const spec of specs) {
@@ -732,7 +826,7 @@
     }
   }
 
-  function cssOutput() {
+  function legacyCssSection() {
     const lines = [
       ':root {',
       `  --color-background: ${state.context.background};`,
@@ -781,14 +875,39 @@
     return lines.join('\n');
   }
 
-  function jsonOutput() {
-    const reference = Object.fromEntries(Object.entries(state.palettes).map(([roleId, palette]) => [roleId, Object.fromEntries(palette.scale.map(token => [token.step, token.hex]))]));
-    return JSON.stringify({
+  function cssOutput() {
+    if (!state.websiteTokens) return legacyCssSection();
+    const layered = window.WebsiteTokenContract.serializeCss({
+      palettes: state.palettes,
+      assignments: state.assignments,
+      websiteTokens: state.websiteTokens,
       context: state.context,
-      target: state.target,
+    });
+    const deprecation = state.savedPairs.length
+      ? '/* Deprecated: --pair-* names are kept for the compatibility window; use the website tokens above instead. */'
+      : '';
+    const legacy = legacyCssSection().replace(':root {', ':root {\n  /* Deprecated: --color-* names are kept for the compatibility window; use the layered tokens above instead. */');
+    return `${layered}\n\n${deprecation ? `${deprecation}\n` : ''}${legacy}`;
+  }
+
+  function currentProject() {
+    return {
+      schemaVersion: window.ProjectState.SCHEMA_VERSION,
+      mode: state.mode,
+      generation: state.generation,
+      context: state.context,
+      targetProfileId: state.targetProfileId,
+      advancedPairTarget: state.target,
+      activeRole: state.activeRole,
       roles: Object.fromEntries(model.roleOrder.map(roleId => [roleId, model.roles[roleId].aliasOf ? { aliasOf: model.roles[roleId].aliasOf } : { ...state.roles[roleId] }])),
-      reference,
-      semantic: state.assignments,
+      palettes: Object.fromEntries(Object.entries(state.palettes).map(([roleId, palette]) => [roleId, Object.fromEntries(palette.scale.map(token => [token.step, token.hex]))])),
+      assignments: state.assignments,
+      website: state.websiteTokens ? {
+        targetProfileId: state.websiteTokens.targetProfileId,
+        light: { values: state.websiteTokens.light.values },
+        dark: { values: state.websiteTokens.dark.values },
+      } : null,
+      validation: state.validation,
       pairs: state.savedPairs.map(pair => {
         const family = derivePairStateFamily(pair);
         const { key, foregroundSnapshot, backgroundSnapshot, brandPaletteSnapshot, ...publicPair } = pair;
@@ -806,7 +925,365 @@
         };
       }),
       diagnostics: state.diagnostics,
-    }, null, 2);
+    };
+  }
+
+  function jsonOutput() {
+    return JSON.stringify(currentProject(), null, 2);
+  }
+
+  // --- Persistence and import ---------------------------------------------------
+
+  const STORAGE_KEY = 'design-system-starter.project.v2';
+  const storage = (typeof window.localStorage !== 'undefined') ? window.localStorage : null;
+
+  function applyImportedProject(project) {
+    // Product coverage profiles were removed with the landing-page Preview.
+    // A project that still carries one fails visibly instead of losing tokens
+    // to a silent drop.
+    const retiredProfileId = project.profileId ?? project.website?.profileId ?? null;
+    if (retiredProfileId) {
+      throw new Error(`Website coverage profiles were removed; this project still requests "${retiredProfileId}"`);
+    }
+    state.context = { ...project.context };
+    state.roles = project.roles;
+    state.target = Number(project.advancedPairTarget ?? project.target ?? 4.5);
+    state.targetProfileId = project.targetProfileId || 'aa-interface';
+    state.websiteTokens = project.website || null;
+    state.validation = project.validation || null;
+    state.generation = project.generation || null;
+    state.savedPairs = (project.pairs || []).map((pair, index) => ({
+      ...pair,
+      key: `pair-import-${index + 1}`,
+      foregroundSnapshot: null,
+      backgroundSnapshot: null,
+      brandPaletteSnapshot: null,
+    }));
+    state.nextPairKey = state.savedPairs.length + 100;
+    state.defaultPairInitialized = true;
+    state.activeRole = project.activeRole || 'brand';
+    state.generationIssue = null;
+    state.previousState = null;
+    state.userLocks = {};
+    targetSelect.value = String(state.target);
+    renderAll();
+  }
+
+  function saveProject() {
+    if (!storage) {
+      reportError(t('toast.saveFailed'), new Error('localStorage is unavailable'));
+      return;
+    }
+    try {
+      const payload = window.ProjectState.prepareForStorage(currentProject());
+      storage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      showToast(t('toast.projectSaved'));
+    } catch (error) {
+      reportError(t('toast.saveFailed'), error);
+    }
+  }
+
+  function loadStoredProject() {
+    if (!storage) return;
+    let raw = null;
+    try {
+      raw = storage.getItem(STORAGE_KEY);
+    } catch (error) {
+      reportError(t('toast.loadFailed'), error);
+      return;
+    }
+    if (!raw) return;
+    try {
+      const project = window.ProjectState.decode(raw);
+      applyImportedProject(project);
+      showToast(t('toast.projectLoaded'));
+    } catch (error) {
+      // A bad stored project is never silently discarded: it stays observable
+      // and the active project is left untouched.
+      reportError(t('toast.importFailed'), error);
+    }
+  }
+
+  function newProject() {
+    if (storage) {
+      try {
+        storage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        reportError(t('toast.clearFailed'), error);
+      }
+    }
+    state.context = { ...model.defaults.context };
+    state.target = model.defaults.target;
+    state.activeRole = model.defaults.activeRole;
+    state.roles = model.createInitialRoles();
+    state.savedPairs = [];
+    state.defaultPairInitialized = false;
+    state.nextPairKey = 1;
+    state.websiteTokens = null;
+    state.targetProfileId = 'aa-interface';
+    state.validation = null;
+    state.generation = null;
+    state.generationIssue = null;
+    state.previousState = null;
+    state.userLocks = {};
+    targetSelect.value = String(state.target);
+    renderAll();
+    showToast(t('toast.projectNew'));
+  }
+
+  function downloadJson() {
+    try {
+      const blob = new Blob([jsonOutput()], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'color-design-system-project.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      showToast(t('toast.downloaded'));
+    } catch (error) {
+      reportError(t('toast.downloadFailed'), error);
+    }
+  }
+
+  function importProjectText(json) {
+    try {
+      const project = window.ProjectState.decode(json);
+      applyImportedProject(project);
+    } catch (error) {
+      reportError(t('toast.importFailed'), error);
+      return;
+    }
+    showToast(t('toast.projectImported'));
+  }
+
+  function handleImportFile(file) {
+    if (typeof file.text === 'function') {
+      file.text().then(importProjectText).catch(error => reportError(t('toast.importFailed'), error));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => importProjectText(String(reader.result));
+    reader.onerror = error => reportError(t('toast.importFailed'), error);
+    reader.readAsText(file);
+  }
+
+  // --- Quick start: one-click website system ----------------------------------
+
+  function quickOptions() {
+    const characterId = $('#characterSelect').value;
+    const brandSource = $('#brandSourceSelect').value;
+    const brandHex = brandSource === 'hex' ? $('#quickBrandHex').value.trim() : null;
+    const secondaryStrategy = $('#quickSecondaryStrategy').value;
+    return { characterId, brandSource, brandHex, secondaryStrategy };
+  }
+
+  function currentStateForGeneration() {
+    const roles = { ...state.roles };
+    const source = quickOptions().brandSource;
+    // The starter default lock on Brand is a convenience, not a commitment:
+    // explicit Quick start sources (Generate / HEX) produce a fresh brand unless
+    // the user deliberately locked Brand in Advanced editing. "Keep current"
+    // never unlocks anything.
+    const brandLockedByUser = state.userLocks.brand === true;
+    if (source !== 'keep' && !brandLockedByUser) {
+      roles.brand = { ...roles.brand, locked: false };
+    }
+    return { context: state.context, roles, target: state.target };
+  }
+
+  function nextGenerationSeed() {
+    state.generationCounter += 1;
+    return (state.generationCounter * 7919) % 2147483647;
+  }
+
+  function buildGenerationResult(options) {
+    return window.SystemGenerator.generateSystem({
+      currentState: currentStateForGeneration(),
+      options: {
+        ...options,
+        randomSeed: nextGenerationSeed(),
+        revision: state.generationCounter,
+        targetProfileId: state.targetProfileId,
+      },
+    });
+  }
+
+  function generateWebsiteSystem() {
+    const options = quickOptions();
+    if (options.brandSource === 'hex') {
+      if (!/^#[0-9a-f]{6}$/i.test(options.brandHex)) {
+        $('#quickBrandHex').setAttribute('aria-invalid', 'true');
+        showToast(t('toast.invalidHex'));
+        return;
+      }
+      $('#quickBrandHex').removeAttribute('aria-invalid');
+    }
+    const result = buildGenerationResult(options);
+    if (result.error) {
+      showToast(result.error.message);
+      return;
+    }
+    if (result.validation.status === 'needs-attention') {
+      state.generationIssue = result;
+      renderGenerationResult();
+      showToast(t('toast.generationNeedsAttention'));
+      return;
+    }
+    applyGeneration(result);
+  }
+
+  function dismissGenerationIssue() {
+    state.generationIssue = null;
+    renderGenerationResult();
+    showToast(t('toast.generationIssueDismissed'));
+  }
+
+  function applyGeneration(result) {
+    const proposal = result.proposal;
+    state.previousState = JSON.stringify({
+      context: state.context,
+      target: state.target,
+      roles: state.roles,
+      savedPairs: state.savedPairs,
+      defaultPairInitialized: state.defaultPairInitialized,
+      nextPairKey: state.nextPairKey,
+      websiteTokens: state.websiteTokens,
+      targetProfileId: state.targetProfileId,
+      validation: state.validation,
+      generation: state.generation,
+      userLocks: state.userLocks,
+    });
+    state.context = { ...proposal.context };
+    state.roles = proposal.roles;
+    state.targetProfileId = proposal.targetProfileId;
+    state.target = proposal.advancedPairTarget;
+    state.websiteTokens = proposal.websiteTokens;
+    state.validation = proposal.validation;
+    state.generation = proposal.generation;
+    state.generationIssue = null;
+    targetSelect.value = String(proposal.advancedPairTarget);
+    renderAll();
+    showToast(t('toast.systemGenerated'));
+  }
+
+  function undoApply() {
+    if (!state.previousState) return;
+    const previous = JSON.parse(state.previousState);
+    state.context = previous.context;
+    state.target = previous.target;
+    state.roles = previous.roles;
+    state.savedPairs = previous.savedPairs;
+    state.defaultPairInitialized = previous.defaultPairInitialized;
+    state.nextPairKey = previous.nextPairKey;
+    state.websiteTokens = previous.websiteTokens;
+    state.targetProfileId = previous.targetProfileId;
+    state.validation = previous.validation;
+    state.generation = previous.generation;
+    state.userLocks = previous.userLocks || {};
+    state.previousState = null;
+    targetSelect.value = String(state.target);
+    renderAll();
+    showToast(t('toast.systemUndone'));
+  }
+
+  function generationStatusCopy(status) {
+    if (status === 'ready') return { key: 'gen.ready', descKey: 'gen.ready.desc', icon: '✓', className: 'ready' };
+    if (status === 'ready-with-warnings') return { key: 'gen.readyWarnings', descKey: 'gen.readyWarnings.desc', icon: '✓', className: 'ready-with-warnings' };
+    return { key: 'gen.needsAttention', descKey: 'gen.needsAttention.desc', icon: '!', className: 'needs-attention' };
+  }
+
+  function renderGenerationResult() {
+    const container = $('#generationResult');
+    if (!container) return;
+    if (!state.generationIssue) {
+      if (state.generation) {
+        const copy = generationStatusCopy(state.validation?.status || state.generation.status);
+        const undo = state.previousState ? `<button id="undoApply" class="button" type="button">${t('gen.undo')}</button>` : '';
+        container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.appliedNote')}</small></div><div class="generation-status-actions"><a class="button" href="#preview">${t('gen.preview')}</a>${undo}</div></div>`;
+      } else {
+        container.innerHTML = `<p class="generation-empty">${t('tokens.empty')}</p>`;
+      }
+      return;
+    }
+    const proposal = state.generationIssue.proposal;
+    const copy = generationStatusCopy(proposal.validation.status);
+    const failures = proposal.validation.requiredFailures || [];
+    const taskRows = failures.length ? `<ul class="generation-tasks">${failures.map(failure => `<li><strong>${failure.theme} · ${failure.tokenId}</strong><span>${t('gen.failureDetail', { token: failure.relationshipId, actual: Number(failure.actual).toFixed(2), required: Number(failure.required).toFixed(1) })}</span>${failure.recovery ? `<em>${t('gen.recovery', { recovery: failure.recovery })}</em>` : ''}</li>`).join('')}</ul>` : '';
+    const summary = failures.length ? `<p class="generation-summary">${t('gen.taskSummary', { count: failures.length })}</p>` : '';
+    container.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t('gen.failureStatusDesc')}</small></div></div>
+      ${summary}
+      ${taskRows}
+      <p class="generation-note">${t('gen.failureNote')}</p>
+      <div class="generation-actions">
+        <button id="dismissGenerationIssue" class="button" type="button">${t('gen.dismiss')}</button>
+      </div>`;
+  }
+
+  function renderContextSourceNote() {
+    const note = $('#contextSourceNote');
+    if (!note) return;
+    const source = state.context.source;
+    note.textContent = source === 'generated' ? t('context.source.generated')
+      : source === 'provided' ? t('context.source.provided')
+      : source === 'locked' ? t('context.source.locked')
+      : '';
+  }
+
+  function renderWebsiteTokenStatus() {
+    const element = $('#websiteTokenStatus');
+    if (!element) return;
+    if (!state.validation) {
+      element.innerHTML = '';
+      return;
+    }
+    const copy = generationStatusCopy(state.validation.status);
+    const failures = state.validation.requiredFailures || [];
+    element.innerHTML = `<div class="generation-status ${copy.className}"><span class="status-icon" aria-hidden="true">${copy.icon}</span><div><strong>${t(copy.key)}</strong><small>${t(copy.descKey)}</small></div></div>${failures.length ? `<p class="generation-summary">${t('gen.taskSummary', { count: failures.length })}</p>` : ''}`;
+  }
+
+  function tokenSourceLabel(value) {
+    if (value.sourceKind === 'measured-ink') return t('tokens.measured');
+    if (value.sourceKind === 'context-color') return t('tokens.contextBackground');
+    const definition = model.roles[value.sourceRole];
+    return definition ? `${definition.label} ${value.sourceStep}` : value.sourceRole;
+  }
+
+  function renderWebsiteTokens() {
+    const container = $('#websiteTokens');
+    if (!container) return;
+    renderWebsiteTokenStatus();
+    if (!state.websiteTokens) {
+      container.innerHTML = `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
+      return;
+    }
+    const contract = window.WebsiteTokenContract;
+    const light = state.websiteTokens.light.values;
+    const dark = state.websiteTokens.dark.values;
+    const order = [
+      ['surfaces', 'tokens.group.surfaces'],
+      ['content', 'tokens.group.content'],
+      ['borders-and-focus', 'tokens.group.bordersAndFocus'],
+      ['action-primary', 'tokens.group.actions'],
+      ['action-secondary', 'tokens.group.actions'],
+      ['action-destructive', 'tokens.group.actions'],
+      ['fields', 'tokens.group.fields'],
+      ['feedback', 'tokens.group.feedback'],
+      ['accent', 'tokens.group.accent'],
+    ];
+    const html = order.map(([group, labelKey]) => {
+      const tokens = (contract.tokenGroups[group] || []).filter(token => light[token.id] || dark[token.id]);
+      if (!tokens.length) return '';
+      const rows = tokens.map(token => {
+        const lightValue = light[token.id];
+        const darkValue = dark[token.id];
+        return `<tr><td class="token-name"><code>${token.css}</code></td><td><span class="token-swatch" style="background:${lightValue.hex}"></span><code>${lightValue.hex}</code><small>${tokenSourceLabel(lightValue)}</small></td><td><span class="token-swatch" style="background:${darkValue.hex}"></span><code>${darkValue.hex}</code><small>${tokenSourceLabel(darkValue)}</small></td></tr>`;
+      }).join('');
+      return `<div class="token-group"><h3>${t(labelKey)}</h3><div class="token-table-scroll"><table class="token-table"><thead><tr><th></th><th>${t('tokens.light')}</th><th>${t('tokens.dark')}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    }).join('');
+    container.innerHTML = html || `<p class="website-tokens-empty">${t('tokens.empty')}</p>`;
   }
 
   let toastTimer;
@@ -829,6 +1306,10 @@
     state.target = Number(targetSelect.value);
     renderAll();
   });
+  $('#brandSourceSelect').addEventListener('change', () => {
+    $('#quickBrandHexField').hidden = $('#brandSourceSelect').value !== 'hex';
+  });
+  $('#generateSystem').addEventListener('click', generateWebsiteSystem);
   $('#secondaryStrategy').addEventListener('change', event => {
     const strategy = event.target.value;
     state.roles.secondary.strategy = strategy;
@@ -841,8 +1322,10 @@
     renderAll();
   });
   $('#lockRole').addEventListener('click', () => {
+    const ownerId = activeOwnerId();
     const role = activeRoleState();
     role.locked = !role.locked;
+    state.userLocks[ownerId] = role.locked;
     renderAll();
   });
   $('#generateSemantics').addEventListener('click', generateSemanticColors);
@@ -851,6 +1334,21 @@
   $('#addPair').addEventListener('click', addPair);
   $('#copyCss').addEventListener('click', () => copy(cssOutput(), t('toast.cssCopied')));
   $('#copyJson').addEventListener('click', () => copy(jsonOutput(), t('toast.jsonCopied')));
+  $('#copyTailwind').addEventListener('click', () => {
+    const adapter = state.websiteTokens ? window.WebsiteTokenContract.serializeTailwind(state.websiteTokens) : '';
+    if (!adapter) {
+      showToast(t('tokens.empty'));
+      return;
+    }
+    copy(adapter, t('toast.tailwindCopied'));
+  });
+  $('#saveProject').addEventListener('click', saveProject);
+  $('#newProject').addEventListener('click', newProject);
+  $('#downloadJson').addEventListener('click', downloadJson);
+  $('#importFile').addEventListener('change', event => {
+    const file = event.target.files && event.target.files[0];
+    if (file) handleImportFile(file);
+  });
 
   document.addEventListener('change', event => {
     const pairField = event.target.closest('[data-pair-field]');
@@ -858,6 +1356,16 @@
   });
 
   document.addEventListener('click', event => {
+    const dismissTarget = event.target.closest('#dismissGenerationIssue');
+    if (dismissTarget) {
+      dismissGenerationIssue();
+      return;
+    }
+    const undoTarget = event.target.closest('#undoApply');
+    if (undoTarget) {
+      undoApply();
+      return;
+    }
     const editRoleTarget = event.target.closest('[data-edit-role]');
     if (editRoleTarget) {
       state.activeRole = editRoleTarget.dataset.editRole;
@@ -956,4 +1464,5 @@
 
   targetSelect.value = String(state.target);
   applyLanguage('en');
+  loadStoredProject();
 })();

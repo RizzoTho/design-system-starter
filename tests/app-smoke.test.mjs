@@ -28,7 +28,11 @@ class FakeElement {
     this.listeners = {};
     this.classList = new FakeClassList();
     this.scrollCount = 0;
-    this.style = { values: {}, setProperty: (name, value) => { this.style.values[name] = value; } };
+    this.style = {
+      values: {},
+      setProperty: (name, value) => { this.style.values[name] = value; },
+      removeProperty: (name) => { delete this.style.values[name]; },
+    };
   }
   addEventListener(type, listener) { this.listeners[type] = listener; }
   setAttribute(name, value) { this.attributes[name] = String(value); }
@@ -111,9 +115,15 @@ const sandbox = {
 sandbox.window = sandbox;
 sandbox.window.isSecureContext = false;
 sandbox.window.matchMedia = () => ({ matches: true });
+const storageStore = new Map();
+sandbox.localStorage = {
+  getItem: key => (storageStore.has(key) ? storageStore.get(key) : null),
+  setItem: (key, value) => { storageStore.set(key, String(value)); },
+  removeItem: key => { storageStore.delete(key); },
+};
 
 const context = vm.createContext(sandbox);
-for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/app.js']) {
+for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/token-contract.js', '../js/system-generator.js', '../js/project-state.js', '../js/app.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), context, { filename: file });
 }
 
@@ -153,41 +163,44 @@ documentListeners.click({
   target: { closest: selector => selector === '[data-edit-role]' ? { dataset: { editRole: 'brand' } } : null },
 });
 assert.equal(elements['step-candidates'].scrollCount, 1, 'Fit report did not navigate to Colors');
+// The landing page and the spec zone render identically in both themes.
 for (const content of [elements.lightPreviewContent.innerHTML, elements.darkPreviewContent.innerHTML]) {
-  assert.match(content, /Publish update/);
-  assert.match(content, /Review focus order/);
-  assert.match(content, /Check empty states/);
-  assert.match(content, /Enter a complete email address/);
-  assert.match(content, /Accessibility review/);
-  assert.match(content, /Contrast checks/);
+  assert.match(content, /class="site-nav"/);
+  assert.match(content, /Ship a website people can actually read/);
+  assert.match(content, /class="site-card"/);
+  assert.match(content, /class="site-footer"/);
+  assert.match(content, /System spec/);
   assert.match(content, /Theme palette/);
-  assert.match(content, /Release signals/);
-  assert.match(content, /No archived releases/);
-  assert.match(content, /class="product-field focused"/);
-  assert.match(content, /class="product-field invalid"/);
+  assert.match(content, /class="spec-field is-focused"/);
+  assert.match(content, /class="spec-field is-invalid"/);
+  assert.match(content, /class="spec-notice danger"/);
+  assert.match(content, /class="spec-overlay"/);
+  assert.doesNotMatch(content, /class="product-/, 'The retired workspace preview returned');
 }
-assert.match(elements.lightPreviewContent.innerHTML, /previewReleaseNote-light/);
-assert.match(elements.darkPreviewContent.innerHTML, /previewReleaseNote-dark/);
+assert.match(elements.lightPreviewContent.innerHTML, /siteEmail-light/);
+assert.match(elements.darkPreviewContent.innerHTML, /siteEmail-dark/);
 const previewIds = [...`${elements.lightPreviewContent.innerHTML}${elements.darkPreviewContent.innerHTML}`.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 assert.equal(new Set(previewIds).size, previewIds.length, 'Light and Dark preview markup contains duplicate IDs');
-assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 4.5);
-assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 4.5);
+// Muted body text stays readable on the generated page surface in both themes.
+for (const preview of [elements.lightPreview, elements.darkPreview]) {
+  assert.ok(context.window.ColorEngine.contrast(preview.style.values['--content-muted'], preview.style.values['--surface-page']) >= 4.5);
+}
 
 languageButtons[1].dispatch('click');
 assert.equal(document.documentElement.lang, 'zh-CN');
 assert.equal(languageButtons[0].attributes['aria-pressed'], 'false');
 assert.equal(languageButtons[1].attributes['aria-pressed'], 'true');
 assert.match(elements.activeRoleDescription.textContent, /核心识别色/);
-assert.match(elements.lightPreviewContent.innerHTML, /发布更新/);
+assert.match(elements.lightPreviewContent.innerHTML, /做一个真正读得清楚的网站/);
 assert.match(elements.contextStatus.innerHTML, /要求 · 4\.5:1/);
 assert.match(elements.pairList.innerHTML, /需要优化/);
 languageButtons[0].dispatch('click');
 assert.equal(document.documentElement.lang, 'en');
-assert.match(elements.lightPreviewContent.innerHTML, /Publish update/);
+assert.match(elements.lightPreviewContent.innerHTML, /Ship a website people can actually read/);
 
 assert.equal(elements.savedPairCount.textContent, '1');
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 600/);
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #B7523A/);
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #B7523A/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-fields/);
 assert.match(elements.savedPairs.innerHTML, /Static/);
 assert.match(elements.savedPairs.innerHTML, /saved-pair-remove/);
@@ -215,7 +228,7 @@ const pairBackgroundTarget = {
 };
 documentListeners.change({ target: pairBackgroundTarget });
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #96412C/);
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #96412C/);
 
 documentListeners.click({
   target: { closest: selector => selector === '[data-remove-pair]' ? { dataset: { removePair: 'pair-2' } } : null },
@@ -232,14 +245,14 @@ const crossRolePair = {
 documentListeners.change({ target: crossRolePair });
 assert.match(elements.savedPairs.innerHTML, /Brand 50 → Neutral 700/, 'A pair could not span two roles');
 // The foreground stays Brand 50 while the background leaves the Brand palette.
-assert.match(elements.savedPairs.innerHTML, /#F0EEED → #(?!96412C)/, 'Background did not follow the new role');
+assert.match(elements.savedPairs.innerHTML, /#FDEAE5 → #(?!96412C)/, 'Background did not follow the new role');
 
 elements.copyJson.dispatch('click');
 const crossRoleJson = JSON.parse(copiedText);
 assert.equal(crossRoleJson.pairs[0].foregroundRoleId, 'brand');
 assert.equal(crossRoleJson.pairs[0].backgroundRoleId, 'neutral');
 // Hover and Pressed must come from the background role's scale, not the foreground's.
-const neutralSteps = Object.values(crossRoleJson.reference.neutral);
+const neutralSteps = Object.values(crossRoleJson.palettes.neutral);
 assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.hover.background),
   'Hover did not follow the background role scale');
 assert.ok(neutralSteps.includes(crossRoleJson.pairs[0].states.pressed.background),
@@ -256,8 +269,8 @@ assert.match(elements.savedPairs.innerHTML, /Brand 50 → Brand 700/);
 elements.copyJson.dispatch('click');
 const exportedJson = JSON.parse(copiedText);
 assert.equal(exportedJson.roles.regular.aliasOf, 'neutral');
-assert.equal('secondary' in exportedJson.reference, false);
-assert.equal(exportedJson.semantic.regular.aliasOf, 'neutral');
+assert.equal('secondary' in exportedJson.palettes, false);
+assert.equal(exportedJson.assignments.regular.aliasOf, 'neutral');
 assert.equal(exportedJson.pairs.length, 1);
 assert.equal('key' in exportedJson.pairs[0], false);
 assert.equal('backgroundSnapshot' in exportedJson.pairs[0], false);
@@ -274,7 +287,7 @@ assert.ok(exportedJson.pairs[0].focusRing.hex);
 elements.copyCss.dispatch('click');
 assert.doesNotMatch(copiedText, /--color-secondary-/);
 assert.match(copiedText, /--color-regular-light-subtle: var\(--color-neutral-light-subtle\)/);
-assert.match(copiedText, /--pair-brand-1-foreground: #F0EEED/);
+assert.match(copiedText, /--pair-brand-1-foreground: #FDEAE5/);
 assert.match(copiedText, /--pair-brand-1-background-hover:/);
 assert.match(copiedText, /--pair-brand-1-background-pressed:/);
 assert.match(copiedText, /--pair-brand-1-focus-ring:/);
@@ -347,7 +360,7 @@ assert.ok(bodyText.ratio > link.ratio, 'Body text should outrank Link in contras
 assert.equal(link.backgroundRoleId, 'neutral', 'Link should sit on the Neutral surface, not its own');
 assert.equal(link.foregroundRoleId, 'brand');
 for (const pair of starterJson.pairs.filter(item => item.slug)) {
-  assert.ok(pair.ratio >= starterJson.target, `${pair.slug} did not reach the active target`);
+  assert.ok(pair.ratio >= starterJson.advancedPairTarget, `${pair.slug} did not reach the active target`);
 }
 
 elements.copyCss.dispatch('click');
@@ -373,8 +386,12 @@ assert.equal((elements.secondarySuggestions.innerHTML.match(/class="suggestion"/
 elements.targetSelect.value = '7';
 elements.targetSelect.dispatch('change');
 assert.match(elements.savedPairs.innerHTML, /FAIL/, 'Saved pair status did not follow the global target');
-assert.ok(context.window.ColorEngine.contrast(elements.lightPreview.style.values['--pv-muted-text'], elements.lightPreview.style.values['--pv-panel']) >= 7);
-assert.ok(context.window.ColorEngine.contrast(elements.darkPreview.style.values['--pv-muted-text'], elements.darkPreview.style.values['--pv-panel']) >= 7);
+// The advanced pair target governs pairs and Role checks. Website tokens follow
+// the contract's own target profile, so Preview keeps meeting that target
+// instead of quietly re-resolving to a different one.
+for (const preview of [elements.lightPreview, elements.darkPreview]) {
+  assert.ok(context.window.ColorEngine.contrast(preview.style.values['--content-muted'], preview.style.values['--surface-page']) >= 4.5);
+}
 
 elements.hexInput.value = 'invalid';
 elements.hexInput.dispatch('change');
@@ -404,5 +421,93 @@ for (const key of [...elements.savedPairs.innerHTML.matchAll(/data-remove-pair="
 }
 assert.equal(elements.savedPairCount.textContent, '0');
 assert.match(elements.savedPairs.innerHTML, /No pairs configured/);
+
+// --- Quick start: one-click website system (session already edited above) --------
+
+elements.characterSelect.value = 'balanced';
+elements.brandSourceSelect.value = 'generated';
+elements.quickSecondaryStrategy.value = 'none';
+
+// Generate is the explicit replacement action even after Advanced edits. A
+// valid result applies directly and exposes Preview plus one-level Undo.
+elements.generateSystem.dispatch('click');
+assert.ok(context.window.SystemGenerator, 'SystemGenerator is not loaded');
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system|Reroll|Cancel/, 'Generate returned to proposal confirmation');
+assert.match(elements.generationResult.innerHTML, /View preview/, 'Applied system has no direct Preview route');
+assert.match(elements.generationResult.innerHTML, /Undo generation/, 'Applied system shows no Undo');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Website tokens did not render in Step 03');
+assert.ok(elements.websiteTokens.innerHTML.includes('--action-primary-background'), 'Website token contract is incomplete');
+assert.match(elements.contextSourceNote.textContent, /Provided|Generated/, 'Context source note is missing after generation');
+
+// Undo restores the Advanced state that existed before generation.
+documentListeners.click({ target: { closest: selector => selector === '#undoApply' ? {} : null } });
+assert.doesNotMatch(elements.generationResult.innerHTML, /Apply system/, 'Undo did not clear the applied state');
+assert.match(elements.generationResult.innerHTML, /token contract/, 'Undo did not return to the empty prompt');
+
+// Provided Brand HEX stays exact after direct generation.
+documentListeners.click({ target: { closest: selector => selector === '[data-select-role]' ? { dataset: { selectRole: 'brand' } } : null } });
+elements.brandSourceSelect.value = 'hex';
+elements.quickBrandHex.value = '#B7523A';
+elements.generateSystem.dispatch('click');
+assert.equal(elements.hexInput.value, '#B7523A', 'Provided HEX was not applied to the active Brand');
+
+// Invalid HEX is rejected without changing the active system.
+const seedBeforeInvalid = elements.hexInput.value;
+elements.quickBrandHex.value = 'not-a-color';
+elements.generateSystem.dispatch('click');
+assert.equal(elements.quickBrandHex.attributes['aria-invalid'], 'true', 'Invalid HEX was not flagged');
+assert.equal(elements.hexInput.value, seedBeforeInvalid, 'Invalid HEX changed the active system');
+
+// --- Phase 6: persistence and import round trip ---------------------------------
+
+// Save writes the current project; New clears it and resets the active system.
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'The generic contract did not resolve before Save');
+elements.copyJson.dispatch('click');
+const savedJson = copiedText;
+elements.saveProject.dispatch('click');
+assert.ok(storageStore.has('design-system-starter.project.v2'), 'Save did not write to local storage');
+const savedBrand = elements.hexInput.value;
+elements.newProject.dispatch('click');
+assert.notEqual(elements.hexInput.value, savedBrand, 'New project did not reset the active Brand');
+
+// Export -> Import round trip preserves the visible system and pairs.
+storageStore.clear();
+storageStore.set('design-system-starter.project.v2', savedJson);
+const roundTrip = JSON.parse(savedJson);
+assert.equal(roundTrip.schemaVersion, 2, 'v2 JSON lost its schema version');
+assert.equal('palettes' in roundTrip, true, 'v2 JSON lost the palettes section');
+assert.equal('assignments' in roundTrip, true, 'v2 JSON lost the assignments section');
+const pairCountBeforeImport = Number(elements.savedPairCount.textContent);
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => savedJson }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, savedBrand, 'Import did not restore the saved Brand');
+assert.ok(elements.websiteTokens.innerHTML.includes('--surface-page'), 'Import lost the website token contract');
+assert.ok(elements.lightPreviewContent.innerHTML.includes('class="site-preview"'), 'Import lost the website Preview');
+assert.equal('profileId' in roundTrip, false, 'The retired coverage profile is still written to the project payload');
+assert.equal(Number(elements.savedPairCount.textContent), roundTrip.pairs.length,
+  'Import changed the saved pair count');
+assert.match(elements.toast.textContent, /Project imported/, 'Import did not report success');
+
+// A project saved with a retired coverage profile fails visibly instead of
+// losing those tokens to a silent drop.
+const retiredProfile = { ...roundTrip, profileId: 'portfolio' };
+const brandBeforeRetiredProfile = elements.hexInput.value;
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => JSON.stringify(retiredProfile) }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, brandBeforeRetiredProfile, 'Retired profile import changed the active Brand');
+assert.match(elements.toast.textContent, /Import failed/, 'Retired profile import did not report a visible failure');
+
+// An invalid import fails visibly without mutating the active project.
+const activeBeforeInvalid = elements.hexInput.value;
+elements.importFile.dispatch('change', {
+  target: { files: [{ text: async () => '{ not json' }] },
+});
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.equal(elements.hexInput.value, activeBeforeInvalid, 'Invalid import changed the active project');
+assert.match(elements.toast.textContent, /Import failed/, 'Invalid import did not report a visible failure');
 
 console.log('app-smoke: startup and core role interactions passed');

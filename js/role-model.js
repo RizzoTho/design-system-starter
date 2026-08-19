@@ -272,8 +272,10 @@
   }
 
   // The starter set is a projection of resolved assignments onto pair coordinates.
-  // Rows whose foreground is an on-bold assignment use `auto`; the rest resolve a token
-  // against the active target. Disabled roles drop out rather than being fabricated.
+  // Since the one-click system landed, the generated website system owns the
+  // starter result; this legacy projection only feeds the compatibility-pair
+  // action before any website system is applied (see
+  // WebsiteTokenContract.compatibilityPairSpecs for the current projection).
   function starterPairSpecs(palettes, roleState, assignments, target) {
     const enabled = roleId => Boolean(palettes[roleId]) && roleState[roleId].enabled !== false;
     const light = roleId => assignments[roleId].light;

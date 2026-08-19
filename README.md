@@ -2,15 +2,16 @@
 
 中文说明: [README.zh.md](README.zh.md)
 
-For designers and engineers who already know their interface `Background` and `Text` colors, but need a faster way to build the rest of a usable color system.
-
-Color work is difficult because visual harmony and measured accessibility do not always agree. I built this tool around the decisions that repeatedly matter in real interface work: preserve recognizable semantic roles, tune perceptual rhythm, verify contrast, and inspect colors in components before exporting them. AI does not replace that domain judgment; it helps turn it into a faster, repeatable workflow.
+Generate a complete, accessible website color system from up to three choices — no HEX value required — then inspect and tune it in the Advanced workflow. Color work is difficult because visual harmony and measured accessibility do not always agree. This tool turns the decisions that repeatedly matter in real interface work into a fast, repeatable workflow: preserve recognizable semantic roles, tune perceptual rhythm, verify contrast with WCAG math, and inspect colors in components before exporting them.
 
 ## What it is
 
-A dependency-free browser tool for defining `Brand`, `Neutral`, optional `Secondary`, and semantic color roles against a fixed interface context.
+A dependency-free browser tool with two paths:
 
-It generates OKLCH-based 50–950 scales, evaluates WCAG contrast, previews Light and Dark component assignments, saves static or interactive foreground/background pairs, and exports CSS variables or JSON. Interactive pairs include Default, Hover, Pressed, and focus-ring values. The interface supports English and Chinese.
+- **Quick start** — choose a color character (Balanced, Warm, Cool, Vivid, or Muted), a Brand source, and a Secondary strategy, then press one action to generate a complete website color system: Context, all role palettes, Light and Dark website tokens, and a `READY` / `READY WITH WARNINGS` / `NEEDS ATTENTION` validation summary.
+- **Advanced editing** — the direct workflow for `Background`, `Text`, `Brand`, `Neutral`, optional `Secondary`, and semantic roles with OKLCH scales, locks, Role checks, Website tokens, and Custom pairs.
+
+It generates OKLCH-based 50–950 scales, evaluates WCAG contrast with relationship-specific targets (text, large text, and non-text), previews the result as one real landing page in Light and Dark, saves static or interactive foreground/background pairs, and exports CSS variables or JSON. The interface supports English and Chinese.
 
 ## Run locally
 
@@ -29,11 +30,11 @@ Then open `http://localhost:8000`.
 
 ## Basic workflow
 
-1. Confirm the fixed `Background` and `Text` colors.
-2. Set `Brand` and `Neutral`; enable `Secondary` only when it has a clear use.
-3. Sync unlocked semantic colors to `Brand`, then tune or lock individual roles.
-4. Choose the global WCAG target and inspect Role checks inside Colors.
-5. Start with the default Brand pair, adjust its Role, token values, and Usage directly, then inspect Component preview and export.
+1. **Quick start**: pick a color character, a Brand source (Generate, HEX, or Keep current), and a Secondary strategy, then press `Generate website system`. Every valid result applies immediately; press Generate again for a fresh revision, open Preview from the result, or use one-level Undo. A failed result keeps the active system unchanged and reports the relationships to fix.
+2. **Context**: confirm or tune the generated `Background` and `Text`; the panel shows a measured PASS or FAIL at 4.5:1.
+3. **Colors**: inspect `Brand`, `Neutral`, optional `Secondary`, and the semantic roles; tune or lock individual roles and review Role checks against the global WCAG target.
+4. **Website tokens**: review the generated contract grouped by intent (surfaces, content, actions, fields, feedback, accent) with Light and Dark values. Custom pairs stay editable snapshots beneath it.
+5. **Preview and Export**: inspect the landing page in Light or Dark — the page background is the generated surface, and the system spec below the footer holds every state — then copy CSS variables or JSON.
 
 ## GitHub Pages
 
@@ -49,11 +50,15 @@ The workflow runs the project checks before deployment and publishes only the st
 ## Repository structure
 
 ```text
-index.html          Runnable page structure
+index.html          Runnable page structure (loads sources in dependency order)
 styles.css          Visual and responsive styles
-js/                 Color engine, role model, i18n, and interactions
-tests/              Static, deterministic, i18n, and smoke checks
-docs/               Product and color-model decisions
+js/                 color-engine, i18n, role-model, token-contract,
+                    system-generator, project-state, and app
+js/token-contract.js       Website token definitions, targets, validation
+js/system-generator.js     Deterministic one-click generation pipeline
+js/project-state.js        Schema v2 encode / decode / validation
+tests/              Static, deterministic, i18n, smoke, and Quick start checks
+docs/               Product, color-model, and website-token decisions
 plans/              Implementation history and acceptance gates
 scripts/            Deployment artifact preparation
 .github/workflows/  GitHub Pages deployment
@@ -61,8 +66,9 @@ scripts/            Deployment artifact preparation
 
 ## Limitations
 
-- State is session-only and resets when the page reloads.
-- Saved pairs are explicit snapshots; Interactive pairs derive state values from the saved scale, but neither type automatically becomes a semantic assignment.
+- Local Save keeps the project in the browser's localStorage for this origin; Download JSON creates a portable file. State resets when storage is cleared or on a different machine.
+- Custom pairs are explicit snapshots; Interactive pairs derive state values from the saved scale, but neither type automatically becomes a semantic assignment.
+- The website token contract is generic. Product coverage profiles were removed together with their Preview modules: a token set with no honest preview surface is not a contract.
 - The tool targets sRGB and does not yet simulate color-vision deficiencies.
 - Generated usage labels are recommendations; WCAG results remain the acceptance signal.
 
