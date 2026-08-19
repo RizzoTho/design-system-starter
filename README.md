@@ -53,10 +53,11 @@ The workflow runs the project checks before deployment and publishes only the st
 index.html          Runnable page structure (loads sources in dependency order)
 styles.css          Visual and responsive styles
 js/                 color-engine, i18n, role-model, token-contract,
-                    system-generator, project-state, and app
+                    system-generator, project-state, select, and app
 js/token-contract.js       Website token definitions, targets, validation
 js/system-generator.js     Deterministic one-click generation pipeline
 js/project-state.js        Schema v2 encode / decode / validation
+js/select.js               The shared dropdown control
 tests/              Static, deterministic, i18n, smoke, and Quick start checks
 docs/               Product, color-model, and website-token decisions
 plans/              Implementation history and acceptance gates

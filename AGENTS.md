@@ -20,11 +20,12 @@ Do not turn it into a generic color picker. Its core question is:
 - `js/token-contract.js` owns the generic website token definitions, target profiles, relationship definitions, Light / Dark website-token resolution, and validation summaries.
 - `js/system-generator.js` owns character presets, deterministic Context / Brand / Neutral / Secondary / semantic batch generation, bounded constraint search, and the end-to-end `generateSystem()` proposal builder.
 - `js/project-state.js` owns schema version 2, strict project encode/decode/validation, and storage payload preparation.
+- `js/select.js` owns the shared dropdown control: it upgrades every `<select>` to a listbox and keeps presentation and keyboard behavior only. The native `<select>` stays in the DOM as the value owner, so `.value`, the bubbling `change` event, its data attributes, and `i18n` translation of the `<option>` text all keep working.
 - `js/app.js` owns the single mutable state, rendering, interaction, navigation, direct Quick start generation, failed-generation reports, one-level Undo, copy, and export behavior.
 - `scripts/prepare-pages.sh` owns the clean `_site/` artifact used for GitHub Pages deployment.
 - `.github/workflows/pages.yml` owns verification and deployment to the `github-pages` environment from `main`.
 - `AGENTS.md` owns the project intent and maintenance rules.
-- Browser script load order: `color-engine.js` → `i18n.js` → `role-model.js` → `token-contract.js` → `system-generator.js` → `project-state.js` → `app.js`. `index.html` and `tests/static-contract.test.mjs` enforce it.
+- Browser script load order: `color-engine.js` → `i18n.js` → `role-model.js` → `token-contract.js` → `system-generator.js` → `project-state.js` → `select.js` → `app.js`. `index.html` and `tests/static-contract.test.mjs` enforce it.
 - There is no package manager, framework, or generated source. GitHub Pages uses a dependency-free packaging script that copies runtime files into ignored `_site/` output.
 - The page must continue to work when `index.html` is opened directly through `file://`.
 
@@ -113,6 +114,7 @@ The floating Steps window is the navigation owner for this sequence: Quick start
 - Role checks belong to Step 02 Colors. Results below the active target are optimization tasks, not passive diagnostics. Show a visible task summary, name the failing relationship and measured gap, and label each affected role with text or icon in addition to color. Clicking a check row opens that role in Colors; check rows must not copy diagnostic text.
 - Export is layered: Reference, Role, and Website CSS sections with alias provenance, then the compatibility `--color-*` / `--pair-*` block under a visible deprecation note. JSON is schema v2 and round-trips through import.
 - The Export section owns project persistence: Save locally (localStorage), New project, Download JSON, Import JSON, and a Tailwind adapter that references website CSS variables. Boot-time Load restores the last saved project; a bad stored project or invalid import reports a visible failure and never replaces the active project.
+- Every dropdown is the one listbox in `js/select.js`; do not leave a bare native `<select>` on the page. A native select on macOS opens its menu over the trigger so the current option lines up with the closed control, which reads as the control being covered rather than expanded. The menu opens below its trigger and flips above it only when the viewport leaves no room below. Selection is marked by weight and a check mark, never by the highlight colour alone. `renderAll()` re-runs `SelectControl.upgrade()`, which is where re-rendered rows, programmatic values, and translated option text are picked up.
 - Copy feedback must be short, use white text, and must not obscure the main task.
 - Generated scale tokens have no hover movement. Avoid decorative motion that suggests a state change where none exists.
 - The floating Steps window can be minimized and restored. Navigation should respect `prefers-reduced-motion`.

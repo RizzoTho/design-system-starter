@@ -619,6 +619,7 @@
     renderGenerationResult();
     renderContextSourceNote();
     renderWebsiteTokens();
+    SelectControl.upgrade();
   }
 
   function setRoleSeed(value) {

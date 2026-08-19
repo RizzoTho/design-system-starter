@@ -14,12 +14,12 @@ const idSelectors = [...app.matchAll(/\$\('#([^']+)'\)/g)].map(match => match[1]
 const missingIds = [...new Set(idSelectors.filter(id => !ids.includes(id)))];
 assert.deepEqual(missingIds, [], `JavaScript points to missing IDs: ${missingIds.join(', ')}`);
 
-for (const source of ['styles.css', 'js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/token-contract.js', 'js/system-generator.js', 'js/project-state.js', 'js/app.js']) {
+for (const source of ['styles.css', 'js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/token-contract.js', 'js/system-generator.js', 'js/project-state.js', 'js/select.js', 'js/app.js']) {
   assert.match(html, new RegExp(`["']${source.replace('.', '\\.')}["']`), `${source} is not linked from index.html`);
 }
 
 const scriptSources = [...html.matchAll(/<script src="([^"]+)"><\/script>/g)].map(match => match[1]);
-const expectedOrder = ['js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/token-contract.js', 'js/system-generator.js', 'js/project-state.js', 'js/app.js'];
+const expectedOrder = ['js/color-engine.js', 'js/i18n.js', 'js/role-model.js', 'js/token-contract.js', 'js/system-generator.js', 'js/project-state.js', 'js/select.js', 'js/app.js'];
 assert.deepEqual(scriptSources, expectedOrder, 'Script sources are missing or out of dependency order');
 
 assert.doesNotMatch(html, /<style\b/i, 'Inline style owner returned to index.html');
@@ -29,14 +29,14 @@ assert.match(html, /id="generateSemantics" class="button"/, 'Sync action did not
 assert.match(html, /id="lockRole" class="button primary full-button"/, 'Lock action did not receive the primary visual style');
 assert.match(html, /<span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden><\/span>/, 'Scale diagnostics are not inline with the description');
 assert.ok(html.indexOf('id="targetSelect"') > html.indexOf('id="stepDock"'), 'WCAG target is not owned by the bottom-right global dock');
-assert.equal([...html.matchAll(/<script\b/g)].length, 7, 'Unexpected script count');
+assert.equal([...html.matchAll(/<script\b/g)].length, 8, 'Unexpected script count');
 assert.ok(idSelectors.length > 30, 'Static selector scan did not inspect the app');
 // Quick start is one centered column and the generation result is the foot of
 // that card, not a second panel in an empty column.
 assert.match(html, /<aside class="step-controls quick-start">[\s\S]*id="generationResult"[\s\S]*<\/aside>/, 'The generation result left the Quick start card');
 assert.match(css, /\.quick-start-section \{[^}]*grid-template-columns: minmax\(0, 1fr\)/s, 'Quick start returned to a two-column layout');
 assert.match(css, /\.quick-start-section \.generation-result \{[^}]*border-top/s, 'The result is no longer attached to the foot of the card');
-assert.match(css, /\.quick-start-section \.field select \{[^}]*width: auto/s, 'Quick start selects stretch again, parking the chevron away from the value');
+assert.match(css, /\.quick-start-section \.field \.select \{[^}]*width: max-content/s, 'Quick start selects stretch again, parking the chevron away from the value');
 
 // Braces must balance: an unclosed media query silently nests every rule after
 // it and disables them outside that breakpoint.
@@ -104,5 +104,15 @@ assert.doesNotMatch(app, /id="applyProposal"|id="rerollProposal"|id="cancelPropo
 assert.match(app, /id="dismissGenerationIssue"/, 'A failed generation has no dismissible diagnostic report');
 assert.match(roleModel, /function starterPairSpecs/, 'The starter set moved out of the role model');
 assert.doesNotMatch(roleModel, /borderIcon\.step[^;]*starter/, 'Starter text foregrounds must not reuse the 3:1 border/icon token');
+
+// Dropdowns are one listbox owned by js/select.js. A native select on macOS opens
+// its menu over the trigger, so the control being changed disappears behind it.
+const selectControl = fs.readFileSync(new URL('../js/select.js', import.meta.url), 'utf8');
+assert.match(selectControl, /role', 'listbox'/, 'The dropdown is no longer exposed as a listbox');
+assert.match(css, /\.select-menu \{[^}]*top: calc\(100% \+ 6px\)/s, 'The dropdown menu no longer opens below its trigger');
+assert.match(css, /\.select-menu\[data-drop="up"\] \{[^}]*bottom: calc\(100% \+ 6px\)/s, 'The dropdown lost its flip-up escape for rows at the bottom of the viewport');
+assert.match(css, /\.select-option\[aria-selected="true"\] \{[^}]*font-weight/s, 'The selected option is marked by colour alone');
+assert.match(app, /SelectControl\.upgrade\(\)/, 'Rendered selects are never upgraded to the shared dropdown');
+assert.doesNotMatch(css, /^\.text-input, select \{/m, 'Native select styling returned alongside the upgraded control');
 
 console.log(`static-contract: ${ids.length} IDs and ${new Set(idSelectors).size} JavaScript ID selectors passed`);

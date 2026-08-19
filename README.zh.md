@@ -53,10 +53,11 @@ Workflow 会先运行项目检查，再只发布独立页面所需的 assets。
 index.html          可直接运行的页面结构（按依赖顺序加载源文件）
 styles.css          视觉与响应式样式
 js/                 color-engine、i18n、role-model、token-contract、
-                    system-generator、project-state 与 app
+                    system-generator、project-state、select 与 app
 js/token-contract.js       网站 token 定义、目标档案、验证
 js/system-generator.js     确定性的—键生成流程
 js/project-state.js        schema v2 编解码与验证
+js/select.js               全站统一的下拉控件
 tests/              静态、确定性、i18n、smoke 与快速开始检查
 docs/               产品、颜色模型与网站 token 决策
 plans/              实现历史与验收 gates

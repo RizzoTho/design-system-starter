@@ -121,7 +121,7 @@ sandbox.window.isSecureContext = false;
 sandbox.window.matchMedia = () => ({ matches: true });
 
 const context = vm.createContext(sandbox);
-for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/token-contract.js', '../js/system-generator.js', '../js/project-state.js', '../js/app.js']) {
+for (const file of ['../js/color-engine.js', '../js/i18n.js', '../js/role-model.js', '../js/token-contract.js', '../js/system-generator.js', '../js/project-state.js', '../js/select.js', '../js/app.js']) {
   vm.runInContext(fs.readFileSync(new URL(file, import.meta.url), 'utf8'), context, { filename: file });
 }
 
