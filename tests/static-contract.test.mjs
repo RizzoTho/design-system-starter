@@ -64,7 +64,7 @@ assert.match(css, /\.spec-field\.is-focused input \{[^}]*outline: 2px solid var\
 assert.match(css, /\.spec-field\.is-invalid input \{[^}]*border-color: var\(--field-border-invalid\)/s, 'Preview invalid state lost its Danger border');
 assert.match(css, /\.spec-field\.is-invalid\.is-focused input \{[^}]*outline-color: var\(--focus-ring-danger-context\)/s, 'Invalid + Focus does not use the danger-context ring');
 assert.match(css, /\.saved-pair \{[^}]*grid-template-areas:[^}]*"sample copy remove"[^}]*"status status status"/s, 'Saved pair status and remove action do not own separate grid areas');
-assert.match(css, /\.pair\.needs-work \{[^}]*box-shadow: 0 3px 12px rgba\(180,76,56,\.08\)/s, 'Fit report optimization tasks lost their full-card state treatment');
+assert.match(css, /\.pair\.needs-work \{[^}]*box-shadow: 0 3px 12px rgb\(var\(--ui-danger-rgb\) \/ \.08\)/s, 'Fit report optimization tasks lost their full-card state treatment');
 assert.doesNotMatch(css, /inset 3px 0 0 var\(--bad\)/, 'Fit report still uses the prohibited left border');
 assert.doesNotMatch(css, /border-left|inset 3px 0 0/, 'The visual system still uses a left-border treatment');
 assert.match(html, /id="addPair"[^>]*data-i18n="saved\.add"/, 'Saved pair editor lost its add action');
@@ -114,5 +114,22 @@ assert.match(css, /\.select-menu\[data-drop="up"\] \{[^}]*bottom: calc\(100% \+ 
 assert.match(css, /\.select-option\[aria-selected="true"\] \{[^}]*font-weight/s, 'The selected option is marked by colour alone');
 assert.match(app, /SelectControl\.upgrade\(\)/, 'Rendered selects are never upgraded to the shared dropdown');
 assert.doesNotMatch(css, /^\.text-input, select \{/m, 'Native select styling returned alongside the upgraded control');
+
+// Chrome tokenization (plans/2026-08-19-chrome-tokenization.zh.md). The tool's own
+// shell resolves every color from a --ui-* token in :root, so a later black-and-white
+// pass changes a value list instead of 92 scattered literals. Two directions matter:
+// chrome must not hardcode, and the Preview must not borrow a chrome token — it is
+// driven by the exported website tokens so the page and the export cannot drift.
+const rootStart = css.indexOf(':root {');
+const rootEnd = css.indexOf('\n}', rootStart) + 2;
+assert.ok(rootStart > -1 && rootEnd > rootStart, 'The :root token block is missing');
+const chromeCss = css.slice(0, rootStart) + css.slice(rootEnd);
+const bareColors = [...new Set([...chromeCss.matchAll(/#[0-9a-fA-F]{3,6}\b|rgba\(/g)].map(match => match[0]))];
+assert.deepEqual(bareColors, [], `Chrome rules hardcode colors instead of --ui-* tokens: ${bareColors.join(', ')}`);
+
+const previewRules = [...css.matchAll(/^\s*(\.(?:site|spec)-[^{]*)\{([^}]*)\}/gm)];
+assert.ok(previewRules.length > 20, 'The preview rule scan did not inspect the preview');
+const borrowedChrome = previewRules.filter(([, , body]) => /var\(--ui-/.test(body)).map(([, selector]) => selector.trim());
+assert.deepEqual(borrowedChrome, [], `Preview rules borrowed chrome tokens: ${borrowedChrome.join(', ')}`);
 
 console.log(`static-contract: ${ids.length} IDs and ${new Set(idSelectors).size} JavaScript ID selectors passed`);
