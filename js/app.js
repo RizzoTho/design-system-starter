@@ -1422,13 +1422,14 @@
   function stepMark(section) {
     return section.querySelector('[data-step-toggle]');
   }
+  // The mark takes its name from the step title it sits beside (aria-labelledby),
+  // so four collapse controls announce four different names instead of one
+  // repeated string. State is carried by aria-expanded alone.
   function updateStepMarkLabels() {
     stepSections.forEach(section => {
       const mark = stepMark(section);
       if (!mark) return;
-      const collapsed = section.classList.contains('is-collapsed');
-      mark.setAttribute('aria-expanded', String(!collapsed));
-      mark.setAttribute('aria-label', t(collapsed ? 'aria.expandSection' : 'aria.collapseSection'));
+      mark.setAttribute('aria-expanded', String(!section.classList.contains('is-collapsed')));
     });
   }
   // Any route that scrolls to a step has to open it first; scrolling to a

@@ -138,9 +138,18 @@ assert.doesNotMatch(css, /^\.text-input, select \{/m, 'Native select styling ret
 const rootStart = css.indexOf(':root {');
 const rootEnd = css.indexOf('\n}', rootStart) + 2;
 assert.ok(rootStart > -1 && rootEnd > rootStart, 'The :root token block is missing');
-const chromeCss = css.slice(0, rootStart) + css.slice(rootEnd);
+// Strip comments first: a hex quoted in a note about why a value changed is
+// documentation, not a rule that hardcodes color.
+const chromeCss = (css.slice(0, rootStart) + css.slice(rootEnd)).replace(/\/\*[\s\S]*?\*\//g, '');
 const bareColors = [...new Set([...chromeCss.matchAll(/#[0-9a-fA-F]{3,6}\b|rgba\(/g)].map(match => match[0]))];
 assert.deepEqual(bareColors, [], `Chrome rules hardcode colors instead of --ui-* tokens: ${bareColors.join(', ')}`);
+
+// P4d: the pre-tokenization alias names are gone. Every chrome rule reads a
+// --ui-* token directly, so there is one name per color and no second spelling
+// to drift from.
+const retiredAliases = ['--ink', '--muted', '--line', '--panel', '--panel-soft', '--canvas', '--ui-highlight', '--ui-highlight-strong', '--good', '--warn', '--bad'];
+const revived = retiredAliases.filter(alias => new RegExp(`var\\(${alias}\\)|^\\s*${alias}:`, 'm').test(css) || html.includes(`var(${alias})`));
+assert.deepEqual(revived, [], `Retired chrome aliases came back: ${revived.join(', ')}`);
 
 const previewRules = [...css.matchAll(/^\s*(\.(?:site|spec)-[^{]*)\{([^}]*)\}/gm)];
 assert.ok(previewRules.length > 20, 'The preview rule scan did not inspect the preview');

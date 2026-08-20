@@ -29,7 +29,7 @@
     <main class="workflow">
       <section id="quick-start" class="workflow-section quick-start-section" data-workflow-step="quick-start">
         <aside class="step-controls quick-start">
-          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="quick.title">Quick start</strong><small data-i18n="quick.desc">Answer three questions, press one button, and get a complete accessible website color system.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-labelledby="step-title-quick"></button><div><strong id="step-title-quick" data-i18n="quick.title">Quick start</strong><small data-i18n="quick.desc">Answer three questions, press one button, and get a complete accessible website color system.</small></div></div>
           <div class="field">
             <label for="characterSelect" data-i18n="quick.characterLabel">Color character</label>
             <select id="characterSelect"><option value="balanced" data-i18n="character.balanced">Balanced</option><option value="warm" data-i18n="character.warm">Warm</option><option value="cool" data-i18n="character.cool">Cool</option><option value="vivid" data-i18n="character.vivid">Vivid</option><option value="muted" data-i18n="character.muted">Muted</option></select>
@@ -68,7 +68,7 @@
 
       <section id="step-context" class="workflow-section" data-workflow-step="context">
         <aside class="step-controls context">
-          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-labelledby="step-title-context"></button><div><strong id="step-title-context" data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
           <div class="field">
             <label for="backgroundColor">Background <span id="backgroundValue" class="value">#F7F3EB</span></label>
             <div class="mini-color-row"><div class="mini-picker"><input id="backgroundColor" type="color" value="#f7f3eb" aria-label="Choose Background color" data-i18n-aria-label="aria.chooseBackground" /></div><input id="backgroundHexInput" class="text-input value" value="#F7F3EB" spellcheck="false" maxlength="7" aria-label="Enter Background HEX value" data-i18n-aria-label="aria.enterBackground" /></div>
@@ -89,7 +89,7 @@
 
       <section id="step-candidates" class="workflow-section" data-workflow-step="candidates">
         <aside class="step-controls candidate">
-          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.colors.title">Colors</strong><small data-i18n="step.colors.desc">Set Brand / Neutral, then generate optional and semantic roles.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-labelledby="step-title-colors"></button><div><strong id="step-title-colors" data-i18n="step.colors.title">Colors</strong><small data-i18n="step.colors.desc">Set Brand / Neutral, then generate optional and semantic roles.</small></div></div>
           <div class="field">
             <label data-i18n="colors.currentRole">Current role</label>
             <div id="roleTabs" class="role-tabs" aria-label="Color roles" data-i18n-aria-label="aria.colorRoles"></div>
@@ -113,14 +113,14 @@
         </aside>
         <div class="step-content">
           <section class="workflow-block role-overview-block">
-            <div class="section-head"><div><h2 data-i18n="overview.title">Color roles</h2><p data-i18n="overview.desc">8 roles with at most 7 independent palettes. Regular reuses Neutral; keep Secondary off without a clear use case.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="overview.edit">SELECT TO EDIT</span></div>
+            <div class="section-head"><div><h2 data-i18n="overview.title">Color roles</h2><p data-i18n="overview.desc">8 roles with at most 7 independent palettes. Regular reuses Neutral; keep Secondary off without a clear use case.</p></div><span class="mono" style="color:var(--ui-muted);font-size:10px" data-i18n="overview.edit">SELECT TO EDIT</span></div>
             <div id="roleOverview" class="role-overview"></div>
           </section>
           <section class="workflow-block candidate-summary">
             <div class="seed-summary" id="seedSummary" style="--seed:#d8664a;--seed-ink:#fff9f0"><div><div id="summaryLabel" class="label">ACTIVE BRAND</div><h2 id="summaryTitle">Brand color</h2><div id="summaryHex" class="hex">#D8664A · OKLCH</div></div><div id="summaryNote" class="label" data-i18n="summary.seedExact">500 keeps the exact seed</div></div>
           </section>
           <section class="workflow-block">
-            <div class="section-head"><div><h2 data-i18n="scale.title">Generated scale</h2><p><span data-i18n="scale.desc.before">Derive 50 → 950 from the active</span> <span id="scaleRole">Brand</span> <span data-i18n="scale.desc.after">role. Click a token to copy and apply it to Colors.</span><span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden></span></p></div><span id="scaleCount" class="mono" style="color:var(--muted);font-size:10px">11 TOKENS</span></div>
+            <div class="section-head"><div><h2 data-i18n="scale.title">Generated scale</h2><p><span data-i18n="scale.desc.before">Derive 50 → 950 from the active</span> <span id="scaleRole">Brand</span> <span data-i18n="scale.desc.after">role. Click a token to copy and apply it to Colors.</span><span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden></span></p></div><span id="scaleCount" class="mono" style="color:var(--ui-muted);font-size:10px">11 TOKENS</span></div>
             <div class="scale-guide" aria-label="Recommended scale usage" data-i18n-aria-label="aria.scaleUsage">
               <span><b>50–200</b><em>Page / surface</em></span><span><b>300–400</b><em>Border / muted</em></span><span><b>500</b><em>Seed</em></span><span class="recommended"><b>600–700</b><em data-i18n="scale.actionRecommended">Action · recommended</em></span><span><b>800–950</b><em>Strong / dark</em></span>
             </div>
@@ -135,7 +135,7 @@
 
       <section id="step-standard" class="workflow-section" data-workflow-step="standard">
         <aside class="step-controls standard">
-          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.tokens.title">Website tokens</strong><small data-i18n="step.tokens.desc">The generated system as named tokens. Custom pairs stay editable snapshots below.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-labelledby="step-title-tokens"></button><div><strong id="step-title-tokens" data-i18n="step.tokens.title">Website tokens</strong><small data-i18n="step.tokens.desc">The generated system as named tokens. Custom pairs stay editable snapshots below.</small></div></div>
           <div class="saved-usage-guide">
             <div><strong data-i18n="saved.static">Static</strong><span data-i18n="saved.staticMeaning">For text, surfaces, icons, or other content without interaction states.</span></div>
             <div><strong data-i18n="saved.interactive">Interactive</strong><span data-i18n="saved.interactiveMeaning">For controls that need Default, Hover, Pressed, and Focus colors.</span></div>
@@ -143,13 +143,13 @@
         </aside>
         <div class="step-content">
           <section class="workflow-block">
-            <div class="section-head"><div><h2 data-i18n="tokens.editor.title">Website tokens</h2><p data-i18n="tokens.editor.desc">Purpose-named colors for surfaces, content, actions, fields, feedback, and accents. Light and Dark resolve the same names.</p></div><span class="mono" style="color:var(--muted);font-size:10px" data-i18n="tokens.editor.badge">GENERATED CONTRACT</span></div>
+            <div class="section-head"><div><h2 data-i18n="tokens.editor.title">Website tokens</h2><p data-i18n="tokens.editor.desc">Purpose-named colors for surfaces, content, actions, fields, feedback, and accents. Light and Dark resolve the same names.</p></div><span class="mono" style="color:var(--ui-muted);font-size:10px" data-i18n="tokens.editor.badge">GENERATED CONTRACT</span></div>
             <p class="tokens-theme-note" data-i18n="tokens.themeNote">Light and Dark use the same token names; values differ per theme.</p>
             <div id="websiteTokenStatus" class="website-token-status"></div>
             <div id="websiteTokens" class="website-tokens"></div>
           </section>
           <section class="workflow-block custom-pairs-block">
-            <div class="section-head"><div><h2 data-i18n="step.customPairs.title">Custom pairs</h2><p data-i18n="step.customPairs.desc">Optional foreground / background snapshots. They never overwrite the generated website tokens.</p></div><span class="mono" style="color:var(--muted);font-size:10px"><b id="savedPairCount">0</b></span></div>
+            <div class="section-head"><div><h2 data-i18n="step.customPairs.title">Custom pairs</h2><p data-i18n="step.customPairs.desc">Optional foreground / background snapshots. They never overwrite the generated website tokens.</p></div><span class="mono" style="color:var(--ui-muted);font-size:10px"><b id="savedPairCount">0</b></span></div>
             <p class="saved-compat-note" data-i18n="saved.compatNote">The generated website system already covers these combinations; the pairs below stay editable snapshots for export.</p>
             <div class="saved-pairs-actions">
               <button id="generateStarterSet" class="button" type="button" data-i18n="saved.generateLegacy">Generate compatibility pairs</button>
@@ -166,7 +166,7 @@
     <div class="footer">Inspired by <a href="https://mgifford.github.io/ui-palette-generator/" target="_blank" rel="noreferrer">MGifford UI Palette Generator</a> · WCAG contrast ratio uses relative luminance.</div>
     </div>
 
-    <aside class="preview-rail" aria-label="Website preview">
+    <aside class="preview-rail" aria-label="Website preview" data-i18n-aria-label="aria.previewRail">
       <section id="preview" class="preview-section" data-workflow-step="preview">
         <div class="section-head"><div><h2 data-i18n="preview.title">Website preview</h2><p data-i18n="preview.desc">One landing page rendered from the exported tokens. The page background is the generated surface; the system spec below the footer holds every state.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
         <div class="preview-grid">
