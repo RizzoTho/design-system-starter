@@ -43,6 +43,7 @@ class FakeElement {
   remove() {}
   scrollIntoView() { this.scrollCount += 1; }
   closest() { return null; }
+  querySelector(selector) { return selector === '[data-step-toggle]' ? this.stepMark ?? null : null; }
   dispatch(type, extra = {}) { this.listeners[type]?.({ target: this, preventDefault() {}, ...extra }); }
 }
 
@@ -65,20 +66,9 @@ const languageButtons = ['en', 'zh'].map(language => {
   element.dataset.language = language;
   return element;
 });
-const stepLinks = [
-  ['context', '#step-context'],
-  ['candidates', '#step-candidates'],
-  ['standard', '#step-standard'],
-  ['preview', '#preview'],
-  ['export', '#export'],
-].map(([step, href]) => {
-  const element = new FakeElement();
-  element.dataset.stepLink = step;
-  element.attributes.href = href;
-  return element;
-});
 const workflowTargets = ['step-context', 'step-candidates', 'step-standard', 'preview'].map(id => elements[id]);
 workflowTargets.forEach((element, index) => { element.dataset.workflowStep = ['context', 'candidates', 'standard', 'preview'][index]; });
+workflowTargets.forEach(element => { element.stepMark = new FakeElement(); });
 
 const documentListeners = {};
 let lastCreatedElement = null;
@@ -90,7 +80,6 @@ const document = {
   querySelectorAll(selector) {
     if (selector === '[data-preview-theme]') return previewButtons;
     if (selector === '[data-language]') return languageButtons;
-    if (selector === '[data-step-link]') return stepLinks;
     if (selector === '[data-workflow-step]') return workflowTargets;
     return [];
   },

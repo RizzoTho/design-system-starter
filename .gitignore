@@ -18,3 +18,7 @@ __pycache__/
 .claude/
 .ai/
 .alma/
+
+# 本地存档，不入库
+PROJECT_CONTEXT.md
+docs/

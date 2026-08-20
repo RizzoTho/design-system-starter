@@ -28,7 +28,19 @@ assert.ok(html.indexOf('id="generateSemantics"') < html.indexOf('id="lockRole"')
 assert.match(html, /id="generateSemantics" class="button"/, 'Sync action did not receive the secondary visual style');
 assert.match(html, /id="lockRole" class="button primary full-button"/, 'Lock action did not receive the primary visual style');
 assert.match(html, /<span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden><\/span>/, 'Scale diagnostics are not inline with the description');
-assert.ok(html.indexOf('id="targetSelect"') > html.indexOf('id="stepDock"'), 'WCAG target is not owned by the bottom-right global dock');
+// The bottom-right Steps dock is gone. The global WCAG target leads the workflow
+// ahead of 01 Context, and each step heading owns a hollow mark that collapses
+// its own section. The mark stays monochrome: in the chrome, color means "press
+// this next", and a step heading is not that.
+assert.doesNotMatch(html, /id="stepDock"|data-step-link/, 'The Steps dock returned');
+assert.ok(html.indexOf('id="targetSelect"') < html.indexOf('id="step-context"'), 'The global WCAG target no longer leads the workflow ahead of 01');
+assert.equal([...html.matchAll(/data-step-toggle/g)].length, 4, 'Every workflow step must own exactly one collapse mark');
+assert.doesNotMatch(html, /<div class="step-heading"><b>/, 'A step heading prints a number again instead of the mark');
+assert.match(css, /\.step-mark::before \{[^}]*border: 2px solid var\(--ui-ink\)/s, 'The step mark is no longer a monochrome hollow ring');
+assert.match(css, /\[data-touched="false"\] \.step-mark::before \{[^}]*animation: step-breathe/s, 'An untouched step no longer breathes');
+assert.match(css, /@keyframes step-breathe/, 'The breathing keyframes are missing');
+assert.match(css, /prefers-reduced-motion[\s\S]{0,220}\[data-touched="false"\] \.step-mark::before \{[^}]*animation: none/, 'The breathing light ignores reduced motion');
+assert.match(css, /\.workflow-section\.is-collapsed \.step-content \{[^}]*display: none/s, 'The mark no longer collapses the whole step section');
 assert.equal([...html.matchAll(/<script\b/g)].length, 8, 'Unexpected script count');
 assert.ok(idSelectors.length > 30, 'Static selector scan did not inspect the app');
 // Quick start is one centered column and the generation result is the foot of
@@ -64,9 +76,12 @@ assert.match(css, /\.spec-field\.is-focused input \{[^}]*outline: 2px solid var\
 assert.match(css, /\.spec-field\.is-invalid input \{[^}]*border-color: var\(--field-border-invalid\)/s, 'Preview invalid state lost its Danger border');
 assert.match(css, /\.spec-field\.is-invalid\.is-focused input \{[^}]*outline-color: var\(--focus-ring-danger-context\)/s, 'Invalid + Focus does not use the danger-context ring');
 assert.match(css, /\.saved-pair \{[^}]*grid-template-areas:[^}]*"sample copy remove"[^}]*"status status status"/s, 'Saved pair status and remove action do not own separate grid areas');
-assert.match(css, /\.pair\.needs-work \{[^}]*box-shadow: 0 3px 12px rgba\(180,76,56,\.08\)/s, 'Fit report optimization tasks lost their full-card state treatment');
+assert.match(css, /\.pair\.needs-work \{[^}]*box-shadow: 0 3px 12px rgb\(var\(--ui-danger-rgb\) \/ \.08\)/s, 'Fit report optimization tasks lost their full-card state treatment');
 assert.doesNotMatch(css, /inset 3px 0 0 var\(--bad\)/, 'Fit report still uses the prohibited left border');
-assert.doesNotMatch(css, /border-left|inset 3px 0 0/, 'The visual system still uses a left-border treatment');
+// The colored left bar stays banned as a card treatment. The preview rail's 1px
+// divider is column structure, not an accent, so that one rule is exempt by name.
+const cardCss = css.split('\n').filter(line => !line.trimStart().startsWith('.preview-rail')).join('\n');
+assert.doesNotMatch(cardCss, /border-left|inset 3px 0 0/, 'The visual system still uses a left-border treatment');
 assert.match(html, /id="addPair"[^>]*data-i18n="saved\.add"/, 'Saved pair editor lost its add action');
 assert.doesNotMatch(html, /Contrast matrix|data-save-pair|id="matrix"/i, 'The removed Contrast matrix surface returned');
 assert.doesNotMatch(app, /renderMatrix|data-save-pair|matrix-cell|savedPairId/, 'The removed Contrast matrix interaction returned');
@@ -114,5 +129,31 @@ assert.match(css, /\.select-menu\[data-drop="up"\] \{[^}]*bottom: calc\(100% \+ 
 assert.match(css, /\.select-option\[aria-selected="true"\] \{[^}]*font-weight/s, 'The selected option is marked by colour alone');
 assert.match(app, /SelectControl\.upgrade\(\)/, 'Rendered selects are never upgraded to the shared dropdown');
 assert.doesNotMatch(css, /^\.text-input, select \{/m, 'Native select styling returned alongside the upgraded control');
+
+// Chrome tokenization (plans/2026-08-19-chrome-tokenization.zh.md). The tool's own
+// shell resolves every color from a --ui-* token in :root, so a later black-and-white
+// pass changes a value list instead of 92 scattered literals. Two directions matter:
+// chrome must not hardcode, and the Preview must not borrow a chrome token — it is
+// driven by the exported website tokens so the page and the export cannot drift.
+const rootStart = css.indexOf(':root {');
+const rootEnd = css.indexOf('\n}', rootStart) + 2;
+assert.ok(rootStart > -1 && rootEnd > rootStart, 'The :root token block is missing');
+// Strip comments first: a hex quoted in a note about why a value changed is
+// documentation, not a rule that hardcodes color.
+const chromeCss = (css.slice(0, rootStart) + css.slice(rootEnd)).replace(/\/\*[\s\S]*?\*\//g, '');
+const bareColors = [...new Set([...chromeCss.matchAll(/#[0-9a-fA-F]{3,6}\b|rgba\(/g)].map(match => match[0]))];
+assert.deepEqual(bareColors, [], `Chrome rules hardcode colors instead of --ui-* tokens: ${bareColors.join(', ')}`);
+
+// P4d: the pre-tokenization alias names are gone. Every chrome rule reads a
+// --ui-* token directly, so there is one name per color and no second spelling
+// to drift from.
+const retiredAliases = ['--ink', '--muted', '--line', '--panel', '--panel-soft', '--canvas', '--ui-highlight', '--ui-highlight-strong', '--good', '--warn', '--bad'];
+const revived = retiredAliases.filter(alias => new RegExp(`var\\(${alias}\\)|^\\s*${alias}:`, 'm').test(css) || html.includes(`var(${alias})`));
+assert.deepEqual(revived, [], `Retired chrome aliases came back: ${revived.join(', ')}`);
+
+const previewRules = [...css.matchAll(/^\s*(\.(?:site|spec)-[^{]*)\{([^}]*)\}/gm)];
+assert.ok(previewRules.length > 20, 'The preview rule scan did not inspect the preview');
+const borrowedChrome = previewRules.filter(([, , body]) => /var\(--ui-/.test(body)).map(([, selector]) => selector.trim());
+assert.deepEqual(borrowedChrome, [], `Preview rules borrowed chrome tokens: ${borrowedChrome.join(', ')}`);
 
 console.log(`static-contract: ${ids.length} IDs and ${new Set(idSelectors).size} JavaScript ID selectors passed`);

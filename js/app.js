@@ -1373,7 +1373,7 @@
       renderAll();
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       $('#step-candidates').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-      setActiveStep('candidates');
+      revealStep($('#step-candidates'));
       return;
     }
     const removePairTarget = event.target.closest('[data-remove-pair]');
@@ -1417,16 +1417,28 @@
     $('#darkPreview').hidden = theme !== 'dark';
   }));
 
-  const stepDock = $('#stepDock');
-  const stepDockToggle = $('#stepDockToggle');
-  const stepLinks = [...document.querySelectorAll('[data-step-link]')];
   const languageButtons = [...document.querySelectorAll('[data-language]')];
-  function setActiveStep(name) {
-    stepLinks.forEach(link => link.classList.toggle('active', link.dataset.stepLink === name));
+  const stepSections = [...document.querySelectorAll('[data-workflow-step]')];
+  function stepMark(section) {
+    return section.querySelector('[data-step-toggle]');
   }
-  function updateStepDockToggleLabel() {
-    const minimized = stepDock.classList.contains('minimized');
-    stepDockToggle.setAttribute('aria-label', t(minimized ? 'aria.expandSteps' : 'aria.minimizeSteps'));
+  // The mark takes its name from the step title it sits beside (aria-labelledby),
+  // so four collapse controls announce four different names instead of one
+  // repeated string. State is carried by aria-expanded alone.
+  function updateStepMarkLabels() {
+    stepSections.forEach(section => {
+      const mark = stepMark(section);
+      if (!mark) return;
+      mark.setAttribute('aria-expanded', String(!section.classList.contains('is-collapsed')));
+    });
+  }
+  // Any route that scrolls to a step has to open it first; scrolling to a
+  // collapsed heading looks like the action did nothing.
+  function revealStep(section) {
+    if (!section) return;
+    section.classList.remove('is-collapsed');
+    section.dataset.touched = 'true';
+    updateStepMarkLabels();
   }
   function applyLanguage(language) {
     i18n.setLanguage(language);
@@ -1438,30 +1450,25 @@
       button.setAttribute('aria-pressed', String(active));
     });
     i18n.apply(document);
-    updateStepDockToggleLabel();
+    updateStepMarkLabels();
     renderAll();
   }
   languageButtons.forEach(button => button.addEventListener('click', () => applyLanguage(button.dataset.language)));
-  stepDockToggle.addEventListener('click', () => {
-    const minimized = stepDock.classList.toggle('minimized');
-    stepDockToggle.textContent = minimized ? '+' : '−';
-    stepDockToggle.setAttribute('aria-expanded', String(!minimized));
-    updateStepDockToggleLabel();
+  // A step starts untouched and its mark breathes. The first interaction anywhere
+  // inside that section stops the pulse for good, so breathing reads as "not
+  // looked at yet" rather than as decoration.
+  stepSections.forEach(section => {
+    section.dataset.touched = 'false';
+    const settle = () => { section.dataset.touched = 'true'; };
+    section.addEventListener('pointerdown', settle);
+    section.addEventListener('focusin', settle);
+    const mark = stepMark(section);
+    if (!mark) return;
+    mark.addEventListener('click', () => {
+      section.classList.toggle('is-collapsed');
+      updateStepMarkLabels();
+    });
   });
-  stepLinks.forEach(link => link.addEventListener('click', event => {
-    event.preventDefault();
-    const target = document.querySelector(link.getAttribute('href'));
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    setActiveStep(link.dataset.stepLink);
-  }));
-  const observedTargets = [...document.querySelectorAll('[data-workflow-step]'), $('#export')];
-  const stepObserver = new IntersectionObserver(entries => {
-    const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
-    setActiveStep(visible.target.id === 'export' ? 'export' : visible.target.dataset.workflowStep);
-  }, { rootMargin: '-20% 0px -58% 0px', threshold: [0, 0.15, 0.4] });
-  observedTargets.forEach(target => stepObserver.observe(target));
 
   targetSelect.value = String(state.target);
   applyLanguage('en');
