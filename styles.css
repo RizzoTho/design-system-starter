@@ -9,60 +9,63 @@
      plans/2026-08-19-chrome-tokenization.zh.md.
      ---------------------------------------------------------------------- */
 
-  /* light surfaces */
-  --ui-canvas: #f5f4ec;
-  --ui-canvas-alt: #f1eee4;
-  --ui-surface: #fffaf2;
-  --ui-surface-quiet: #f4efe6;
-  --ui-surface-soft: #f4eadb;
-  --ui-surface-inset: #ece9df;
-  --ui-track: #e8ddcc;
-  --ui-track-quiet: #e5ded2;
-  --ui-panel-soft: #efe5d5;
+  /* light surfaces: neutral by design. The user judges generated color against
+     this background, so a tinted shell would bias every reading. */
+  --ui-canvas: #ffffff;
+  --ui-canvas-alt: #f7f9f9;
+  --ui-surface: #ffffff;
+  --ui-surface-quiet: #f7f9f9;
+  --ui-surface-soft: #f7f9f9;
+  --ui-surface-inset: #f7f9f9;
+  --ui-track: #eff3f4;
+  --ui-track-quiet: #e7ecee;
+  --ui-panel-soft: #eff3f4;
 
-  /* dark dock: the Steps window is a dark island inside a light UI */
-  --ui-dock: #29251f;
-  --ui-dock-raised: #39342d;
+  /* dark surfaces: kept for inverted treatments (toast, overlays). The Steps
+     dock that used to own them is gone. */
+  --ui-dock: #0f1419;
+  --ui-dock-raised: #1c2732;
 
   /* ink */
-  --ui-ink: #29251f;
-  --ui-ink-strong: #2b241d;
-  --ui-ink-inverse: #fffaf2;  /* same value as --ui-surface, different job: ink on dark */
-  --ui-muted: #7d7468;
-  --ui-muted-soft: #77736c;
-  --ui-muted-warm: #8c7a60;
-  --ui-muted-deep: #5f5a52;
+  --ui-ink: #0f1419;
+  --ui-ink-strong: #0f1419;
+  --ui-ink-inverse: #ffffff;  /* same value as --ui-surface, different job: ink on dark */
+  --ui-muted: #536471;
+  --ui-muted-soft: #536471;
+  --ui-muted-warm: #536471;
+  --ui-muted-deep: #3d4a54;
 
-  /* accent */
-  --ui-accent: #d8664a;
-  --ui-accent-strong: #a96b21;
-  --ui-accent-deep: #9a6118;
+  /* accent: the only chromatic family in the chrome. Colour here means
+     "press this next" -- primary action, focus ring, link. Nothing else. */
+  --ui-accent: #c1462a;
+  --ui-accent-strong: #a83c22;
+  --ui-accent-deep: #8f3319;
 
   /* status */
-  --ui-pass: #2d6b46;
-  --ui-pass-strong: #1f603d;
-  --ui-fail: #9c352d;
-  --ui-fail-soft: #a24536;
-  --ui-fail-deep: #87382b;
-  --ui-danger: #b44c38;
+  --ui-pass: #0f7a4d;
+  --ui-pass-strong: #0b6440;
+  --ui-fail: #b4291d;
+  --ui-fail-soft: #a3241a;
+  --ui-fail-deep: #8c1f16;
+  --ui-danger: #b4291d;
 
   /* alpha bases: written as rgb(var(--x) / <alpha>) so one hue serves every opacity */
-  --ui-ink-rgb: 41 37 31;
-  --ui-line-rgb: 54 45 35;
-  --ui-shadow-rgb: 35 30 25;
-  --ui-shade-rgb: 28 24 20;
-  --ui-warm-rgb: 66 53 39;
-  --ui-accent-rgb: 169 107 33;
-  --ui-danger-rgb: 180 76 56;
+  --ui-ink-rgb: 15 20 25;
+  --ui-line-rgb: 15 20 25;
+  --ui-shadow-rgb: 15 20 25;
+  --ui-shade-rgb: 15 20 25;
+  --ui-warm-rgb: 15 20 25;
+  --ui-accent-rgb: 168 60 34;
+  --ui-danger-rgb: 180 41 29;
   --ui-light-rgb: 255 255 255;
-  --ui-cream-rgb: 255 250 242;
-  --ui-canvas-rgb: 245 244 236;
+  --ui-cream-rgb: 255 255 255;
+  --ui-canvas-rgb: 255 255 255;
   --ui-black-rgb: 0 0 0;
 
   /* badge tints */
-  --ui-badge-pass-rgb: 168 213 162;
-  --ui-badge-warn-rgb: 241 179 92;
-  --ui-badge-fail-rgb: 237 142 119;
+  --ui-badge-pass-rgb: 15 122 77;
+  --ui-badge-warn-rgb: 176 116 15;
+  --ui-badge-fail-rgb: 180 41 29;
 
   --ui-line: rgb(var(--ui-line-rgb) / .16);
 
@@ -109,11 +112,23 @@ body::before {
 button, input, select { font: inherit; }
 h1, h2, h3, h4 { font-family: var(--font-title); }
 button { cursor: pointer; }
-.language-switch { position: fixed; top: 17px; right: 18px; z-index: 60; display: flex; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: rgb(var(--ui-canvas-rgb) / .92); box-shadow: 0 6px 18px rgb(var(--ui-ink-rgb) / .08); backdrop-filter: blur(10px); }
+/* The language switch belongs to the workspace, not the preview. Pinning it to
+   the viewport's right edge parks it on top of the preview rail's own controls. */
+.language-switch { position: fixed; top: 17px; left: 18px; z-index: 60; display: flex; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); background: rgb(var(--ui-canvas-rgb) / .92); box-shadow: 0 6px 18px rgb(var(--ui-ink-rgb) / .08); backdrop-filter: blur(10px); }
 .language-switch button { padding: 0; border: 0; color: var(--muted); background: transparent; font: 600 9px/1 var(--font-title); letter-spacing: .04em; }
 .language-switch button.active { color: var(--ink); }
 .language-switch span { font-size: 9px; opacity: .45; }
-.shell { width: min(var(--width-page), calc(100% - 48px)); margin: 0 auto; padding: 28px 0 64px; }
+/* Two columns: the workspace scrolls, the preview rail stays. Every choice on
+   the left is answered on the right without scrolling for it -- that feedback
+   loop is what makes the click path worth following. */
+.shell { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 42%); align-items: start; }
+.workspace { min-width: 0; padding: 28px 30px 64px; }
+.preview-rail { position: sticky; top: 0; align-self: start; height: 100vh; min-width: 0; display: grid; border-left: 1px solid var(--line); background: var(--ui-canvas-alt); }
+.preview-rail .preview-section { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 22px 24px 24px; border-bottom: 0; }
+.preview-rail .preview-grid { min-height: 0; }
+.preview-rail .preview { width: 100%; min-height: 0; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.preview-rail .preview-canvas { min-height: 0; overflow: auto; }
+.preview-rail .section-head p { display: none; }
 
 header {
   width: min(100%, 920px);
@@ -142,7 +157,6 @@ h1 { margin: 10px 0 12px; color: var(--ui-ink-strong); font: 500 clamp(38px, 6vw
 .workflow-section:first-child { padding-top: 32px; }
 .step-controls { --step-accent: var(--ui-muted-warm); position: sticky; top: 18px; align-self: start; padding: 19px; border: 1px solid var(--line); border-radius: 12px; background: var(--ui-surface-inset); box-shadow: 0 12px 35px rgb(var(--ui-warm-rgb) / .08); }
 .step-controls .step-heading { margin-bottom: 18px; }
-.step-controls .step-heading > b { background: var(--step-accent); }
 .step-controls .field:first-of-type { margin-top: 0; }
 .step-content { min-width: 0; display: grid; align-content: start; gap: 40px; }
 .workflow-block { min-width: 0; padding: 0; border: 0; border-radius: 0; background: var(--ui-canvas); box-shadow: none; }
@@ -155,35 +169,8 @@ h1 { margin: 10px 0 12px; color: var(--ui-ink-strong); font: 500 clamp(38px, 6vw
 .context-result p { max-width: 520px; margin: 0; font-size: 14px; line-height: 1.55; opacity: .72; }
 .context-result .context-status { align-self: flex-start; margin-top: 34px; }
 
-.step-dock { position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 258px; overflow: hidden; border: 1px solid rgb(var(--ui-light-rgb) / .14); border-radius: 14px; color: var(--ui-ink-inverse); background: var(--ui-dock); box-shadow: 0 18px 50px rgb(var(--ui-ink-rgb) / .28); transition: width 180ms var(--ease-out); }
-.step-dock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 10px 14px; }
-.step-dock-head strong { font: 500 13px var(--font-title); }
-.step-dock-toggle { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgb(var(--ui-light-rgb) / .18); border-radius: 8px; color: var(--ui-ink-inverse); background: rgb(var(--ui-light-rgb) / .06); font: 500 16px/1 var(--font-title); transition: transform 140ms var(--ease-out), background-color 140ms ease; }
-.step-dock-body { display: grid; gap: 3px; padding: 0 7px 8px; }
-.global-target { display: grid; gap: 6px; padding: 10px 14px 14px; border-top: 1px solid rgb(var(--ui-light-rgb) / .14); }
-.global-target label { display: flex; justify-content: space-between; gap: 8px; color: rgb(var(--ui-cream-rgb) / .72); font-size: 9px; }
-.global-target label b { font: 600 8px "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; opacity: .58; }
-.global-target .select-trigger { width: 100%; min-width: 0; padding: 8px 9px; border: 1px solid rgb(var(--ui-light-rgb) / .16); border-radius: 7px; color: var(--ui-ink-inverse); background: var(--ui-dock-raised); font-size: 10px; }
-.global-target .select-trigger:hover:not(:disabled) { border-color: rgb(var(--ui-light-rgb) / .3); }
-.global-target .select-menu { padding: 4px; border-color: rgb(var(--ui-light-rgb) / .16); background: var(--ui-dock-raised); box-shadow: 0 16px 34px rgb(var(--ui-black-rgb) / .36); }
-.global-target .select-option { padding: 7px 5px; border-radius: 6px; color: rgb(var(--ui-cream-rgb) / .78); font-size: 10px; }
-.global-target .select-option[data-active="true"] { background: rgb(var(--ui-light-rgb) / .12); }
-.global-target .select-option[aria-selected="true"] { color: var(--ui-ink-inverse); }
-/* The amber accent is too dark to read on the dock; the mark takes the same ink
-   as the label it belongs to. */
-.global-target .select-check { width: 11px; height: 11px; stroke: var(--ui-ink-inverse); }
-.step-link { display: grid; grid-template-columns: 28px 1fr; gap: 7px; align-items: center; padding: 9px 8px; border-radius: 8px; color: rgb(var(--ui-cream-rgb) / .68); text-decoration: none; font-size: 12px; transition: color 140ms ease, background-color 140ms ease, transform 140ms var(--ease-out); }
-.step-link b { font: 500 10px var(--font-title); opacity: .62; }
 .step-icon { width: 14px; height: 14px; display: grid; place-items: center; justify-self: start; color: currentColor; opacity: .62; }
 .step-icon svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.4; }
-.step-link strong { font: 500 12px var(--font-title); }
-.step-link.active { color: var(--ui-ink-inverse); background: rgb(var(--ui-light-rgb) / .12); }
-.step-link.destination-link { color: rgb(var(--ui-cream-rgb) / .82); }
-.step-link.destination-start { margin-top: 4px; border-top: 1px solid rgb(var(--ui-light-rgb) / .14); border-radius: 0; }
-.step-dock.minimized { width: 154px; }
-.step-dock.minimized .step-dock-body { display: none; }
-.step-dock.minimized .global-target { padding-inline: 9px; }
-.step-dock-toggle:active, .step-link:active { transform: scale(.97); }
 
 .export-section { width: min(100%, var(--width-export)); display: flex; justify-content: space-between; align-items: center; gap: 24px; margin: 0 auto; padding: 44px 0; border-bottom: 1px solid var(--line); background: var(--ui-canvas); scroll-margin-top: 18px; }
 .export-copy { max-width: 520px; }
@@ -191,7 +178,40 @@ h1 { margin: 10px 0 12px; color: var(--ui-ink-strong); font: 500 clamp(38px, 6vw
 .preview-section { width: 100%; padding: 48px 0 56px; border-bottom: 1px solid var(--line); background: var(--ui-canvas); scroll-margin-top: 18px; }
 
 .step-heading { display: grid; grid-template-columns: 29px 1fr; gap: 8px; align-items: start; margin-bottom: 13px; }
-.step-heading > b { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 99px; color: var(--ui-ink-inverse); background: var(--ui-highlight-strong); font: 500 10px var(--font-title); }
+/* The step mark replaces the step number and owns collapse. It carries no digit:
+   order is read from the column itself. It stays monochrome on purpose -- in the
+   chrome, color means "press this next", and a step heading is not that. */
+.step-mark { width: 25px; height: 25px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 99px; background: none; cursor: pointer; }
+.step-mark::before { content: ""; width: 15px; height: 15px; border: 2px solid var(--ui-ink); border-radius: 99px; transition: border-width 160ms ease; }
+.step-mark:hover::before { transform: scale(1.2); }
+.step-mark:active { transform: scale(.94); }
+.workflow-section.is-collapsed .step-mark::before { border-width: 7px; }
+
+/* An untouched step breathes, so the pulse reads as "not looked at yet". The
+   first interaction anywhere inside that section stops it for good. */
+[data-touched="false"] .step-mark::before { animation: step-breathe 2400ms ease-in-out infinite; }
+/* The trough still reads as a ring. A breath that fades to nothing looks like a
+   broken element whenever the animation is paused -- which the browser does on
+   its own for any hidden tab. */
+@keyframes step-breathe {
+  0%, 100% { opacity: .42; transform: scale(.86); box-shadow: 0 0 0 0 rgb(var(--ui-ink-rgb) / 0); }
+  50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 0 6px rgb(var(--ui-ink-rgb) / .1); }
+}
+
+/* Collapse keeps the mark and the title and hides the rest of the section. */
+.workflow-section.is-collapsed { padding-block: 22px; }
+.workflow-section.is-collapsed .step-heading { margin-bottom: 0; }
+.workflow-section.is-collapsed .step-heading small { display: none; }
+.workflow-section.is-collapsed .step-controls > *:not(.step-heading) { display: none; }
+.workflow-section.is-collapsed .step-content { display: none; }
+
+/* The global WCAG target leads the workflow ahead of 01. It governs every
+   measurement below it, so it is stated before the first step, not inside one. */
+.target-section { padding: 26px 0; }
+.target-card { width: 286px; max-width: 100%; display: grid; gap: 7px; }
+.target-card label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--muted); font-size: 11px; }
+.target-card label b { font: 600 8px "SFMono-Regular", Consolas, monospace; letter-spacing: .08em; opacity: .55; }
+.target-card p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .step-heading strong { display: block; font: 500 13px/1.2 var(--font-title); }
 .step-heading small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.35; }
 .field { margin-top: 18px; }
@@ -368,7 +388,6 @@ main { min-width: 0; }
 .token-use { display: block; overflow: hidden; margin-bottom: 5px; font: 500 10px var(--font-title); text-overflow: ellipsis; white-space: nowrap; }
 .contrast-values { display: block; color: var(--ui-ink); font-size: 9px; opacity: .68; white-space: nowrap; }
 
-
 .preview-tabs { width: 184px; flex: 0 0 auto; }
 .preview-grid { width: 100%; display: block; }
 /* The caption is app chrome; the canvas below it is the generated page and
@@ -526,21 +545,23 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 @media (hover: hover) and (pointer: fine) {
   .button:hover { filter: brightness(1.04); }
   .saved-pair > button:hover { color: var(--bad); background: rgb(var(--ui-danger-rgb) / .09); }
-  .step-link:hover { color: var(--ui-ink-inverse); background: rgb(var(--ui-light-rgb) / .08); }
-  .step-dock-toggle:hover { background: rgb(var(--ui-light-rgb) / .12); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .button, .pair, .swatch, .mode button, .step-dock, .step-link, .step-dock-toggle { transition-duration: 0ms; }
+  .button, .pair, .swatch, .mode button, .step-mark { transition-duration: 0ms; }
+  [data-touched="false"] .step-mark::before { animation: none; opacity: 1; transform: none; }
 }
 
 @media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .preview-rail { position: static; height: auto; border-left: 0; border-top: 1px solid var(--line); }
+  .preview-rail .preview-canvas { overflow: visible; }
+  .preview-rail .section-head p { display: block; }
   .shell { width: min(100% - 40px, 660px); padding-top: 18px; }
   header { padding-bottom: 24px; }
   .workflow-section { grid-template-columns: 1fr; gap: 24px; padding: 34px 0 42px; }
   .preview-section { padding: 34px 0 42px; }
   .step-controls { position: static; }
   .step-content { gap: 32px; }
-  .step-dock { right: 14px; bottom: 14px; }
   .export-section { display: block; }
   .scale-guide { overflow-x: auto; grid-template-columns: repeat(5, 120px); }
   .scale { overflow-x: auto; grid-template-columns: repeat(11, 76px); padding-bottom: 5px; }
@@ -552,13 +573,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
   .semantic-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 500px) {
-  .language-switch { position: absolute; top: 10px; right: 12px; }
+  .language-switch { position: absolute; top: 10px; left: 12px; }
   .shell { width: calc(100% - 24px); }
   .safe-pair, .seed-summary { padding: 16px; }
   .workflow-section { padding: 28px 0 36px; }
   .preview-section { padding: 28px 0 36px; }
   .step-controls, .context-result { padding: 16px; }
-  .step-dock { right: 10px; bottom: 10px; width: min(258px, calc(100vw - 20px)); }
   h1 { font-size: 44px; }
   .section-head { display: block; }
   .section-head p { margin-top: 7px; }

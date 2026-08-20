@@ -13,6 +13,7 @@
     <button type="button" data-language="zh" aria-pressed="false">中</button>
   </div>
   <div class="shell">
+    <div class="workspace">
     <header>
       <div>
         <h1><span class="title-main">COLOR DESIGN SYSTEM</span><span class="title-sub">for starter</span></h1>
@@ -28,7 +29,7 @@
     <main class="workflow">
       <section id="quick-start" class="workflow-section quick-start-section" data-workflow-step="quick-start">
         <aside class="step-controls quick-start">
-          <div class="step-heading"><b>★</b><div><strong data-i18n="quick.title">Quick start</strong><small data-i18n="quick.desc">Answer three questions, press one button, and get a complete accessible website color system.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="quick.title">Quick start</strong><small data-i18n="quick.desc">Answer three questions, press one button, and get a complete accessible website color system.</small></div></div>
           <div class="field">
             <label for="characterSelect" data-i18n="quick.characterLabel">Color character</label>
             <select id="characterSelect"><option value="balanced" data-i18n="character.balanced">Balanced</option><option value="warm" data-i18n="character.warm">Warm</option><option value="cool" data-i18n="character.cool">Cool</option><option value="vivid" data-i18n="character.vivid">Vivid</option><option value="muted" data-i18n="character.muted">Muted</option></select>
@@ -57,9 +58,17 @@
         </div>
       </section>
 
+      <section id="global-target" class="workflow-section target-section">
+        <div class="target-card">
+          <label for="targetSelect"><span data-i18n="global.target">WCAG target</span><b>GLOBAL</b></label>
+          <select id="targetSelect" aria-label="WCAG target"><option value="4.5" data-i18n="target.option.normal">AA · normal text · 4.5:1</option><option value="3" data-i18n="target.option.large">AA · large text · 3:1</option><option value="7" data-i18n="target.option.aaa">AAA · normal text · 7:1</option></select>
+          <p data-i18n="global.targetHelp">Every contrast result below is measured against this target.</p>
+        </div>
+      </section>
+
       <section id="step-context" class="workflow-section" data-workflow-step="context">
         <aside class="step-controls context">
-          <div class="step-heading"><b>01</b><div><strong data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.context.title">Context</strong><small data-i18n="step.context.desc">Lock the page background and primary text first.</small></div></div>
           <div class="field">
             <label for="backgroundColor">Background <span id="backgroundValue" class="value">#F7F3EB</span></label>
             <div class="mini-color-row"><div class="mini-picker"><input id="backgroundColor" type="color" value="#f7f3eb" aria-label="Choose Background color" data-i18n-aria-label="aria.chooseBackground" /></div><input id="backgroundHexInput" class="text-input value" value="#F7F3EB" spellcheck="false" maxlength="7" aria-label="Enter Background HEX value" data-i18n-aria-label="aria.enterBackground" /></div>
@@ -80,7 +89,7 @@
 
       <section id="step-candidates" class="workflow-section" data-workflow-step="candidates">
         <aside class="step-controls candidate">
-          <div class="step-heading"><b>02</b><div><strong data-i18n="step.colors.title">Colors</strong><small data-i18n="step.colors.desc">Set Brand / Neutral, then generate optional and semantic roles.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.colors.title">Colors</strong><small data-i18n="step.colors.desc">Set Brand / Neutral, then generate optional and semantic roles.</small></div></div>
           <div class="field">
             <label data-i18n="colors.currentRole">Current role</label>
             <div id="roleTabs" class="role-tabs" aria-label="Color roles" data-i18n-aria-label="aria.colorRoles"></div>
@@ -126,7 +135,7 @@
 
       <section id="step-standard" class="workflow-section" data-workflow-step="standard">
         <aside class="step-controls standard">
-          <div class="step-heading"><b>03</b><div><strong data-i18n="step.tokens.title">Website tokens</strong><small data-i18n="step.tokens.desc">The generated system as named tokens. Custom pairs stay editable snapshots below.</small></div></div>
+          <div class="step-heading"><button class="step-mark" type="button" data-step-toggle aria-expanded="true" aria-label="Collapse this step" data-i18n-aria-label="aria.collapseSection"></button><div><strong data-i18n="step.tokens.title">Website tokens</strong><small data-i18n="step.tokens.desc">The generated system as named tokens. Custom pairs stay editable snapshots below.</small></div></div>
           <div class="saved-usage-guide">
             <div><strong data-i18n="saved.static">Static</strong><span data-i18n="saved.staticMeaning">For text, surfaces, icons, or other content without interaction states.</span></div>
             <div><strong data-i18n="saved.interactive">Interactive</strong><span data-i18n="saved.interactiveMeaning">For controls that need Default, Hover, Pressed, and Focus colors.</span></div>
@@ -153,28 +162,20 @@
       </section>
     </main>
 
-    <section id="preview" class="preview-section" data-workflow-step="preview">
-      <div class="section-head"><div><h2 data-i18n="preview.title">Website preview</h2><p data-i18n="preview.desc">One landing page rendered from the exported tokens. The page background is the generated surface; the system spec below the footer holds every state.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
-      <div class="preview-grid">
-        <div id="lightPreview" class="preview light"><div class="preview-top"><strong data-i18n="preview.lightTitle">Website sample · Light</strong><span data-i18n="preview.lightMeta">Same markup · Light values</span></div><div id="lightPreviewContent" class="preview-canvas"></div></div>
-        <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong data-i18n="preview.darkTitle">Website sample · Dark</strong><span data-i18n="preview.darkMeta">Same markup · Dark values</span></div><div id="darkPreviewContent" class="preview-canvas"></div></div>
-      </div>
-    </section>
     <section id="export" class="export-section"><div class="export-copy"><h2 data-i18n="export.title">Export colors</h2><p data-i18n="export.desc">Copy the current colors and usage relationships as CSS variables or JSON.</p><p class="export-hint" data-i18n="export.projectHint">Save keeps this project in your browser; Download JSON creates a file you can import anywhere. Invalid imports never replace the active project.</p></div><div class="export-actions"><div class="actions"><button id="copyCss" class="button primary" data-i18n="action.copyCss">Copy CSS variables</button><button id="copyJson" class="button" data-i18n="action.copyJson">Copy JSON</button><button id="copyTailwind" class="button" data-i18n="action.copyTailwind">Copy Tailwind adapter</button></div><div class="actions"><button id="downloadJson" class="button" data-i18n="action.downloadJson">Download JSON</button><label class="button" for="importFile" data-i18n="action.importJson">Import JSON</label><input id="importFile" type="file" accept="application/json,.json" hidden /><button id="saveProject" class="button" data-i18n="action.saveProject">Save locally</button><button id="newProject" class="button" data-i18n="action.newProject">New project</button></div></div></section>
     <div class="footer">Inspired by <a href="https://mgifford.github.io/ui-palette-generator/" target="_blank" rel="noreferrer">MGifford UI Palette Generator</a> · WCAG contrast ratio uses relative luminance.</div>
+    </div>
+
+    <aside class="preview-rail" aria-label="Website preview">
+      <section id="preview" class="preview-section" data-workflow-step="preview">
+        <div class="section-head"><div><h2 data-i18n="preview.title">Website preview</h2><p data-i18n="preview.desc">One landing page rendered from the exported tokens. The page background is the generated surface; the system spec below the footer holds every state.</p></div><div class="mode preview-tabs" aria-label="Preview theme" data-i18n-aria-label="aria.previewTheme"><button class="active" data-preview-theme="light" aria-pressed="true" data-i18n="preview.light">Light</button><button data-preview-theme="dark" aria-pressed="false" data-i18n="preview.dark">Dark</button></div></div>
+        <div class="preview-grid">
+          <div id="lightPreview" class="preview light"><div class="preview-top"><strong data-i18n="preview.lightTitle">Website sample · Light</strong><span data-i18n="preview.lightMeta">Same markup · Light values</span></div><div id="lightPreviewContent" class="preview-canvas"></div></div>
+          <div id="darkPreview" class="preview dark" hidden><div class="preview-top"><strong data-i18n="preview.darkTitle">Website sample · Dark</strong><span data-i18n="preview.darkMeta">Same markup · Dark values</span></div><div id="darkPreviewContent" class="preview-canvas"></div></div>
+        </div>
+      </section>
+    </aside>
   </div>
-  <aside id="stepDock" class="step-dock" aria-label="Workflow navigation" data-i18n-aria-label="aria.workflowNavigation">
-    <div class="step-dock-head"><strong data-i18n="nav.steps">Steps</strong><button id="stepDockToggle" class="step-dock-toggle" type="button" aria-expanded="true" aria-controls="stepDockBody" aria-label="Minimize workflow navigation" data-i18n-aria-label="aria.minimizeSteps">−</button></div>
-    <nav id="stepDockBody" class="step-dock-body">
-      <a class="step-link active" href="#quick-start" data-step-link="quick-start"><span class="step-icon" aria-hidden="true">★</span><strong data-i18n="nav.quickStart">Quick start</strong></a>
-      <a class="step-link" href="#step-context" data-step-link="context"><b>01</b><strong data-i18n="step.context.title">Context</strong></a>
-      <a class="step-link" href="#step-candidates" data-step-link="candidates"><b>02</b><strong data-i18n="step.colors.title">Colors</strong></a>
-      <a class="step-link" href="#step-standard" data-step-link="standard"><b>03</b><strong data-i18n="step.tokens.title">Website tokens</strong></a>
-      <a class="step-link destination-link destination-start" href="#preview" data-step-link="preview"><span class="step-icon" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4 6.5-4 6.5 4 6.5 4-2.4 4-6.5 4S1.5 8 1.5 8Z"></path><circle cx="8" cy="8" r="1.75"></circle></svg></span><strong data-i18n="nav.preview">Preview</strong></a>
-      <a class="step-link destination-link" href="#export" data-step-link="export"><b aria-hidden="true">↗</b><strong data-i18n="nav.export">Export</strong></a>
-    </nav>
-    <div class="global-target"><label for="targetSelect"><span data-i18n="global.target">WCAG target</span><b>GLOBAL</b></label><select id="targetSelect" aria-label="WCAG target"><option value="4.5" data-i18n="target.option.normal">AA · normal text · 4.5:1</option><option value="3" data-i18n="target.option.large">AA · large text · 3:1</option><option value="7" data-i18n="target.option.aaa">AAA · normal text · 7:1</option></select></div>
-  </aside>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="js/color-engine.js"></script>

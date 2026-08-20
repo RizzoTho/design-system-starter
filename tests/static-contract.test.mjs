@@ -28,7 +28,19 @@ assert.ok(html.indexOf('id="generateSemantics"') < html.indexOf('id="lockRole"')
 assert.match(html, /id="generateSemantics" class="button"/, 'Sync action did not receive the secondary visual style');
 assert.match(html, /id="lockRole" class="button primary full-button"/, 'Lock action did not receive the primary visual style');
 assert.match(html, /<span id="scaleDiagnostics" class="scale-diagnostic-inline" hidden><\/span>/, 'Scale diagnostics are not inline with the description');
-assert.ok(html.indexOf('id="targetSelect"') > html.indexOf('id="stepDock"'), 'WCAG target is not owned by the bottom-right global dock');
+// The bottom-right Steps dock is gone. The global WCAG target leads the workflow
+// ahead of 01 Context, and each step heading owns a hollow mark that collapses
+// its own section. The mark stays monochrome: in the chrome, color means "press
+// this next", and a step heading is not that.
+assert.doesNotMatch(html, /id="stepDock"|data-step-link/, 'The Steps dock returned');
+assert.ok(html.indexOf('id="targetSelect"') < html.indexOf('id="step-context"'), 'The global WCAG target no longer leads the workflow ahead of 01');
+assert.equal([...html.matchAll(/data-step-toggle/g)].length, 4, 'Every workflow step must own exactly one collapse mark');
+assert.doesNotMatch(html, /<div class="step-heading"><b>/, 'A step heading prints a number again instead of the mark');
+assert.match(css, /\.step-mark::before \{[^}]*border: 2px solid var\(--ui-ink\)/s, 'The step mark is no longer a monochrome hollow ring');
+assert.match(css, /\[data-touched="false"\] \.step-mark::before \{[^}]*animation: step-breathe/s, 'An untouched step no longer breathes');
+assert.match(css, /@keyframes step-breathe/, 'The breathing keyframes are missing');
+assert.match(css, /prefers-reduced-motion[\s\S]{0,220}\[data-touched="false"\] \.step-mark::before \{[^}]*animation: none/, 'The breathing light ignores reduced motion');
+assert.match(css, /\.workflow-section\.is-collapsed \.step-content \{[^}]*display: none/s, 'The mark no longer collapses the whole step section');
 assert.equal([...html.matchAll(/<script\b/g)].length, 8, 'Unexpected script count');
 assert.ok(idSelectors.length > 30, 'Static selector scan did not inspect the app');
 // Quick start is one centered column and the generation result is the foot of
@@ -66,7 +78,10 @@ assert.match(css, /\.spec-field\.is-invalid\.is-focused input \{[^}]*outline-col
 assert.match(css, /\.saved-pair \{[^}]*grid-template-areas:[^}]*"sample copy remove"[^}]*"status status status"/s, 'Saved pair status and remove action do not own separate grid areas');
 assert.match(css, /\.pair\.needs-work \{[^}]*box-shadow: 0 3px 12px rgb\(var\(--ui-danger-rgb\) \/ \.08\)/s, 'Fit report optimization tasks lost their full-card state treatment');
 assert.doesNotMatch(css, /inset 3px 0 0 var\(--bad\)/, 'Fit report still uses the prohibited left border');
-assert.doesNotMatch(css, /border-left|inset 3px 0 0/, 'The visual system still uses a left-border treatment');
+// The colored left bar stays banned as a card treatment. The preview rail's 1px
+// divider is column structure, not an accent, so that one rule is exempt by name.
+const cardCss = css.split('\n').filter(line => !line.trimStart().startsWith('.preview-rail')).join('\n');
+assert.doesNotMatch(cardCss, /border-left|inset 3px 0 0/, 'The visual system still uses a left-border treatment');
 assert.match(html, /id="addPair"[^>]*data-i18n="saved\.add"/, 'Saved pair editor lost its add action');
 assert.doesNotMatch(html, /Contrast matrix|data-save-pair|id="matrix"/i, 'The removed Contrast matrix surface returned');
 assert.doesNotMatch(app, /renderMatrix|data-save-pair|matrix-cell|savedPairId/, 'The removed Contrast matrix interaction returned');
